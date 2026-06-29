@@ -12,8 +12,8 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try { await api.post('/auth/forgot-password', { email }); setSent(true); toast.success('Reset link sent!'); }
-    catch (err) { toast.error(err.response?.data?.error || 'Error'); }
+    try { await api.post('/auth/forgot-password', { email }); setSent(true); toast.success('Havola yuborildi!'); }
+    catch (err) { toast.error(err.response?.data?.error || 'Xatolik yuz berdi'); }
     finally { setLoading(false); }
   };
 
@@ -30,26 +30,26 @@ export default function ForgotPassword() {
         <div className="card-glow">
           {sent ? (
             <div className="text-center py-6">
-              <h2 className="text-xl font-game text-white mb-2">Check Your Email</h2>
-              <p className="text-dark-400 mb-6">Reset link sent to <strong className="text-white">{email}</strong></p>
-              <Link to="/auth/login" className="text-brand-400 hover:text-brand-300">Back to login</Link>
+              <h2 className="text-xl font-game text-white mb-2">Emailingizni tekshiring</h2>
+              <p className="text-dark-400 mb-6">Havola yuborildi: <strong className="text-white">{email}</strong></p>
+              <Link to="/auth/login" className="text-brand-400 hover:text-brand-300">Kirish sahifasiga qaytish</Link>
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-game text-white mb-2">Reset Password</h2>
-              <p className="text-dark-400 mb-6">Enter your email to get a reset link.</p>
+              <h2 className="text-2xl font-game text-white mb-2">Parolni tiklash</h2>
+              <p className="text-dark-400 mb-6">Email manzilingizni kiriting, biz sizga tiklash havolasini yuboramiz.</p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-dark-300 mb-1.5">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="input-field pl-10" required />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" className="input-field pl-10" required />
                   </div>
                 </div>
-                <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Sending...' : 'Send Reset Link'}</button>
+                <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Yuborilmoqda...' : 'Havola yuborish'}</button>
               </form>
               <div className="mt-6">
-                <Link to="/auth/login" className="inline-flex items-center gap-2 text-dark-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" /> Back to login</Link>
+                <Link to="/auth/login" className="inline-flex items-center gap-2 text-dark-400 hover:text-white text-sm"><ArrowLeft className="w-4 h-4" /> Kirishga qaytish</Link>
               </div>
             </>
           )}

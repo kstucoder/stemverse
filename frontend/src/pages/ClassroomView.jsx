@@ -35,19 +35,19 @@ export default function ClassroomView() {
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="card-glow text-center"><Users className="w-5 h-5 text-brand-400 mx-auto mb-2" /><p className="text-2xl font-game text-white">{students.length}</p><p className="text-xs text-dark-400">Students</p></div>
+          <div className="card-glow text-center"><Users className="w-5 h-5 text-brand-400 mx-auto mb-2" /><p className="text-2xl font-game text-white">{students.length}</p><p className="text-xs text-dark-400">O'quvchilar</p></div>
           <div className="card-glow text-center"><TrendingUp className="w-5 h-5 text-neon-cyan mx-auto mb-2" /><p className="text-2xl font-game text-white">{totalXP}</p><p className="text-xs text-dark-400">Total XP</p></div>
           <div className="card-glow text-center"><Trophy className="w-5 h-5 text-neon-yellow mx-auto mb-2" /><p className="text-2xl font-game text-white">{avgLevel.toFixed(1)}</p><p className="text-xs text-dark-400">Avg Level</p></div>
         </div>
 
         <div className="card-glow">
-          <h3 className="font-game text-white mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-brand-400" /> Students</h3>
+          <h3 className="font-game text-white mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-brand-400" /> O'quvchilar</h3>
           {students.length === 0 ? (
-            <p className="text-dark-400 text-sm">No students yet. Share the invite code with your students!</p>
+            <p className="text-dark-400 text-sm">Hali o'quvchilar yo'q. Share the invite code with your students!</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-dark-700"><th className="text-left py-3 text-dark-400 font-semibold">Student</th><th className="text-center py-3 text-dark-400 font-semibold">Level</th><th className="text-center py-3 text-dark-400 font-semibold">XP</th><th className="text-center py-3 text-dark-400 font-semibold">Progress</th><th className="text-center py-3 text-dark-400 font-semibold">Achievements</th></tr></thead>
+                <thead><tr className="border-b border-dark-700"><th className="text-left py-3 text-dark-400 font-semibold">O'quvchi</th><th className="text-center py-3 text-dark-400 font-semibold">Level</th><th className="text-center py-3 text-dark-400 font-semibold">XP</th><th className="text-center py-3 text-dark-400 font-semibold">Progress</th><th className="text-center py-3 text-dark-400 font-semibold">Achievements</th></tr></thead>
                 <tbody>
                   {students.map(e => {
                     const s = e.student;

@@ -21,8 +21,8 @@ export default function TeacherDashboard() {
     <div className="min-h-screen bg-dark-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <div><h1 className="text-3xl font-game text-white"><School className="w-8 h-8 inline text-brand-400 mr-2" />Teacher Panel</h1><p className="text-dark-400 mt-2">Manage classrooms and monitor student progress</p></div>
-          <Link to="/teacher/classrooms" className="btn-primary text-sm py-2"><Plus className="w-4 h-4 inline mr-1" />Manage Classrooms</Link>
+          <div><h1 className="text-3xl font-game text-white"><School className="w-8 h-8 inline text-brand-400 mr-2" />O'qituvchi paneli</h1><p className="text-dark-400 mt-2">Sinflarni boshqarish va o'quvchilar progressini kuzatish</p></div>
+          <Link to="/teacher/classrooms" className="btn-primary text-sm py-2"><Plus className="w-4 h-4 inline mr-1" />Sinflarni boshqarish</Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -31,7 +31,7 @@ export default function TeacherDashboard() {
           <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center mx-auto mb-3"><BookCheck className="w-6 h-6 text-neon-green" /></div><p className="text-3xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Completed Lessons</p></div>
         </div>
 
-        <h2 className="text-xl font-game text-white mb-4">Your Classrooms</h2>
+        <h2 className="text-xl font-game text-white mb-4">Sizning sinflaringiz</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {classrooms.map(c => (
             <Link key={c.id} to={`/teacher/classroom/${c.id}`} className="card-glow hover:border-brand-500/50 transition-all">
@@ -49,7 +49,7 @@ export default function TeacherDashboard() {
               ))}
             </Link>
           ))}
-          {classrooms.length === 0 && <div className="card-glow text-center col-span-full py-8 text-dark-400">No classrooms yet. Create your first classroom!</div>}
+          {classrooms.length === 0 && <div className="card-glow text-center col-span-full py-8 text-dark-400">Hali sinflar yo'q. Create your first classroom!</div>}
         </div>
       </div>
     </div>

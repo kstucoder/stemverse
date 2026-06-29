@@ -14,7 +14,6 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ error: 'Email already registered' });
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -52,6 +51,35 @@ app.get('/api/lessons', async (req, res) => {
   try {
     const lessons = await prisma.lesson.findMany({ orderBy: { order: 'asc' } });
     res.json(lessons);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/progress/overview', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token required' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const total = await prisma.lesson.count({ where: { published: true } });
+    const completed = await prisma.userProgress.count({ where: { userId: decoded.id, completed: true } });
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    res.json({ totalLessons: total, completedLessons: completed, xp: user.xp, level: user.level, progress: total > 0 ? Math.round(completed/total*100) : 0 });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/progress/complete', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Token required' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { lessonId, score } = req.body;
+    await prisma.userProgress.upsert({
+      where: { userId_lessonId: { userId: decoded.id, lessonId } },
+      create: { userId: decoded.id, lessonId, completed: true, score: score||0, completedAt: new Date() },
+      update: { completed: true, score: Math.max(score||0, 0) },
+    });
+    const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
+    await prisma.user.update({ where: { id: decoded.id }, data: { xp: { increment: lesson?.xpReward||0 } } });
+    res.json({ success: true, xpEarned: lesson?.xpReward||0 });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

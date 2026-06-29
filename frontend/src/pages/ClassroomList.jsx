@@ -5,20 +5,20 @@ import { teacherAPI } from '../lib/api';
 import toast from 'react-hot-toast';
 
 export default function ClassroomList() {
-  const [classrooms, setClassrooms] = useState([]);
+  const [classrooms, setSinflar] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showYaratish, setShowYaratish] = useState(false);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
-  const load = () => teacherAPI.classrooms().then(r => setClassrooms(r.data)).catch(console.error).finally(() => setLoading(false));
+  const load = () => teacherAPI.classrooms().then(r => setSinflar(r.data)).catch(console.error).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
-  const handleCreate = async (e) => {
+  const handleYaratish = async (e) => {
     e.preventDefault(); if (!name.trim()) return;
     setCreating(true);
-    try { const { data } = await teacherAPI.createClassroom(name); toast.success(`Classroom "${data.name}" created!`); setShowCreate(false); setName(''); load(); }
+    try { const { data } = await teacherAPI.createClassroom(name); toast.success(`Classroom "${data.name}" created!`); setShowYaratish(false); setName(''); load(); }
     catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
     finally { setCreating(false); }
   };
@@ -37,17 +37,17 @@ export default function ClassroomList() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link to="/teacher" className="p-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700/50"><ArrowLeft className="w-5 h-5" /></Link>
-            <div><h1 className="text-2xl font-game text-white"><School className="w-6 h-6 inline text-brand-400 mr-2" />Classrooms</h1><p className="text-sm text-dark-400">{classrooms.length} total</p></div>
+            <div><h1 className="text-2xl font-game text-white"><School className="w-6 h-6 inline text-brand-400 mr-2" />Sinflar</h1><p className="text-sm text-dark-400">{classrooms.length} total</p></div>
           </div>
-          <button onClick={() => setShowCreate(!showCreate)} className="btn-primary text-sm py-2"><Plus className="w-4 h-4 inline mr-1" />New Classroom</button>
+          <button onClick={() => setShowYaratish(!showYaratish)} className="btn-primary text-sm py-2"><Plus className="w-4 h-4 inline mr-1" />Yangi sinf</button>
         </div>
 
-        {showCreate && (
+        {showYaratish && (
           <div className="card-glow mb-8 animate-slide-down">
-            <h3 className="font-game text-white mb-4">Create Classroom</h3>
-            <form onSubmit={handleCreate} className="flex gap-3">
+            <h3 className="font-game text-white mb-4">Sinf yaratish</h3>
+            <form onSubmit={handleYaratish} className="flex gap-3">
               <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Classroom name (e.g. Grade 7-A)" className="input-field flex-1" required />
-              <button type="submit" disabled={creating} className="btn-primary">{creating ? 'Creating...' : 'Create'}</button>
+              <button type="submit" disabled={creating} className="btn-primary">{creating ? 'Creating...' : 'Yaratish'}</button>
             </form>
           </div>
         )}
@@ -67,7 +67,7 @@ export default function ClassroomList() {
               <button onClick={() => handleDelete(c.id)} className="p-2 rounded-lg text-dark-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
             </div>
           ))}
-          {classrooms.length === 0 && <div className="text-center py-16"><School className="w-12 h-12 text-dark-500 mx-auto mb-4" /><p className="text-dark-400">No classrooms yet</p></div>}
+          {classrooms.length === 0 && <div className="text-center py-16"><School className="w-12 h-12 text-dark-500 mx-auto mb-4" /><p className="text-dark-400">Hali sinflar yo'q</p></div>}
         </div>
       </div>
     </div>

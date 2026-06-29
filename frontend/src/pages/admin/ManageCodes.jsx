@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Key, Plus, Loader2, Copy, ArrowLeft } from 'lucide-react';
+import { Key, Plus, Loader2, Kopyalash, ArrowLeft } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-export default function ManageCodes() {
-  const [codes, setCodes] = useState([]);
+export default function ManageKodlar() {
+  const [codes, setKodlar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(10);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { adminAPI.listCodes().then(r => setCodes(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
+  useEffect(() => { adminAPI.listKodlar().then(r => setKodlar(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const { data } = await adminAPI.generateCodes(count);
+      const { data } = await adminAPI.generateKodlar(count);
       toast.success(`${data.generated} codes generated!`);
-      adminAPI.listCodes().then(r => setCodes(r.data));
+      adminAPI.listKodlar().then(r => setKodlar(r.data));
     } catch (err) { toast.error('Failed'); }
     finally { setGenerating(false); }
   };
@@ -33,7 +33,7 @@ export default function ManageCodes() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link to="/admin" className="p-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700/50"><ArrowLeft className="w-5 h-5" /></Link>
-            <div><h1 className="text-2xl font-game text-white"><Key className="w-6 h-6 inline text-neon-cyan" /> Codes</h1><p className="text-sm text-dark-400">{codes.length} total · {avail} avail · {used} used</p></div>
+            <div><h1 className="text-2xl font-game text-white"><Key className="w-6 h-6 inline text-neon-cyan" /> Kodlar</h1><p className="text-sm text-dark-400">{codes.length} total · {avail} avail · {used} used</p></div>
           </div>
         </div>
 
@@ -52,7 +52,7 @@ export default function ManageCodes() {
                 <th className="text-left py-3 px-2 text-dark-400">Code</th>
                 <th className="text-left py-3 px-2 text-dark-400">Status</th>
                 <th className="text-left py-3 px-2 text-dark-400">Used By</th>
-                <th className="text-right py-3 px-2 text-dark-400">Copy</th>
+                <th className="text-right py-3 px-2 text-dark-400">Kopyalash</th>
               </tr>
             </thead>
             <tbody>
@@ -62,7 +62,7 @@ export default function ManageCodes() {
                   <td className="py-3 px-2">{c.used ? <span className="badge-completed text-xs">Used</span> : <span className="badge-level text-xs">Available</span>}</td>
                   <td className="py-3 px-2 text-dark-400">{c.usedBy?.name || '—'}</td>
                   <td className="py-3 px-2 text-right">
-                    <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success('Copied!'); }} className="p-1.5 rounded-lg text-dark-400 hover:text-brand-400"><Copy className="w-4 h-4" /></button>
+                    <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success('Copied!'); }} className="p-1.5 rounded-lg text-dark-400 hover:text-brand-400"><Kopyalash className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}

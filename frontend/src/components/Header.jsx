@@ -12,12 +12,12 @@ export default function Header() {
   const handleLogout = () => { logout(); navigate('/auth/login'); };
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/lessons', icon: BookOpen, label: 'Lessons' },
-    { to: '/achievements', icon: Trophy, label: 'Achievements' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Asosiy' },
+    { to: '/lessons', icon: BookOpen, label: 'Darslar' },
+    { to: '/achievements', icon: Trophy, label: 'Yutuqlar' },
   ];
   if (user.role === 'ADMIN') navItems.push({ to: '/admin', icon: Cpu, label: 'Admin' });
-  if (user.role === 'TEACHER' || user.role === 'ADMIN') navItems.push({ to: '/teacher', icon: School, label: 'Teacher' });
+  if (user.role === 'TEACHER' || user.role === 'ADMIN') navItems.push({ to: '/teacher', icon: School, label: "O'qituvchi" });
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-dark-700">

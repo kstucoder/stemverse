@@ -29,16 +29,16 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-game text-white">Welcome, <span className="text-gradient">{user?.name}</span></h1>
-            <p className="text-dark-400 mt-1">Ready for your next lesson?</p>
+            <p className="text-dark-400 mt-1">Keyingi darsga tayyormisiz?</p>
           </div>
-          {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm"><Gift className="w-4 h-4" /> Activate Kit</Link>}
+          {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm"><Gift className="w-4 h-4" /> KITni aktivlashtirish</Link>}
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="card-glow">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-brand-500/20 flex items-center justify-center"><Zap className="w-5 h-5 text-brand-400" /></div>
-              <div><p className="text-2xl font-game text-white">{user?.xp || 0}</p><p className="text-xs text-dark-400">Total XP</p></div>
+              <div><p className="text-2xl font-game text-white">{user?.xp || 0}</p><p className="text-xs text-dark-400">Umumiy XP</p></div>
             </div>
             <div className="w-full h-2 bg-dark-700 rounded-full overflow-hidden">
               <div className="h-full bg-brand-gradient rounded-full" style={{ width: `${levelProgress}%` }} />
@@ -48,7 +48,7 @@ export default function Dashboard() {
           <div className="card-glow">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-neon-green/20 flex items-center justify-center"><CheckCircle className="w-5 h-5 text-neon-green" /></div>
-              <div><p className="text-2xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Completed</p></div>
+              <div><p className="text-2xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Bajarilgan</p></div>
             </div>
             <p className="text-xs text-dark-500 mt-3">of {stats?.totalLessons || 0} lessons</p>
           </div>
@@ -73,8 +73,8 @@ export default function Dashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-game text-white flex items-center gap-2"><BookOpen className="w-5 h-5 text-brand-400" /> Recent Lessons</h2>
-              <Link to="/lessons" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">View all <ArrowRight className="w-3 h-3" /></Link>
+              <h2 className="text-xl font-game text-white flex items-center gap-2"><BookOpen className="w-5 h-5 text-brand-400" /> So'nggi darslar</h2>
+              <Link to="/lessons" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">Hammasini ko'rish <ArrowRight className="w-3 h-3" /></Link>
             </div>
             <div className="space-y-3">
               {recent.map((l) => (
@@ -95,7 +95,7 @@ export default function Dashboard() {
             <div className="card-glow mb-6">
               <div className="space-y-2">
                 <Link to="/lessons" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-700/50 hover:bg-dark-700 text-sm">
-                  <BookOpen className="w-4 h-4 text-brand-400" /><span className="text-dark-200">Start a lesson</span>
+                  <BookOpen className="w-4 h-4 text-brand-400" /><span className="text-dark-200">Darsni boshlash</span>
                 </Link>
                 {!kit && <Link to="/activate" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-700/50 hover:bg-dark-700 text-sm">
                   <Gift className="w-4 h-4 text-neon-cyan" /><span className="text-dark-200">Activate kit</span>

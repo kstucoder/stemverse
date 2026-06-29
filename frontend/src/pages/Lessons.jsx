@@ -5,11 +5,11 @@ import { lessonsAPI } from '../lib/api';
 
 const levelLabels = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced' };
 
-export default function Lessons() {
-  const [lessons, setLessons] = useState([]);
+export default function Darslar() {
+  const [lessons, setDarslar] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { lessonsAPI.list().then(r => setLessons(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
+  useEffect(() => { lessonsAPI.list().then(r => setDarslar(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
 
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>;
 
@@ -17,8 +17,8 @@ export default function Lessons() {
     <div className="min-h-screen bg-dark-900">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-game text-white flex items-center gap-3"><BookOpen className="w-8 h-8 text-brand-400" /> Lessons</h1>
-          <p className="text-dark-400 mt-2">Complete lessons to unlock new hardware skills!</p>
+          <h1 className="text-3xl font-game text-white flex items-center gap-3"><BookOpen className="w-8 h-8 text-brand-400" /> Darslar</h1>
+          <p className="text-dark-400 mt-2">Darslarni tugatib, yangi qurilmalarni oching!</p>
         </div>
         <div className="space-y-4">
           {lessons.map((l) => (
@@ -35,7 +35,7 @@ export default function Lessons() {
                       <p className="text-sm text-dark-400 mt-1">{l.description}</p>
                     </div>
                     <span className={`badge ${l.progress?.completed ? 'badge-completed' : 'badge-level'}`}>
-                      {l.progress?.completed ? 'Done' : `${l.xpReward} XP`}
+                      {l.progress?.completed ? 'Bajarildi' : `${l.xpReward} XP`}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-4">

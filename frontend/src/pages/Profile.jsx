@@ -3,8 +3,8 @@ import { User, Mail, Cpu, Zap, Calendar, Save, Loader2 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import toast from 'react-hot-toast';
 
-export default function Profile() {
-  const { user, updateProfile } = useAuthStore();
+export default function Profil() {
+  const { user, updateProfil } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
   if (!user) return null;
@@ -13,7 +13,7 @@ export default function Profile() {
     e.preventDefault();
     if (!name.trim()) { toast.error('Name required'); return; }
     setSaving(true);
-    try { await updateProfile({ name }); toast.success('Profile updated!'); }
+    try { await updateProfil({ name }); toast.success('Profil updated!'); }
     catch (err) { toast.error(err.message); }
     finally { setSaving(false); }
   };
@@ -21,7 +21,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-dark-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8"><h1 className="text-3xl font-game text-white flex items-center gap-3"><User className="w-8 h-8 text-brand-400" /> Profile</h1></div>
+        <div className="mb-8"><h1 className="text-3xl font-game text-white flex items-center gap-3"><User className="w-8 h-8 text-brand-400" /> Profil</h1></div>
         <div className="space-y-6">
           <div className="card-glow">
             <div className="flex items-center gap-4 mb-6">
@@ -50,7 +50,7 @@ export default function Profile() {
             </form>
           </div>
           <div className="card-glow">
-            <h3 className="font-game text-white mb-4">Statistics</h3>
+            <h3 className="font-game text-white mb-4">Statistika</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-dark-700/50 rounded-xl p-4 text-center">
                 <Zap className="w-6 h-6 text-neon-yellow mx-auto mb-2" />

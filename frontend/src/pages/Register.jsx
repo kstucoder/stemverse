@@ -12,9 +12,9 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
-    if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
-    try { await register(form.name, form.email, form.password); toast.success('Account created! 🚀'); navigate('/dashboard'); }
+    if (form.password !== form.confirmPassword) { toast.error('Parollar mos kelmadi'); return; }
+    if (form.password.length < 6) { toast.error('Parol kamida 6 belgidan iborat bo\'lishi kerak'); return; }
+    try { await register(form.name, form.email, form.password); toast.success('Hisob yaratildi! 🚀'); navigate('/dashboard'); }
     catch (err) { toast.error(err.message); }
   };
 
@@ -30,40 +30,40 @@ export default function Register() {
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-brand-gradient flex items-center justify-center mx-auto mb-2"><Zap className="w-8 h-8 text-white" /></div>
           <h1 className="font-game text-3xl text-white">STEM<span className="text-gradient">VERSE</span></h1>
-          <p className="text-dark-400 mt-2">Begin your electronics adventure!</p>
+          <p className="text-dark-400 mt-2">Elektronika sarguzashtini boshlang!</p>
         </div>
         <div className="card-glow">
-          <h2 className="text-2xl font-game text-white mb-6">Create Account</h2>
+          <h2 className="text-2xl font-game text-white mb-6">Hisob yaratish</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Name</label>
-              <div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="text" value={form.name} onChange={e => u('name', e.target.value)} placeholder="Your name" className="input-field pl-10" required /></div>
+              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Ismingiz</label>
+              <div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="text" value={form.name} onChange={e => u('name', e.target.value)} placeholder="Ismingiz" className="input-field pl-10" required /></div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-dark-300 mb-1.5">Email</label>
-              <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="email" value={form.email} onChange={e => u('email', e.target.value)} placeholder="your@email.com" className="input-field pl-10" required /></div>
+              <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="email" value={form.email} onChange={e => u('email', e.target.value)} placeholder="email@example.com" className="input-field pl-10" required /></div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Password</label>
+              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Parol</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => u('password', e.target.value)} placeholder="Min 6 characters" className="input-field pl-10 pr-10" required />
+                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => u('password', e.target.value)} placeholder="Kamida 6 belgi" className="input-field pl-10 pr-10" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Confirm Password</label>
-              <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="password" value={form.confirmPassword} onChange={e => u('confirmPassword', e.target.value)} placeholder="Repeat password" className="input-field pl-10" required /></div>
+              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Parolni takrorlang</label>
+              <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="password" value={form.confirmPassword} onChange={e => u('confirmPassword', e.target.value)} placeholder="Parolni qayta kiriting" className="input-field pl-10" required /></div>
             </div>
             <button type="submit" disabled={loading} className="btn-neon w-full flex items-center justify-center gap-2">
               {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-              {loading ? 'Creating...' : 'Create Account'}
+              {loading ? 'Yaratilmoqda...' : 'Hisob yaratish'}
             </button>
           </form>
           <div className="mt-6 text-center">
-            <p className="text-dark-400">Have an account? <Link to="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold">Sign in</Link></p>
+            <p className="text-dark-400">Hisobingiz bormi? <Link to="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold">Kirish</Link></p>
           </div>
         </div>
       </div>
