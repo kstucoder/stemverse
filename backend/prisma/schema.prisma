@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  kits         Kit[]
+  progress     UserProgress[]
+  achievements UserAchievement[]
+  codes        ActivationCode[]
+  classrooms   Classroom[]       @relation("TeacherClassrooms")
+  enrollments  ClassroomStudent[]
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+model Classroom {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  teacherId  String
+  teacher    User     @relation("TeacherClassrooms", fields: [teacherId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  students   ClassroomStudent[]
+}
+
+model ClassroomStudent {
+  id           String   @id @default(cuid())
+  classroomId  String
+  classroom    Classroom @relation(fields: [classroomId], references: [id])
+  studentId    String
+  student      User     @relation(fields: [studentId], references: [id])
+  joinedAt     DateTime @default(now())
+  @@unique([classroomId, studentId])
+}
+
+model Kit {
+  id             String    @id @default(cuid())
+  name           String?
+  activationCode String    @unique
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id])
+  activatedAt    DateTime?
+  createdAt      DateTime  @default(now())
+}
+
+model ActivationCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  used      Boolean   @default(false)
+  usedById  String?
+  usedBy    User?     @relation(fields: [usedById], references: [id])
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Lesson {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  level          Int      @default(1)
+  order          Int      @default(0)
+  circuitDiagram String?
+  components     Json?
+  codeExample    String?
+  gameConfig     Json?
+  winCondition   Json?
+  xpReward       Int      @default(50)
+  published      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  progress       UserProgress[]
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String?
+  xpReward    Int      @default(100)
+  condition   Json?
+  createdAt   DateTime @default(now())
+  users       UserAchievement[]
+}
+
+model UserProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  lessonId    String
+  lesson      Lesson    @relation(fields: [lessonId], references: [id])
+  completed   Boolean   @default(false)
+  score       Int       @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@unique([userId, lessonId])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  earnedAt      DateTime @default(now())
+  @@unique([userId, achievementId])
+}

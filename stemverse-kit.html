@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEMVERSE — To'plam tarkibi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0f172a;color:#e2e8f0;font-family:'Nunito',sans-serif;padding:20px}
+  .container{max-width:1000px;margin:0 auto}
+  .header{text-align:center;padding:30px 0 20px}
+  .logo{font-family:'Fredoka One',cursive;font-size:32px;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{color:#94a3b8;font-size:14px;margin-top:8px}
+  .badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;margin:2px}
+  .badge-uno{background:rgba(0,245,255,0.15);color:#00f5ff;border:1px solid rgba(0,245,255,0.3)}
+  .badge-esp{background:rgba(0,255,136,0.15);color:#00ff88;border:1px solid rgba(0,255,136,0.3)}
+  .badge-basic{background:rgba(148,163,184,0.15);color:#cbd5e1;border:1px solid rgba(148,163,184,0.2)}
+  .badge-sensor{background:rgba(255,221,0,0.15);color:#ffdd00;border:1px solid rgba(255,221,0,0.3)}
+  .badge-act{background:rgba(255,0,229,0.15);color:#ff00e5;border:1px solid rgba(255,0,229,0.3)}
+  .badge-led{background:rgba(0,255,136,0.15);color:#00ff88;border:1px solid rgba(0,255,136,0.3)}
+  .badge-res{background:rgba(255,102,0,0.15);color:#ff6600;border:1px solid rgba(255,102,0,0.3)}
+  .badge-total{background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+  .section{margin:24px 0}
+  .section-title{font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .section-title .count{font-size:12px;font-family:'Nunito',sans-serif;background:#1e293b;padding:2px 10px;border-radius:12px;color:#94a3b8;font-weight:400}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+  .card{background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:14px;padding:12px;transition:all 0.2s;position:relative;overflow:hidden}
+  .card:hover{border-color:#6366f1;box-shadow:0 0 20px rgba(99,102,241,0.1);transform:translateY(-2px)}
+  .card .icon{font-size:32px;display:block;text-align:center;margin-bottom:6px}
+  .card .name{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:2px}
+  .card .desc{font-size:11px;color:#64748b;margin-bottom:6px}
+  .card .qty{font-size:13px;color:#00f5ff;font-weight:800}
+  .card .qty span{color:#64748b;font-weight:400;font-size:11px}
+  .card .pins{font-size:10px;color:#475569;margin-top:4px}
+  .card .used{font-size:10px;color:#475569;margin-top:2px;border-top:1px solid #1e293b;padding-top:4px}
+  .summary{background:linear-gradient(135deg,#1e293b,#312e81);border:1px solid #4338ca;border-radius:16px;padding:20px;margin:24px 0}
+  .summary h2{font-family:'Fredoka One',cursive;font-size:22px;margin-bottom:12px;background:linear-gradient(135deg,#00f5ff,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .stat{text-align:center;padding:10px;background:rgba(15,23,42,0.6);border-radius:10px}
+  .stat .num{font-size:22px;font-weight:800;color:#fff}
+  .stat .label{font-size:11px;color:#64748b;margin-top:2px}
+  .stat .sub{font-size:9px;color:#475569}
+  .lessons-table{margin:20px 0}
+  .lesson-row{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;margin:3px 0;background:#1e293b;font-size:12px}
+  .lesson-row .num{color:#6366f1;font-weight:700;width:24px}
+  .lesson-row .name{flex:1;font-weight:600}
+  .lesson-row .comps{color:#64748b;font-size:10px}
+  .lesson-row:nth-child(even){background:#151f2f}
+  .cat-line{margin:8px 0;padding:8px 0;border-top:1px solid #1e293b}
+  .cat-label{font-size:11px;color:#6366f1;font-weight:700;margin-bottom:4px;display:block}
+  .print-btn{display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:12px;color:#fff;font-family:'Fredoka One',cursive;font-size:16px;cursor:pointer;margin:10px 0;transition:0.2s}
+  .print-btn:hover{opacity:0.9;transform:scale(1.02)}
+  @media print{body{background:#fff;color:#000;padding:10px}.card{background:#f8fafc;border-color:#e2e8f0;break-inside:avoid}.card .name{color:#0f172a}.section-title{color:#0f172a}.summary{background:#f0f0ff;border-color:#6366f1}.summary h2{-webkit-text-fill-color:#4338ca;color:#4338ca}.stat{background:#fff}.stat .num{color:#0f172a}.badge{border-color:#ccc}.print-btn{display:none}.no-print{display:none}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">STEM⭐VERSE</div>
+    <div class="subtitle">20 ta o'yin uchun zarur to'plam — Digital Twin Learning Platform</div>
+    <div style="margin-top:10px">
+      <span class="badge badge-uno">🔵 Arduino Uno</span>
+      <span class="badge badge-esp">🟢 ESP8266/32</span>
+      <span class="badge badge-sensor">🟡 Sensorlar</span>
+      <span class="badge badge-act">🟪 Aktuatorlar</span>
+      <span class="badge badge-led">🟢 LEDlar</span>
+      <span class="badge badge-res">🟠 Rezistorlar</span>
+    </div>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Chop etish / PDF</button>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <h2>📦 Umumiy tarkib</h2>
+    <div class="summary-grid">
+      <div class="stat"><div class="num">37</div><div class="label">Komponent turi</div></div>
+      <div class="stat"><div class="num">82+</div><div class="label">Jami dona</div></div>
+      <div class="stat"><div class="num">~$65</div><div class="label">Taxminiy narx</div><div class="sub">Aliexpress/Boozorga</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">Platforma</div><div class="sub">Uno + ESP8266 + ESP32</div></div>
+      <div class="stat"><div class="num">20</div><div class="label">O'yin/Dars</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">Bosqich</div><div class="sub">Basic → IoT</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: ARDUINO BOARDS -->
+  <div class="section">
+    <h2 class="section-title">🔵 Mikrokontrollerlar <span class="count">3 tur</span></h2>
+    <div class="grid">
+      <div class="card">
+        <span class="icon">🟦</span>
+        <div class="name">Arduino Uno R3</div>
+        <div class="desc">Asosiy plata — 17 ta dars</div>
+        <div class="qty">1 <span>dona</span></div>
+        <div class="pins">14x Digital · 6x Analog · USB-B</div>
+        <div class="used">1-17-darslar</div>
+      </div>
+      <div class="card">
+        <span class="icon">🟩</span>
+        <div class="name">ESP8266 NodeMCU</div>
+        <div class="desc">WiFi plata — IoT darslari</div>
+        <div class="qty">1 <span>dona</span></div>
+        <div class="pins">11x Digital · 1x Analog · Micro USB</div>
+        <div class="used">18-dars (IoT Dashboard)</div>
+      </div>
+      <div class="card">
+        <span class="icon">🟪</span>
+        <div class="name">ESP32 Dev Board</div>
+        <div class="desc">Bluetooth+WiFi — IoT darslari</div>
+        <div class="qty">1 <span>dona</span></div>
+        <div class="pins">25x Digital · 2x Analog · Micro USB</div>
+        <div class="used">19-20-darslar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: LEDS -->
+  <div class="section">
+    <h2 class="section-title">💡 LEDlar <span class="count">6 tur, 17 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🔴</span><div class="name">Qizil LED</div><div class="qty">5 <span>dona</span></div><div class="used">Dars 2,4,8,9,16,17</div></div>
+      <div class="card"><span class="icon">🟡</span><div class="name">Sariq LED</div><div class="qty">3 <span>dona</span></div><div class="used">Dars 2 (svetafor)</div></div>
+      <div class="card"><span class="icon">🟢</span><div class="name">Yashil LED</div><div class="qty">5 <span>dona</span></div><div class="used">Dars 2,4,8,9,17</div></div>
+      <div class="card"><span class="icon">🔵</span><div class="name">Ko'k LED</div><div class="qty">3 <span>dona</span></div><div class="used">Dars 9,13,17</div></div>
+      <div class="card"><span class="icon">🌈</span><div class="name">RGB LED</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 3 (Color Mixer)</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: RESISTORS -->
+  <div class="section">
+    <h2 class="section-title">⚡ Rezistorlar <span class="count">2 tur, 30 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🔶</span><div class="name">220Ω Rezistor</div><div class="desc">Qizil-qizil-qora-jigarrang</div><div class="qty">20 <span>dona</span></div><div class="used">LEDlar uchun</div></div>
+      <div class="card"><span class="icon">🟤</span><div class="name">10kΩ Rezistor</div><div class="desc">Jigarrang-qora-qora-qizil</div><div class="qty">10 <span>dona</span></div><div class="used">Tugmalar, sensorlar uchun</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: POTENTIOMETERS -->
+  <div class="section">
+    <h2 class="section-title">🎚️ Potensiometrlar <span class="count">3 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🎛️</span><div class="name">10kΩ Potensiometr</div><div class="desc">Analog signal — 0-1023</div><div class="qty">3 <span>dona</span></div><div class="used">Dars 1,3,6,11,15,17,18</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: SENSORS -->
+  <div class="section">
+    <h2 class="section-title">📡 Sensorlar <span class="count">5 tur, 5 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">☀️</span><div class="name">LDR (Fotorezistor)</div><div class="desc">Yorug'lik sensori</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 7 (Theremin), 19</div></div>
+      <div class="card"><span class="icon">🌡️</span><div class="name">LM35 Harorat</div><div class="desc">Analog harorat sensori</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 8,13,18,19,20</div></div>
+      <div class="card"><span class="icon">📏</span><div class="name">HC-SR04 Ultrasonic</div><div class="desc">Masofa sensori 2-400cm</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 9,11,14,18,19,20</div></div>
+      <div class="card"><span class="icon">🚶</span><div class="name">PIR Motion</div><div class="desc">Harakat detektori</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 16 (Security)</div></div>
+      <div class="card"><span class="icon">🌿</span><div class="name">Tuproq namligi</div><div class="desc">Moisture sensor</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 13 (Greenhouse)</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: ACTUATORS -->
+  <div class="section">
+    <h2 class="section-title">🦾 Aktuatorlar <span class="count">2 tur, 2 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🔄</span><div class="name">Servo SG90</div><div class="desc">0-180° aylanish</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 11 (Robot Arm)</div></div>
+      <div class="card"><span class="icon">🔊</span><div class="name">Aktiv Buzzer</div><div class="desc">Ovoz chiqarish</div><div class="qty">1 <span>dona</span></div><div class="used">Dars 5,7,10,12,14,16,17,18,19,20</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: BUTTONS -->
+  <div class="section">
+    <h2 class="section-title">🔘 Tugmalar <span class="count">10 dona</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🔘</span><div class="name">Push button (takt)</div><div class="desc">4 pinli, 12x12mm</div><div class="qty">10 <span>dona</span></div><div class="used">Deyarli barcha darslarda</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: BREADBOARD & WIRES -->
+  <div class="section">
+    <h2 class="section-title">🔌 Plata va simlar <span class="count">4 tur</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🧩</span><div class="name">Breadboard</div><div class="desc">830 ta ulanish nuqtasi</div><div class="qty">1 <span>dona</span></div></div>
+      <div class="card"><span class="icon">🔗</span><div class="name">Jumper simlar</div><div class="desc">Erkak-Erkak</div><div class="qty">20 <span>dona</span></div></div>
+      <div class="card"><span class="icon">🔗</span><div class="name">Jumper simlar</div><div class="desc">Erkak-Ayol</div><div class="qty">10 <span>dona</span></div></div>
+      <div class="card"><span class="icon">🔌</span><div class="name">USB kabellar</div><div class="desc">USB-B (Uno) + Micro USB</div><div class="qty">3 <span>dona</span></div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 9: POWER -->
+  <div class="section">
+    <h2 class="section-title">🔋 Quvvat manbai <span class="count">2 tur</span></h2>
+    <div class="grid">
+      <div class="card"><span class="icon">🔋</span><div class="name">9V batareya</div><div class="desc">Portativ quvvat</div><div class="qty">1 <span>dona</span></div></div>
+      <div class="card"><span class="icon">🔌</span><div class="name">9V adapter</div><div class="desc">Quvvat manbai</div><div class="qty">1 <span>dona</span></div></div>
+    </div>
+  </div>
+
+  <!-- LESSONS → COMPONENTS MAPPING -->
+  <div class="section">
+    <h2 class="section-title">📚 Darslar bo'yicha komponentlar <span class="count">20 dars</span></h2>
+    <div class="lessons-table">
+      <div class="cat-line"><span class="cat-label">📘 LEVEL 1: BASICS (Arduino Uno)</span></div>
+      <div class="lesson-row"><span class="num">1</span><span class="name">Blink the LED</span><span class="comps">LED, 220Ω, Breadboard, Simlar</span></div>
+      <div class="lesson-row"><span class="num">2</span><span class="name">Traffic Light</span><span class="comps">3xLED (Q,S,Y), 3x220Ω, Tugma</span></div>
+      <div class="lesson-row"><span class="num">3</span><span class="name">Color Mixer</span><span class="comps">RGB LED, 3x220Ω, 3xPOT</span></div>
+      <div class="lesson-row"><span class="num">4</span><span class="name">Light Show</span><span class="comps">4xLED, 4x220Ω, Tugma</span></div>
+      <div class="lesson-row"><span class="num">5</span><span class="name">Secret Code Door</span><span class="comps">Tugma, LED, Buzzer, 220Ω</span></div>
+
+      <div class="cat-line"><span class="cat-label">📗 LEVEL 2: SENSORS (Arduino Uno)</span></div>
+      <div class="lesson-row"><span class="num">6</span><span class="name">Speed Runner</span><span class="comps">POT, Tugma</span></div>
+      <div class="lesson-row"><span class="num">7</span><span class="name">Light Theremin</span><span class="comps">LDR, 10kΩ, Buzzer, LED</span></div>
+      <div class="lesson-row"><span class="num">8</span><span class="name">Temperature Garden</span><span class="comps">LM35, 3xLED, 3x220Ω</span></div>
+      <div class="lesson-row"><span class="num">9</span><span class="name">Distance Radar</span><span class="comps">HC-SR04, 4xLED, 4x220Ω</span></div>
+      <div class="lesson-row"><span class="num">10</span><span class="name">Reaction Champion</span><span class="comps">2xTugma, LED, Buzzer</span></div>
+
+      <div class="cat-line"><span class="cat-label">📙 LEVEL 3: COMBINATIONS (Arduino Uno/Nano)</span></div>
+      <div class="lesson-row"><span class="num">11</span><span class="name">Robot Arm</span><span class="comps">Servo, POT, HC-SR04, Tugma</span></div>
+      <div class="lesson-row"><span class="num">12</span><span class="name">Piano Player</span><span class="comps">4xTugma, Buzzer, 4x10kΩ</span></div>
+      <div class="lesson-row"><span class="num">13</span><span class="name">Smart Greenhouse</span><span class="comps">LM35, Moisture, LED</span></div>
+      <div class="lesson-row"><span class="num">14</span><span class="name">Parking Assistant</span><span class="comps">HC-SR04, LED, Buzzer</span></div>
+      <div class="lesson-row"><span class="num">15</span><span class="name">Meteor Shower</span><span class="comps">Tugma, POT, Buzzer</span></div>
+
+      <div class="cat-line"><span class="cat-label">📕 LEVEL 4: ADVANCED + IoT</span></div>
+      <div class="lesson-row"><span class="num">16</span><span class="name">Security System</span><span class="comps">PIR, Buzzer, LED, Tugma</span></div>
+      <div class="lesson-row"><span class="num">17</span><span class="name">Music Visualizer</span><span class="comps">POT, 4xLED, 4x220Ω, Buzzer</span></div>
+      <div class="lesson-row"><span class="num">18</span><span class="name">IoT Dashboard</span><span class="comps">🔵 ESP8266, POT, Tugma, HC-SR04, LM35</span></div>
+      <div class="lesson-row"><span class="num">19</span><span class="name">Remote Sensor</span><span class="comps">🟢 ESP32, LM35, LDR, HC-SR04, LED, Buzzer</span></div>
+      <div class="lesson-row"><span class="num">20</span><span class="name">Smart Home</span><span class="comps">🟣 ESP32, LED, Tugma, POT, LM35, HC-SR04, LDR, Buzzer, Servo</span></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="section" style="margin-top:20px">
+    <div style="background:#1e293b;border-radius:14px;padding:16px;font-size:13px;color:#94a3b8;line-height:1.7">
+      <strong style="color:#f1f5f9">📌 Eslatmalar:</strong><br>
+      • Arduino Nano — Uno o'rniga ishlatsa bo'ladi (pinning mos)<br>
+      • ESP8266 va ESP32 alohida, chunki ular WiFi/Firebase uchun<br>
+      • Rezistorlar eng arzon komponent — zaxira bilan oling<br>
+      • Jumper simlar tez sinadi — ko'proq oling<br>
+      • Barcha komponentlar Aliexpress/Banggood/Boozor.uz da bor<br>
+      • Taxminiy narx: $50-80 (sifatga qarab)<br>
+      • USB kabellar sifatli bo'lishi kerak (ayniqsa ESP32 uchun)
+    </div>
+  </div>
+</div>
+</body>
+</html>

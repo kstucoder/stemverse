@@ -1,0 +1,111 @@
+import { useRef, useCallback, useEffect } from 'react';
+import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import useGameStore from '../../stores/gameStore';
+
+export default function MotionAlarm() {
+  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const particles = useRef(new ParticleSystem());
+  const intruders = useRef(0);
+  const alarmOn = useRef(false);
+  const winRef = useRef(false);
+
+  const draw = useCallback((ctx, w, h, t) => {
+    ctx.clearRect(0, 0, w, h);
+    const motion = serialData.button || 0;
+    const isAlarm = motion === 1 || alarmOn.current;
+
+    drawGradientBackground(ctx, w, h, isAlarm ? ['#2a0000', '#1a0000', '#0a0000'] : ['#0a0a1a', '#1a1a2a', '#0a0a1a']);
+
+    // Building floor plan
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(30, 30, w - 60, h - 100);
+
+    // Rooms
+    const rooms = [
+      { x: 40, y: 40, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Lobby', color: '#3b82f6' },
+      { x: 40 + (w - 80) / 3, y: 40, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Lab', color: '#22c55e' },
+      { x: 40 + 2 * (w - 80) / 3, y: 40, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Server', color: '#f97316' },
+      { x: 40, y: 50 + (h - 120) / 2, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Office', color: '#8b5cf6' },
+      { x: 40 + (w - 80) / 3, y: 50 + (h - 120) / 2, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Storage', color: '#ec4899' },
+      { x: 40 + 2 * (w - 80) / 3, y: 50 + (h - 120) / 2, w: (w - 80) / 3, h: (h - 120) / 2, name: 'Vault', color: '#ef4444' },
+    ];
+
+    rooms.forEach((room, i) => {
+      ctx.fillStyle = isAlarm ? `${room.color}15` : `${room.color}08`;
+      ctx.fillRect(room.x, room.y, room.w, room.h);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(room.x, room.y, room.w, room.h);
+
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.font = '11px sans-serif';
+      ctx.fillText(room.name, room.x + room.w / 2, room.y + room.h / 2);
+
+      if (isAlarm && i === Math.floor(t / 2) % 6) {
+        ctx.fillStyle = `rgba(239,68,68,${0.1 + 0.1 * Math.sin(t * 5)})`;
+        ctx.fillRect(room.x, room.y, room.w, room.h);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '20px sans-serif';
+        ctx.fillText('⚠️', room.x + room.w / 2, room.y + room.h / 2 + 20);
+      }
+    });
+
+    // Motion detected flash
+    if (isAlarm) {
+      ctx.fillStyle = `rgba(239,68,68,${0.05 + 0.05 * Math.sin(t * 10)})`;
+      ctx.fillRect(0, 0, w, h);
+
+      particles.current.emit(Math.random() * w, Math.random() * h, '#ef4444', 3, 100);
+    }
+
+    // Intruder counter
+    if (isAlarm) {
+      intruders.current++;
+      if (intruders.current >= 100 && !winRef.current && winConditions) {
+        winRef.current = true;
+        alarmOn.current = false;
+        incrementScore(300);
+        if (onWin) onWin(score + 300);
+      }
+    }
+
+    // Status bar
+    ctx.fillStyle = 'rgba(15,23,42,0.8)';
+    ctx.fillRect(10, h - 55, 160, 40);
+    ctx.fillStyle = isAlarm ? '#ef4444' : '#22c55e';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(isAlarm ? '🚨 ALARM!' : '🟢 SECURE', 20, h - 32);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Detected: ' + Math.floor(intruders.current / 10), 20, h - 15);
+
+    // Progress
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(w - 210, h - 45, 200, 15);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(w - 210, h - 45, 200 * Math.min(intruders.current / 100, 1), 15);
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.min(100, Math.floor(intruders.current)) + '%', w - 110, h - 34);
+
+    particles.current.update(0.016);
+    particles.current.draw(ctx);
+  }, [serialData.button, serialData.led, score, winConditions, onWin, incrementScore]);
+
+  return (
+    <GameCanvas draw={draw} className="rounded-2xl">
+      <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
+        <p className="text-xs text-dark-400">Score</p>
+        <p className="font-game text-white text-lg">{score}</p>
+      </div>
+      <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
+        🔴 PIR motion → Alarm!<br />
+        Detect 10 intrusions to win
+      </div>
+    </GameCanvas>
+  );
+}
