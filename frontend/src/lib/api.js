@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://stemverse-backend.up.railway.app';  // ← Railway backend
+const API_URL = 'https://stemverse-production.up.railway.app';  // ← Railway backend
 
 const api = axios.create({ 
   baseURL: API_URL + '/api', 
