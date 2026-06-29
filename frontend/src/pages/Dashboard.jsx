@@ -50,7 +50,7 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-xl bg-neon-green/20 flex items-center justify-center"><CheckCircle className="w-5 h-5 text-neon-green" /></div>
               <div><p className="text-2xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Bajarilgan</p></div>
             </div>
-            <p className="text-xs text-dark-500 mt-3">of {stats?.totalLessons || 0} lessons</p>
+            <p className="text-xs text-dark-500 mt-3">{stats?.totalLessons || 0} ta darsdan</p>
           </div>
           <div className="card-glow">
             <div className="flex items-center gap-3">
