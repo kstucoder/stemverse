@@ -64,7 +64,7 @@ export default function Dashboard() {
           <div className="card-glow">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-neon-pink/20 flex items-center justify-center"><Cpu className="w-5 h-5 text-neon-pink" /></div>
-              <div><p className="text-2xl font-game text-white">{kit ? 'Active' : '—'}</p><p className="text-xs text-dark-400">Hardware Kit</p></div>
+              <div><p className="text-2xl font-game text-white">{kit ? 'Faol' : '—'}</p><p className="text-xs text-dark-400">Qurilmalar to'plami</p></div>
             </div>
             {kit && <p className="text-xs text-dark-500 mt-3">{kit.name}</p>}
           </div>

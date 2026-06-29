@@ -14,16 +14,16 @@ async function main() {
     await prisma.activationCode.upsert({ where: { code: 'SV-DEMO-' + String(i).padStart(3, '0') }, update: {}, create: { code: 'SV-DEMO-' + String(i).padStart(3, '0') } });
   }
   const achievements = [
-    { id: 'first_circuit', title: 'First Circuit', description: 'Complete your first lesson', icon: '🔌', xpReward: 50, condition: { type: 'first_lesson' } },
-    { id: 'led_master', title: 'LED Master', description: 'Complete 3 LED lessons', icon: '💡', xpReward: 100, condition: { type: 'lessons_completed', count: 3 } },
-    { id: 'kit_activated', title: 'Kit Activated', description: 'Activate your STEMVERSE kit', icon: '🎮', xpReward: 50, condition: { type: 'kit_activated' } },
-    { id: 'sensor_expert', title: 'Sensor Expert', description: 'Complete 5 sensor lessons', icon: '📡', xpReward: 150, condition: { type: 'lessons_completed', count: 5 } },
-    { id: 'speed_demon', title: 'Speed Demon', description: 'Complete Speed Runner', icon: '🏃', xpReward: 100, condition: { type: 'lessons_completed', count: 6 } },
-    { id: 'music_maestro', title: 'Music Maestro', description: 'Play with sound components', icon: '🎵', xpReward: 100, condition: { type: 'lessons_completed', count: 7 } },
-    { id: 'robot_builder', title: 'Robot Builder', description: 'Complete Robot Arm lesson', icon: '🦾', xpReward: 150, condition: { type: 'lessons_completed', count: 11 } },
-    { id: 'xp_collector', title: 'XP Collector', description: 'Earn 500 XP', icon: '🏆', xpReward: 250, condition: { type: 'xp_reached', xp: 500 } },
-    { id: 'engineer_5', title: 'Engineer Level 5', description: 'Reach level 5', icon: '⭐', xpReward: 200, condition: { type: 'xp_reached', xp: 1000 } },
-    { id: 'master_engineer', title: 'Master Engineer', description: 'Complete all 20 lessons', icon: '👑', xpReward: 500, condition: { type: 'lessons_completed', count: 20 } },
+    { id: 'first_circuit', title: 'Birinchi Sxema', description: 'Birinchi darsni tugating', icon: '🔌', xpReward: 50, condition: { type: 'first_lesson' } },
+    { id: 'led_master', title: 'LED Ustasi', description: '3 ta LED darsini tugating', icon: '💡', xpReward: 100, condition: { type: 'lessons_completed', count: 3 } },
+    { id: 'kit_activated', title: 'Kit Faollashtirildi', description: 'Activate your STEMVERSE kit', icon: '🎮', xpReward: 50, condition: { type: 'kit_activated' } },
+    { id: 'sensor_expert', title: 'Sensor Mutaxassisi', description: 'Complete 5 sensor lessons', icon: '📡', xpReward: 150, condition: { type: 'lessons_completed', count: 5 } },
+    { id: 'speed_demon', title: 'Tezlik Demon', description: 'Complete Speed Runner', icon: '🏃', xpReward: 100, condition: { type: 'lessons_completed', count: 6 } },
+    { id: 'music_maestro', title: 'Musiqa Ustasi', description: 'Play with sound components', icon: '🎵', xpReward: 100, condition: { type: 'lessons_completed', count: 7 } },
+    { id: 'robot_builder', title: 'Robot Quruvchi', description: 'Complete Robot Arm lesson', icon: '🦾', xpReward: 150, condition: { type: 'lessons_completed', count: 11 } },
+    { id: 'xp_collector', title: 'XP Yig'uvchi', description: 'Earn 500 XP', icon: '🏆', xpReward: 250, condition: { type: 'xp_reached', xp: 500 } },
+    { id: 'engineer_5', title: 'Muhandis 5-Daraja', description: 'Reach level 5', icon: '⭐', xpReward: 200, condition: { type: 'xp_reached', xp: 1000 } },
+    { id: 'master_engineer', title: 'Bosh Muhandis', description: 'Complete all 20 lessons', icon: '👑', xpReward: 500, condition: { type: 'lessons_completed', count: 20 } },
   ];
   for (const a of achievements) { await prisma.achievement.upsert({ where: { id: a.id }, update: {}, create: a }); }
 

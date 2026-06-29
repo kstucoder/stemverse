@@ -59,9 +59,9 @@ export default function LessonView() {
   const isCompleted = lesson.progress?.completed;
   const GameComponent = getGameComponent(lesson.gameConfig?.gameType);
   const tabs = [
-    { id: 'game', label: 'Game', icon: Gamepad2 },
-    { id: 'circuit', label: 'Circuit', icon: CircuitBoard },
-    { id: 'code', label: 'Code', icon: Code },
+    { id: 'game', label: "O'yin", icon: Gamepad2 },
+    { id: 'circuit', label: "Sxema", icon: CircuitBoard },
+    { id: 'code', label: "Kod", icon: Code },
   ];
 
   return (
@@ -74,7 +74,7 @@ export default function LessonView() {
           </div>
           <div className="flex items-center gap-3">
             <SerialConnector compact />
-            {!gameStarted && !isCompleted && <button onClick={startLessonGame} className="btn-primary text-sm py-2">Start Game</button>}
+            {!gameStarted && !isCompleted && <button onClick={startLessonGame} className="btn-primary text-sm py-2">O'yinni boshlash</button>}
           </div>
         </div>
 
@@ -94,9 +94,9 @@ export default function LessonView() {
                   {gameStarted ? <GameComponent /> : (
                     <div className="flex flex-col items-center justify-center h-[500px] gap-4">
                       <Gamepad2 className="w-10 h-10 text-brand-400" />
-                      <h3 className="text-xl font-game text-white">Digital Twin Game</h3>
-                      <p className="text-dark-400 text-center max-w-md">Connect your Arduino and start the game!</p>
-                      <button onClick={startLessonGame} className="btn-primary">Launch Game</button>
+                      <h3 className="text-xl font-game text-white">Digital Twin O'yin</h3>
+                      <p className="text-dark-400 text-center max-w-md">Arduino'ni ulang va o'yinni boshlang!</p>
+                      <button onClick={startLessonGame} className="btn-primary">O'yinni boshlash</button>
                     </div>
                   )}
                   {/* Story overlay on top of game */}
@@ -131,13 +131,13 @@ export default function LessonView() {
                 <div className="p-6">
                   <div className="flex justify-between mb-4">
                     <h3 className="text-lg font-game text-white">Arduino Code</h3>
-                    <button onClick={() => { navigator.clipboard.writeText(lesson.codeExample || ''); toast.success('Copied!'); }} className="text-sm text-brand-400">Copy</button>
+                    <button onClick={() => { navigator.clipboard.writeText(lesson.codeExample || ''); toast.success('Copied!'); }} className="text-sm text-brand-400">Nusxa</button>
                   </div>
                   {lesson.codeExample ? (
                     <pre className="bg-dark-950 rounded-xl p-4 border border-dark-700 overflow-x-auto">
                       <code className="text-sm text-neon-green font-mono">{lesson.codeExample}</code>
                     </pre>
-                  ) : <p className="text-dark-400">No code</p>}
+                  ) : <p className="text-dark-400">Kod yo'q</p>}
                 </div>
               )}
             </div>
@@ -147,7 +147,7 @@ export default function LessonView() {
             <div className="card-glow">
               <h3 className="font-game text-white mb-3"><Cpu className="w-4 h-4 inline text-neon-cyan" /> Hardware</h3>
               <SerialConnector />
-              <p className="text-xs text-dark-500 mt-3">Use Chrome/Edge for Web Serial support.</p>
+              <p className="text-xs text-dark-500 mt-3">Web Serial uchun Chrome yoki Edge brauzeridan foydalaning.</p>
             </div>
             <div className="card-glow">
               <h3 className="font-game text-white mb-3">Details</h3>

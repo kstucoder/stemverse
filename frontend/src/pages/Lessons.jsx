@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle, Cpu, ArrowRight, Loader2, Sparkles, Zap } from 'lucide-react';
 import { lessonsAPI } from '../lib/api';
 
-const levelLabels = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced' };
+const levelLabels = { 1: "Boshlangich", 2: "O'rta", 3: 'Murakkab' };
 
 export default function Darslar() {
   const [lessons, setDarslar] = useState([]);
@@ -40,7 +40,7 @@ export default function Darslar() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-4">
                     <span className="badge-level text-xs">
-                      <Zap className="w-3 h-3" /> {levelLabels[l.level] || 'Beginner'}
+                      <Zap className="w-3 h-3" /> {levelLabels[l.level] || 'Boshlangich'}
                     </span>
                     <span className="badge bg-dark-700 text-dark-300 text-xs">{l.components?.length || 0} parts</span>
                   </div>
