@@ -42,7 +42,6 @@ export default function EnergyCity() {
   }
 
   const draw = useCallback((ctx, w, h, t) => {
-    timeRef.current = t;
     ctx.clearRect(0, 0, w, h);
 
     const isNight = cityState.isNight;

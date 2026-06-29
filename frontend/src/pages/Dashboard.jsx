@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, BookOpen, Trophy, Cpu, CheckCircle, TrendingUp, Loader2, ArrowRight, Gift } from 'lucide-react';
+import { Zap, BookOpen, Trophy, Cpu, CheckCircle, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { progressAPI, lessonsAPI, kitAPI } from '../lib/api';
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
             <h1 className="text-3xl font-game text-white">Welcome, <span className="text-gradient">{user?.name}</span></h1>
             <p className="text-dark-400 mt-1">Keyingi darsga tayyormisiz?</p>
           </div>
-          {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm"><Gift className="w-4 h-4" /> KITni aktivlashtirish</Link>}
+          {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm">KITni aktivlashtirish</Link>}
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -97,9 +97,6 @@ export default function Dashboard() {
                 <Link to="/lessons" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-700/50 hover:bg-dark-700 text-sm">
                   <BookOpen className="w-4 h-4 text-brand-400" /><span className="text-dark-200">Darsni boshlash</span>
                 </Link>
-                {!kit && <Link to="/activate" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-dark-700/50 hover:bg-dark-700 text-sm">
-                  <Gift className="w-4 h-4 text-neon-cyan" /><span className="text-dark-200">Activate kit</span>
-                </Link>}
               </div>
             </div>
             <div className="card-glow text-center">
