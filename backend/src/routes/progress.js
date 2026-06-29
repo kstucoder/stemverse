@@ -9,18 +9,31 @@ router.post('/complete', authenticate, async (req, res) => {
     if (!lessonId) return res.status(400).json({ error: 'Lesson ID required' });
     const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
     if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+    
     const existing = await prisma.userProgress.findUnique({ where: { userId_lessonId: { userId: req.user.id, lessonId } } });
+    
+    // ⚠️ Only add XP if lesson wasn't already completed
+    const alreadyCompleted = existing?.completed === true;
+    
     const progress = await prisma.userProgress.upsert({
       where: { userId_lessonId: { userId: req.user.id, lessonId } },
       create: { userId: req.user.id, lessonId, completed: true, score: score || 0, completedAt: new Date() },
       update: { completed: true, score: Math.max(score || 0, existing?.score || 0), completedAt: existing?.completedAt || new Date() },
     });
-    await prisma.user.update({ where: { id: req.user.id }, data: { xp: { increment: lesson.xpReward } } });
+    
+    let xpEarned = 0;
+    if (!alreadyCompleted) {
+      // Award XP only for first completion
+      await prisma.user.update({ where: { id: req.user.id }, data: { xp: { increment: lesson.xpReward } } });
+      xpEarned = lesson.xpReward;
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     const newLevel = Math.floor(user.xp / 200) + 1;
     if (newLevel > user.level) await prisma.user.update({ where: { id: req.user.id }, data: { level: newLevel } });
+    
     const newAchievements = await checkAchievements(req.user.id);
-    res.json({ progress, xpEarned: lesson.xpReward, leveledUp: newLevel > user.level, newLevel, newAchievements });
+    res.json({ progress, xpEarned, leveledUp: newLevel > user.level, newLevel, newAchievements });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
