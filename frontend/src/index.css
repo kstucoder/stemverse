@@ -17,8 +17,9 @@
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
+  /* Smooth animations */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    .animate-float, .animate-glow-pulse, .animate-pulse-slow { animation: none !important; }
   }
 }
 
