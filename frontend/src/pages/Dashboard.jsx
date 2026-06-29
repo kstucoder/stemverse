@@ -28,10 +28,10 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-game text-white">Welcome, <span className="text-gradient">{user?.name}</span></h1>
+            <h1 className="text-3xl font-game text-white">Xush kelibsiz, <span className="text-gradient">{user?.name}</span></h1>
             <p className="text-dark-400 mt-1">Keyingi darsga tayyormisiz?</p>
           </div>
-          {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm">KITni aktivlashtirish</Link>}
+                  {!kit && <Link to="/activate" className="btn-secondary flex items-center gap-2 text-sm">To'plamni aktivlashtirish</Link>}
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -64,7 +64,7 @@ export default function Dashboard() {
           <div className="card-glow">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-neon-pink/20 flex items-center justify-center"><Cpu className="w-5 h-5 text-neon-pink" /></div>
-              <div><p className="text-2xl font-game text-white">{kit ? 'Faol' : '—'}</p><p className="text-xs text-dark-400">Qurilmalar to'plami</p></div>
+              <div><p className="text-2xl font-game text-white">{kit ? 'Faol' : '—'}</p><p className="text-xs text-dark-400">{"Qurilmalar to'plami"}</p></div>
             </div>
             {kit && <p className="text-xs text-dark-500 mt-3">{kit.name}</p>}
           </div>
@@ -86,7 +86,7 @@ export default function Dashboard() {
                     <h3 className="font-semibold text-white truncate">{l.title}</h3>
                     <p className="text-xs text-dark-400">Level {l.level} · {l.xpReward} XP</p>
                   </div>
-                  <span className={`badge ${l.progress?.completed ? 'badge-completed' : 'badge-level'}`}>{l.progress?.completed ? 'Done' : `${l.progress?.score || 0} pts`}</span>
+                  <span className={`badge ${l.progress?.completed ? 'badge-completed' : 'badge-level'}`}>{l.progress?.completed ? 'Bajarildi' : `${l.progress?.score || 0} ball`}</span>
                 </Link>
               ))}
             </div>

@@ -12,18 +12,18 @@ export default function AdminDashboard() {
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>;
 
   const cards = [
-    { label: 'Users', value: stats?.users?.total || 0, icon: Users, color: 'text-brand-400', bg: 'bg-brand-500/20' },
-    { label: 'Students', value: stats?.users?.students || 0, icon: Users, color: 'text-neon-cyan', bg: 'bg-neon-cyan/20' },
-    { label: 'Lessons', value: stats?.lessons?.total || 0, icon: BookOpen, color: 'text-neon-green', bg: 'bg-neon-green/20' },
-    { label: 'Published', value: stats?.lessons?.published || 0, icon: BarChart3, color: 'text-neon-yellow', bg: 'bg-neon-yellow/20' },
-    { label: 'Kits', value: stats?.kits?.activated || 0, icon: Key, color: 'text-neon-pink', bg: 'bg-neon-pink/20' },
-    { label: 'Codes Used', value: `${stats?.codes?.used || 0}/${stats?.codes?.total || 0}`, icon: Key, color: 'text-neon-orange', bg: 'bg-neon-orange/20' },
+    { label: 'Foydalanuvchilar', value: stats?.users?.total || 0, icon: Users, color: 'text-brand-400', bg: 'bg-brand-500/20' },
+    { label: "O'quvchilar", value: stats?.users?.students || 0, icon: Users, color: 'text-neon-cyan', bg: 'bg-neon-cyan/20' },
+    { label: 'Darslar', value: stats?.lessons?.total || 0, icon: BookOpen, color: 'text-neon-green', bg: 'bg-neon-green/20' },
+    { label: 'Nashr qilingan', value: stats?.lessons?.published || 0, icon: BarChart3, color: 'text-neon-yellow', bg: 'bg-neon-yellow/20' },
+      { label: "To'plamlar", value: stats?.kits?.activated || 0, icon: Key, color: 'text-neon-pink', bg: 'bg-neon-pink/20' },
+    { label: 'Kodlar ishlatilgan', value: `${stats?.codes?.used || 0}/${stats?.codes?.total || 0}`, icon: Key, color: 'text-neon-orange', bg: 'bg-neon-orange/20' },
   ];
 
   return (
     <div className="min-h-screen bg-dark-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8"><h1 className="text-3xl font-game text-white"><LayoutDashboard className="w-8 h-8 inline text-brand-400" /> Admin Panel</h1></div>
+        <div className="mb-8"><h1 className="text-3xl font-game text-white"><LayoutDashboard className="w-8 h-8 inline text-brand-400" /> Admin paneli</h1></div>
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           {cards.map((c, i) => (
             <div key={i} className="card-glow text-center">
@@ -34,9 +34,9 @@ export default function AdminDashboard() {
           ))}
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Link to="/admin/lessons" className="card-glow flex items-center gap-4"><BookOpen className="w-6 h-6 text-brand-400" /><div><h3 className="font-semibold text-white">Lessons</h3><p className="text-xs text-dark-400">Manage</p></div></Link>
-          <Link to="/admin/codes" className="card-glow flex items-center gap-4"><Key className="w-6 h-6 text-neon-cyan" /><div><h3 className="font-semibold text-white">Codes</h3><p className="text-xs text-dark-400">Generate</p></div></Link>
-          <div className="card-glow flex items-center gap-4"><BarChart3 className="w-6 h-6 text-neon-green" /><div><h3 className="font-semibold text-white">{stats?.progress?.completedLessons || 0}</h3><p className="text-xs text-dark-400">Completed</p></div></div>
+          <Link to="/admin/lessons" className="card-glow flex items-center gap-4"><BookOpen className="w-6 h-6 text-brand-400" /><div><h3 className="font-semibold text-white">Darslar</h3><p className="text-xs text-dark-400">Boshqarish</p></div></Link>
+          <Link to="/admin/codes" className="card-glow flex items-center gap-4"><Key className="w-6 h-6 text-neon-cyan" /><div><h3 className="font-semibold text-white">Kodlar</h3><p className="text-xs text-dark-400">Yaratish</p></div></Link>
+          <div className="card-glow flex items-center gap-4"><BarChart3 className="w-6 h-6 text-neon-green" /><div><h3 className="font-semibold text-white">{stats?.progress?.completedLessons || 0}</h3><p className="text-xs text-dark-400">Bajarilgan</p></div></div>
         </div>
       </div>
     </div>

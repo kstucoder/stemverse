@@ -26,9 +26,9 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center mx-auto mb-3"><School className="w-6 h-6 text-brand-400" /></div><p className="text-3xl font-game text-white">{stats?.classrooms || 0}</p><p className="text-xs text-dark-400">Classrooms</p></div>
-          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-neon-cyan/20 flex items-center justify-center mx-auto mb-3"><Users className="w-6 h-6 text-neon-cyan" /></div><p className="text-3xl font-game text-white">{stats?.students || 0}</p><p className="text-xs text-dark-400">Students</p></div>
-          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center mx-auto mb-3"><BookCheck className="w-6 h-6 text-neon-green" /></div><p className="text-3xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Completed Lessons</p></div>
+          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center mx-auto mb-3"><School className="w-6 h-6 text-brand-400" /></div><p className="text-3xl font-game text-white">{stats?.classrooms || 0}</p><p className="text-xs text-dark-400">Sinflar</p></div>
+          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-neon-cyan/20 flex items-center justify-center mx-auto mb-3"><Users className="w-6 h-6 text-neon-cyan" /></div><p className="text-3xl font-game text-white">{stats?.students || 0}</p><p className="text-xs text-dark-400">O'quvchilar</p></div>
+          <div className="card-glow text-center"><div className="w-12 h-12 rounded-xl bg-neon-green/20 flex items-center justify-center mx-auto mb-3"><BookCheck className="w-6 h-6 text-neon-green" /></div><p className="text-3xl font-game text-white">{stats?.completedLessons || 0}</p><p className="text-xs text-dark-400">Bajarilgan darslar</p></div>
         </div>
 
         <h2 className="text-xl font-game text-white mb-4">Sizning sinflaringiz</h2>
@@ -37,7 +37,7 @@ export default function TeacherDashboard() {
             <Link key={c.id} to={`/teacher/classroom/${c.id}`} className="card-glow hover:border-brand-500/50 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-game text-white text-lg">{c.name}</h3>
-                <span className="badge-level text-xs">{c._count?.students || c.students?.length || 0} students</span>
+                <span className="badge-level text-xs">{c._count?.students || c.students?.length || 0} o'quvchi</span>
               </div>
               <p className="text-xs text-dark-500">Code: <span className="font-mono text-brand-400">{c.inviteCode}</span></p>
               {c.students?.slice(0, 5).map(s => (
@@ -49,7 +49,7 @@ export default function TeacherDashboard() {
               ))}
             </Link>
           ))}
-          {classrooms.length === 0 && <div className="card-glow text-center col-span-full py-8 text-dark-400">Hali sinflar yo'q. Create your first classroom!</div>}
+          {classrooms.length === 0 && <div className="card-glow text-center col-span-full py-8 text-dark-400">Hali sinflar yo'q. Birinchi sinfingizni yarating!</div>}
         </div>
       </div>
     </div>

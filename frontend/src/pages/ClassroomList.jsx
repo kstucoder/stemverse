@@ -18,15 +18,15 @@ export default function ClassroomList() {
   const handleYaratish = async (e) => {
     e.preventDefault(); if (!name.trim()) return;
     setCreating(true);
-    try { const { data } = await teacherAPI.createClassroom(name); toast.success(`Classroom "${data.name}" created!`); setShowYaratish(false); setName(''); load(); }
-    catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
+      try { const { data } = await teacherAPI.createClassroom(name); toast.success(`"${data.name}" sinfi yaratildi!`); setShowYaratish(false); setName(''); load(); }
+    catch (err) { toast.error(err.response?.data?.error || 'Xatolik'); }
     finally { setCreating(false); }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this classroom?')) return;
-    try { await teacherAPI.deleteClassroom(id); toast.success('Deleted'); load(); }
-    catch (err) { toast.error('Failed to delete'); }
+    if (!confirm('Sinfni o\'chirish?')) return;
+    try { await teacherAPI.deleteClassroom(id); toast.success("O'chirildi"); load(); }
+    catch (err) { toast.error("O'chirishda xatolik"); }
   };
 
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>;
@@ -37,7 +37,7 @@ export default function ClassroomList() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link to="/teacher" className="p-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700/50"><ArrowLeft className="w-5 h-5" /></Link>
-            <div><h1 className="text-2xl font-game text-white"><School className="w-6 h-6 inline text-brand-400 mr-2" />Sinflar</h1><p className="text-sm text-dark-400">{classrooms.length} total</p></div>
+            <div><h1 className="text-2xl font-game text-white"><School className="w-6 h-6 inline text-brand-400 mr-2" />Sinflar</h1><p className="text-sm text-dark-400">{classrooms.length} ta</p></div>
           </div>
           <button onClick={() => setShowYaratish(!showYaratish)} className="btn-primary text-sm py-2"><Plus className="w-4 h-4 inline mr-1" />Yangi sinf</button>
         </div>
@@ -46,8 +46,8 @@ export default function ClassroomList() {
           <div className="card-glow mb-8 animate-slide-down">
             <h3 className="font-game text-white mb-4">Sinf yaratish</h3>
             <form onSubmit={handleYaratish} className="flex gap-3">
-              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Classroom name (e.g. Grade 7-A)" className="input-field flex-1" required />
-              <button type="submit" disabled={creating} className="btn-primary">{creating ? 'Creating...' : 'Yaratish'}</button>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Sinf nomi (masalan: 7-A sinf)" className="input-field flex-1" required />
+              <button type="submit" disabled={creating} className="btn-primary">{creating ? 'Yaratilmoqda...' : 'Yaratish'}</button>
             </form>
           </div>
         )}
@@ -59,11 +59,11 @@ export default function ClassroomList() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white truncate">{c.name}</h3>
                 <p className="text-xs text-dark-400">
-                  <span>{c._count?.students || 0} students</span>
-                  <span className="ml-4">Code: <span className="font-mono text-brand-400 cursor-pointer" onClick={() => { navigator.clipboard.writeText(c.inviteCode); toast.success('Copied!'); }}>{c.inviteCode} <Copy className="w-3 h-3 inline" /></span></span>
+                  <span>{c._count?.students || 0} o'quvchi</span>
+                  <span className="ml-4">Kod: <span className="font-mono text-brand-400 cursor-pointer" onClick={() => { navigator.clipboard.writeText(c.inviteCode); toast.success('Nusxalandi!'); }}>{c.inviteCode} <Copy className="w-3 h-3 inline" /></span></span>
                 </p>
               </div>
-              <button onClick={() => navigate(`/teacher/classroom/${c.id}`)} className="btn-secondary text-xs py-1.5">View</button>
+              <button onClick={() => navigate(`/teacher/classroom/${c.id}`)} className="btn-secondary text-xs py-1.5">Ko'rish</button>
               <button onClick={() => handleDelete(c.id)} className="p-2 rounded-lg text-dark-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
             </div>
           ))}

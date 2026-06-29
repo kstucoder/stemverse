@@ -22,7 +22,7 @@ export default function SerialConnector({ onData, compact = false }) {
         }`}
       >
         {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : connected ? <PlugZap className="w-4 h-4" /> : <Plug className="w-4 h-4" />}
-        {connecting ? 'Connecting...' : connected ? 'Disconnect' : 'Connect'}
+        {connecting ? 'Ulanish...' : connected ? 'Uzish' : 'Ulanish'}
       </button>
     );
   }
@@ -35,8 +35,8 @@ export default function SerialConnector({ onData, compact = false }) {
             {connected ? <PlugZap className="w-5 h-5 text-neon-green" /> : <Plug className="w-5 h-5 text-dark-400" />}
           </div>
           <div>
-            <h3 className="font-semibold text-white">{connected ? 'Device Connected' : 'Connect Arduino'}</h3>
-            <p className="text-xs text-dark-400">{connected ? 'Receiving real-time data' : 'Use Web Serial to connect'}</p>
+            <h3 className="font-semibold text-white">{connected ? 'Qurilma ulandi' : 'Arduino\'ni ulash'}</h3>
+            <p className="text-xs text-dark-400">{connected ? 'Real-time ma\'lumotlar olinmoqda' : 'Web Serial orqali ulaning'}</p>
           </div>
         </div>
         <button
@@ -48,7 +48,7 @@ export default function SerialConnector({ onData, compact = false }) {
               : 'btn-primary text-sm py-2'
           }`}
         >
-          {connecting ? 'Connecting...' : connected ? 'Disconnect' : 'Connect'}
+          {connecting ? 'Ulanish...' : connected ? 'Uzish' : 'Ulanish'}
         </button>
       </div>
     </div>

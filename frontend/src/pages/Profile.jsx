@@ -11,9 +11,9 @@ export default function Profil() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { toast.error('Name required'); return; }
+    if (!name.trim()) { toast.error('Ism talab qilinadi'); return; }
     setSaving(true);
-    try { await updateProfil({ name }); toast.success('Profil updated!'); }
+    try { await updateProfil({ name }); toast.success('Profil yangilandi!'); }
     catch (err) { toast.error(err.message); }
     finally { setSaving(false); }
   };
@@ -30,7 +30,7 @@ export default function Profil() {
             </div>
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="text-sm font-semibold text-dark-300 mb-1.5 block">Name</label>
+                <label className="text-sm font-semibold text-dark-300 mb-1.5 block">Ism</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
                   <input type="text" value={name} onChange={e => setName(e.target.value)} className="input-field pl-10" />
@@ -45,7 +45,7 @@ export default function Profil() {
               </div>
               <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saqlanmoqda...' : 'Saqlash'}
               </button>
             </form>
           </div>
@@ -65,10 +65,10 @@ export default function Profil() {
             </div>
           </div>
           <div className="card-glow">
-            <h3 className="font-game text-white mb-4">Account</h3>
+            <h3 className="font-game text-white mb-4">Hisob</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-3"><User className="w-4 h-4 text-dark-400" /><span className="text-dark-400">Role:</span><span className="badge-level text-xs">{user.role}</span></div>
-              <div className="flex items-center gap-3"><Calendar className="w-4 h-4 text-dark-400" /><span className="text-dark-400">Joined:</span><span className="text-white">{new Date(user.createdAt).toLocaleDateString()}</span></div>
+              <div className="flex items-center gap-3"><User className="w-4 h-4 text-dark-400" /><span className="text-dark-400">Rol:</span><span className="badge-level text-xs">{user.role}</span></div>
+              <div className="flex items-center gap-3"><Calendar className="w-4 h-4 text-dark-400" /><span className="text-dark-400">Ro'yxatdan o'tilgan:</span><span className="text-white">{new Date(user.createdAt).toLocaleDateString()}</span></div>
             </div>
           </div>
         </div>

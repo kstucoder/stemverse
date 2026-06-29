@@ -67,7 +67,7 @@ export default function Darslar() {
                     <span className="badge-level text-xs">
                       <Zap className="w-3 h-3" /> {levelLabels[l.level] || 'Boshlangich'}
                     </span>
-                    <span className="badge bg-dark-700 text-dark-300 text-xs">{l.components?.length || 0} parts</span>
+                    <span className="badge bg-dark-700 text-dark-300 text-xs">{l.components?.length || 0} qism</span>
                   </div>
                 </div>
                 <div className="hidden sm:flex items-center"><ArrowRight className="w-5 h-5 text-dark-500" /></div>
@@ -77,7 +77,7 @@ export default function Darslar() {
           })}
         </div>
         {lessons.length === 0 && (
-          <div className="text-center py-16"><Sparkles className="w-12 h-12 text-dark-500 mx-auto mb-4" /><h3 className="text-xl font-game text-dark-400">No lessons yet</h3></div>
+          <div className="text-center py-16"><Sparkles className="w-12 h-12 text-dark-500 mx-auto mb-4" /><h3 className="text-xl font-game text-dark-400">Hali darslar mavjud emas</h3></div>
         )}
       </div>
     </div>

@@ -34,10 +34,10 @@ export default function LessonView() {
       const { data } = await progressAPI.complete(id, score);
       setXpEarned(data.xpEarned);
       setShowWinModal(true);
-      toast.success(`Completed! +${data.xpEarned} XP`);
-      if (data.newAchievements?.length > 0) data.newAchievements.forEach(a => toast.success(`Achievement: ${a.title}! +${a.xpReward} XP`, { duration: 5000 }));
+      toast.success(`Bajarildi! +${data.xpEarned} XP`);
+      if (data.newAchievements?.length > 0) data.newAchievements.forEach(a => toast.success(`Yutuq: ${a.title}! +${a.xpReward} XP`, { duration: 5000 }));
       lessonsAPI.get(id).then(r => setLesson(r.data));
-    } catch (err) { toast.error('Failed to save'); }
+    } catch (err) { toast.error('Saqlashda xatolik'); }
     finally { setCompleting(false); }
   }, [id]);
 
@@ -54,7 +54,7 @@ export default function LessonView() {
   };
 
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>;
-  if (!lesson) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><p className="text-dark-400">Not found</p></div>;
+  if (!lesson) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><p className="text-dark-400">Dars topilmadi</p></div>;
   if (lesson.locked) return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -128,19 +128,19 @@ export default function LessonView() {
               )}
               {activeTab === 'circuit' && (
                 <div className="p-6">
-                  <h3 className="text-lg font-game text-white mb-4">Circuit</h3>
+                  <h3 className="text-lg font-game text-white mb-4">Sxema</h3>
                   {lesson.components?.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
                       {lesson.components.map((c, i) => <span key={i} className="badge bg-dark-700 text-dark-200">{c}</span>)}
                     </div>
                   )}
-                  <p className="text-dark-400 text-sm">Follow the circuit diagram in your kit.</p>
+                  <p className="text-dark-400 text-sm">To'plamdagi sxemaga qarang va komponentlarni ulang.</p>
                 </div>
               )}
               {activeTab === 'code' && (
                 <div className="p-6">
                   <div className="flex justify-between mb-4">
-                    <h3 className="text-lg font-game text-white">Arduino Code</h3>
+                    <h3 className="text-lg font-game text-white">Arduino Kodi</h3>
                     <button onClick={() => { navigator.clipboard.writeText(lesson.codeExample || ''); toast.success('Copied!'); }} className="text-sm text-brand-400">Nusxa</button>
                   </div>
                   {lesson.codeExample ? (
@@ -160,11 +160,11 @@ export default function LessonView() {
               <p className="text-xs text-dark-500 mt-3">Web Serial uchun Chrome yoki Edge brauzeridan foydalaning.</p>
             </div>
             <div className="card-glow">
-              <h3 className="font-game text-white mb-3">Details</h3>
+              <h3 className="font-game text-white mb-3">Tafsilotlar</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-dark-400">Level</span><span className="text-white font-semibold">{lesson.level}</span></div>
                 <div className="flex justify-between"><span className="text-dark-400">XP</span><span className="badge-xp text-xs">+{lesson.xpReward}</span></div>
-                <div className="flex justify-between"><span className="text-dark-400">Status</span>{isCompleted ? <span className="badge-completed text-xs">Done</span> : <span className="badge-level text-xs">Active</span>}</div>
+                <div className="flex justify-between"><span className="text-dark-400">Holat</span>{isCompleted ? <span className="badge-completed text-xs">Bajarildi</span> : <span className="badge-level text-xs">Faol</span>}</div>
               </div>
             </div>
           </div>
