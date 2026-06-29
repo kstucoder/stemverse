@@ -59,9 +59,9 @@ export default function CutscenePlayer({ scene, onComplete, skipable = true }) {
       const phase = s.phases ? s.phases(elapsed) : 'normal';
 
       // Shake
-      if (s.shake && s.shake(elapsed)) {
+      if (s.shake && s.shakeTrigger && s.shakeTrigger(elapsed)) {
         shakeIntensity = Math.max(0, shakeIntensity - dt * 3);
-        if (s.shakeTrigger && s.shakeTrigger(elapsed)) shakeIntensity = s.shakeIntensity || 1;
+        if (s.shakeTrigger(elapsed)) shakeIntensity = s.shakeIntensity || 1;
       }
       const shk = updateShake(shakeIntensity, dt);
       shakeIntensity = shk.intensity;
