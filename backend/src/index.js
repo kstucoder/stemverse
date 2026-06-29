@@ -27,8 +27,8 @@ app.use('/api/teacher', teacherRoutes);
 // Database seed endpoint — with built-in Uzbek translations
 app.post('/api/seed', async (req, res) => {
   try {
-    const bcrypt = require('bcryptjs');
-    const { PrismaClient } = require('@prisma/client');
+    const bcrypt = (await import('bcryptjs')).default;
+    const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
     // Users
