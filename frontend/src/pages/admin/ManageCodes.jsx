@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Key, Plus, Loader2, Kopyalash, ArrowLeft } from 'lucide-react';
+import { Key, Plus, Loader2, Copy, ArrowLeft } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-export default function ManageKodlar() {
-  const [codes, setKodlar] = useState([]);
+export default function ManageCodes() {
+  const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(10);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { adminAPI.listKodlar().then(r => setKodlar(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
+  useEffect(() => { adminAPI.listCodes().then(r => setCodes(r.data)).catch(console.error).finally(() => setLoading(false)); }, []);
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const { data } = await adminAPI.generateKodlar(count);
-      toast.success(`${data.generated} codes generated!`);
-      adminAPI.listKodlar().then(r => setKodlar(r.data));
-    } catch (err) { toast.error('Failed'); }
+      const { data } = await adminAPI.generateCodes(count);
+      toast.success(`${data.generated} ta kod yaratildi!`);
+      adminAPI.listCodes().then(r => setCodes(r.data));
+    } catch (err) { toast.error('Xatolik'); }
     finally { setGenerating(false); }
   };
 
@@ -33,7 +33,7 @@ export default function ManageKodlar() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link to="/admin" className="p-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700/50"><ArrowLeft className="w-5 h-5" /></Link>
-            <div><h1 className="text-2xl font-game text-white"><Key className="w-6 h-6 inline text-neon-cyan" /> Kodlar</h1><p className="text-sm text-dark-400">{codes.length} total · {avail} avail · {used} used</p></div>
+            <div><h1 className="text-2xl font-game text-white"><Key className="w-6 h-6 inline text-neon-cyan" /> Kodlar</h1><p className="text-sm text-dark-400">{codes.length} ta · {avail} mavjud · {used} ishlatilgan</p></div>
           </div>
         </div>
 
@@ -41,7 +41,7 @@ export default function ManageKodlar() {
           <input type="number" min="1" max="100" value={count} onChange={e => setCount(+e.target.value)} className="input-field w-24" />
           <button onClick={handleGenerate} disabled={generating} className="btn-primary flex items-center gap-2">
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {generating ? '...' : 'Generate'}
+            {generating ? '...' : 'Yaratish'}
           </button>
         </div>
 
@@ -49,26 +49,26 @@ export default function ManageKodlar() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-dark-700">
-                <th className="text-left py-3 px-2 text-dark-400">Code</th>
-                <th className="text-left py-3 px-2 text-dark-400">Status</th>
-                <th className="text-left py-3 px-2 text-dark-400">Used By</th>
-                <th className="text-right py-3 px-2 text-dark-400">Kopyalash</th>
+                <th className="text-left py-3 px-2 text-dark-400">Kod</th>
+                <th className="text-left py-3 px-2 text-dark-400">Holat</th>
+                <th className="text-left py-3 px-2 text-dark-400">Ishlatgan</th>
+                <th className="text-right py-3 px-2 text-dark-400">Nusxa</th>
               </tr>
             </thead>
             <tbody>
               {codes.map(c => (
                 <tr key={c.id} className="border-b border-dark-800">
                   <td className="py-3 px-2 font-mono text-white">{c.code}</td>
-                  <td className="py-3 px-2">{c.used ? <span className="badge-completed text-xs">Used</span> : <span className="badge-level text-xs">Available</span>}</td>
+                  <td className="py-3 px-2">{c.used ? <span className="badge-completed text-xs">Ishlatilgan</span> : <span className="badge-level text-xs">Mavjud</span>}</td>
                   <td className="py-3 px-2 text-dark-400">{c.usedBy?.name || '—'}</td>
                   <td className="py-3 px-2 text-right">
-                    <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success('Copied!'); }} className="p-1.5 rounded-lg text-dark-400 hover:text-brand-400"><Kopyalash className="w-4 h-4" /></button>
+                    <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success('Nusxalandi!'); }} className="p-1.5 rounded-lg text-dark-400 hover:text-brand-400"><Copy className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {codes.length === 0 && <div className="text-center py-8 text-dark-400">No codes yet</div>}
+          {codes.length === 0 && <div className="text-center py-8 text-dark-400">Hali kodlar yo'q</div>}
         </div>
       </div>
     </div>
