@@ -38,6 +38,15 @@ app.post('/api/seed', async (req, res) => {
     await prisma.user.upsert({ where: { email: 'student@stemverse.io' }, update: {}, create: { name: 'Demo Student', email: 'student@stemverse.io', password: sp, role: 'STUDENT', xp: 150, level: 1 } });
     const tp = await bcrypt.hash('teacher123', 12);
     await prisma.user.upsert({ where: { email: 'teacher@stemverse.io' }, update: {}, create: { name: 'Ms. Karimova', email: 'teacher@stemverse.io', password: tp, role: 'TEACHER', xp: 0, level: 1 } });
+    
+    // Reset demo student XP
+    await prisma.user.update({ where: { email: 'student@stemverse.io' }, data: { xp: 0, level: 1 } });
+    // Clear old progress and achievements
+    const student = await prisma.user.findUnique({ where: { email: 'student@stemverse.io' } });
+    if (student) {
+      await prisma.userProgress.deleteMany({ where: { userId: student.id } });
+      await prisma.userAchievement.deleteMany({ where: { userId: student.id } });
+    }
 
     // Activation codes
     for (let i = 1; i <= 10; i++) {
