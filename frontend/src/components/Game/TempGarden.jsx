@@ -135,14 +135,14 @@ export default function TempGarden() {
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText('🌡️ Temperature', 20, 30);
+    ctx.fillText('🌡️ Harorat', 20, 30);
     ctx.fillStyle = isPerfect ? '#4ade80' : isHot ? '#ef4444' : '#60a5fa';
     ctx.font = 'bold 20px monospace';
     ctx.fillText(Math.round(temp) + '°C', 20, 55);
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText(isPerfect ? '✅ Perfect!' : isHot ? '🔥 Too hot!' : '❄️ Too cold!', 20, 70);
+    ctx.fillText(isPerfect ? "✅ Zo'r!" : isHot ? '🔥 Juda issiq!' : "❄️ Juda sovuq!", 20, 70);
   }, [serialData.temperature, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (
@@ -152,8 +152,8 @@ export default function TempGarden() {
         <p className="font-game text-white text-lg">{score}</p>
       </div>
       <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        🌡️ 20-30°C = Happy plants!<br />
-        🟢 Green LED = Perfect zone
+        🌡️ 20-30°C = O'simliklar baxtli!<br />
+        🟢 Yashil LED = Zo'r hudud
       </div>
     </GameCanvas>
   );

@@ -128,7 +128,7 @@ export default function ObstacleCourse() {
     ctx.fillText('🏁 ' + dist + 'm', 20, 40);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText('Goal: 2000m', 20, 58);
+    ctx.fillText('Maqsad: 2000m', 20, 58);
 
     // Speed indicator
     ctx.fillStyle = '#1e293b';
@@ -140,7 +140,7 @@ export default function ObstacleCourse() {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('🏎️ POT: Speed  |  🔵 BTN: Boost', w - 20, 40);
+    ctx.fillText('🏎️ POT: Tezlik  |  🔵 BTN: Kuchaytirish', w - 20, 40);
 
     particles.current.draw(ctx);
   }, []);

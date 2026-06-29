@@ -9,7 +9,7 @@ const useSerialStore = create((set, get) => ({
 
   connect: async () => {
     try {
-      if (!navigator.serial) throw new Error('Web Serial API not supported. Use Chrome or Edge.');
+      if (!navigator.serial) throw new Error('Web Serial API qo\'llab-quvvatlanmaydi. Chrome yoki Edge brauzeridan foydalaning.');
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: get().baudRate });
       const textDecoder = new TextDecoderStream();

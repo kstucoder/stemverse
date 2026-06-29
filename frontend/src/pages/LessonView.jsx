@@ -23,7 +23,7 @@ export default function LessonView() {
   const { startGame, stopGame } = useGameStore();
 
   useEffect(() => {
-    lessonsAPI.get(id).then(r => setLesson(r.data)).catch(() => { toast.error('Not found'); navigate('/lessons'); }).finally(() => setLoading(false));
+    lessonsAPI.get(id).then(r => setLesson(r.data)).catch(() => { toast.error('Dars topilmadi'); navigate('/lessons'); }).finally(() => setLoading(false));
     return () => stopGame();
   }, [id]);
 
@@ -141,7 +141,7 @@ export default function LessonView() {
                 <div className="p-6">
                   <div className="flex justify-between mb-4">
                     <h3 className="text-lg font-game text-white">Arduino Kodi</h3>
-                    <button onClick={() => { navigator.clipboard.writeText(lesson.codeExample || ''); toast.success('Copied!'); }} className="text-sm text-brand-400">Nusxa</button>
+                    <button onClick={() => { navigator.clipboard.writeText(lesson.codeExample || ''); toast.success('Nusxalandi!'); }} className="text-sm text-brand-400">Nusxa</button>
                   </div>
                   {lesson.codeExample ? (
                     <pre className="bg-dark-950 rounded-xl p-4 border border-dark-700 overflow-x-auto">

@@ -3,9 +3,9 @@ import { Car, Footprints, AlertTriangle } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 
 const STATES = {
-  GREEN: { time: 8, label: 'GO', color: '#00ff88', nextState: 'YELLOW' },
-  YELLOW: { time: 3, label: 'CAUTION', color: '#ffdd00', nextState: 'RED' },
-  RED: { time: 6, label: 'STOP', color: '#ff4444', nextState: 'GREEN' },
+  GREEN: { time: 8, label: 'YUR', color: '#00ff88', nextState: 'YELLOW' },
+  YELLOW: { time: 3, label: 'DIQQAT', color: '#ffdd00', nextState: 'RED' },
+  RED: { time: 6, label: "TO'XT", color: '#ff4444', nextState: 'GREEN' },
 };
 
 const STATE_ORDER = ['GREEN', 'YELLOW', 'RED'];
@@ -112,7 +112,7 @@ export default function TrafficLight() {
           <div className="glass rounded-xl px-6 py-3 inline-block">
             <span className="text-4xl font-game" style={{ color: state.color }}>{state.label}</span>
           </div>
-          <p className="text-dark-400 text-sm mt-2">{timer}s remaining</p>
+          <p className="text-dark-400 text-sm mt-2">{timer}s qoldi</p>
         </div>
       </div>
 
@@ -124,29 +124,29 @@ export default function TrafficLight() {
         </div>
         <div className="flex items-center gap-2">
           <Footprints className={`w-4 h-4 ${pedestrianWaiting ? 'text-neon-yellow animate-pulse' : 'text-dark-500'}`} />
-          <span className="text-sm text-dark-400">{pedestrianWaiting ? 'Waiting...' : 'Clear'}</span>
+          <span className="text-sm text-dark-400">{pedestrianWaiting ? 'Kutilmoqda...' : 'Toza'}</span>
         </div>
         <div className="flex items-center gap-2 mt-2">
           <AlertTriangle className={`w-4 h-4 ${accidents > 0 ? 'text-red-500' : 'text-dark-500'}`} />
-          <span className="text-sm text-dark-400">Accidents: {accidents}</span>
+          <span className="text-sm text-dark-400">Halokatlar: {accidents}</span>
         </div>
       </div>
 
       {/* Bottom Stats */}
       <div className="absolute bottom-40 left-4 right-4 flex justify-between">
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Cycles</p>
+          <p className="text-xs text-dark-400">Sikllar</p>
           <p className="font-game text-white text-lg">{cycleCount}/10</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Score</p>
+          <p className="text-xs text-dark-400">Ball</p>
           <p className="font-game text-white text-lg">{score}</p>
         </div>
       </div>
 
       {/* LEDs Status */}
       <div className="absolute top-4 left-4 glass rounded-xl p-3">
-        <p className="text-xs text-dark-400 mb-2">LED Status</p>
+        <p className="text-xs text-dark-400 mb-2">LED Holati</p>
         <div className="flex gap-2">
           <div className={`w-4 h-4 rounded-full ${ledStatus.red_led ? 'bg-red-500' : 'bg-dark-600'}`} />
           <div className={`w-4 h-4 rounded-full ${ledStatus.yellow_led ? 'bg-yellow-400' : 'bg-dark-600'}`} />

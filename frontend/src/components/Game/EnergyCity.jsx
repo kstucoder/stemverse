@@ -261,7 +261,7 @@ export default function EnergyCity() {
       ctx.fillText(`🔥 ${combo}x`, w - 15, 70);
       ctx.fillStyle = '#94a3b8';
       ctx.font = '9px sans-serif';
-      ctx.fillText('COMBO', w - 15, 82);
+      ctx.fillText('KOMBO', w - 15, 82);
     }
   }, [cityState, serialData, score, incrementScore, addPopup]);
 

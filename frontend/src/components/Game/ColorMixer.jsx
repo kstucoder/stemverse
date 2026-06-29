@@ -42,8 +42,8 @@ export default function ColorMixer() {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '14px sans-serif';
-    ctx.fillText('🎯 TARGET', w / 2 - tw - 20 + tw / 2, h / 2 - th / 2 - 15);
-    ctx.fillText('🎨 YOUR MIX', w / 2 + 20 + tw / 2, h / 2 - th / 2 - 15);
+    ctx.fillText('🎯 MAQSAD', w / 2 - tw - 20 + tw / 2, h / 2 - th / 2 - 15);
+    ctx.fillText('🎨 SIZNING ARALASHMAN', w / 2 + 20 + tw / 2, h / 2 - th / 2 - 15);
 
     // Color values
     ctx.font = '12px monospace';
@@ -63,7 +63,7 @@ export default function ColorMixer() {
 
     ctx.fillStyle = similarity > 80 ? '#00ff88' : similarity > 50 ? '#ffdd00' : '#ef4444';
     ctx.font = 'bold 18px sans-serif';
-    ctx.fillText(`Match: ${Math.round(similarity)}%`, w / 2, h - 80);
+    ctx.fillText(`Moslik: ${Math.round(similarity)}%`, w / 2, h - 80);
 
     // Similarity bar
     ctx.fillStyle = '#1e293b';
@@ -94,7 +94,7 @@ export default function ColorMixer() {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Round: ' + roundRef.current + '/3', 20, 32);
+    ctx.fillText('Tur: ' + roundRef.current + '/3', 20, 32);
   }, [serialData.potentiometer, serialData.distance, serialData.led, target, score, winConditions, onWin, incrementScore]);
 
   return (

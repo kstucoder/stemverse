@@ -77,10 +77,10 @@ export default function MotionAlarm() {
     ctx.fillStyle = isAlarm ? '#ef4444' : '#22c55e';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(isAlarm ? '🚨 ALARM!' : '🟢 SECURE', 20, h - 32);
+	    ctx.fillText(isAlarm ? '🚨 SIGNAL!' : '🟢 XAVFSIZ', 20, h - 32);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText('Detected: ' + Math.floor(intruders.current / 10), 20, h - 15);
+	    ctx.fillText('Aniqlangan: ' + Math.floor(intruders.current / 10), 20, h - 15);
 
     // Progress
     ctx.fillStyle = '#1e293b';
@@ -103,8 +103,8 @@ export default function MotionAlarm() {
         <p className="font-game text-white text-lg">{score}</p>
       </div>
       <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        🔴 PIR motion → Alarm!<br />
-        Detect 10 intrusions to win
+	        🔴 PIR harakat → Signal!<br />
+	        Yutish uchun 10 ta bosqinni aniqlang
       </div>
     </GameCanvas>
   );

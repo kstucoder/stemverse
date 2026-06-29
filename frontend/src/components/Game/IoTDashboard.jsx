@@ -69,7 +69,7 @@ export default function IoTDashboard() {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('📈 Live Data', 45, 332);
+    ctx.fillText("📈 Jonli Ma'lumot", 45, 332);
 
     // Draw lines
     const colors = ['#00f5ff', '#ff00e5', '#00ff88', '#ffdd00'];
@@ -100,7 +100,7 @@ export default function IoTDashboard() {
     ctx.fillStyle = '#fff';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('📶 ESP8266 Connected', w - 55, 23);
+    ctx.fillText('📶 ESP8266 Ulangan', w - 55, 23);
 
     // Firebase indicator
     ctx.fillStyle = 'rgba(255,193,7,0.2)';
@@ -110,7 +110,7 @@ export default function IoTDashboard() {
     ctx.fillStyle = '#ffc107';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🔥 Firebase Sync: LIVE', w - 90, 48);
+    ctx.fillText('🔥 Firebase Sinx: FAOLLASHTIRILDI', w - 90, 48);
 
     // Win: get values above threshold
     if (pot > 800 && dist > 200 && temp > 25 && !winRef.current && winConditions) {

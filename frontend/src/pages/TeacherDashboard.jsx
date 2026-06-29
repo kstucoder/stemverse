@@ -39,7 +39,7 @@ export default function TeacherDashboard() {
                 <h3 className="font-game text-white text-lg">{c.name}</h3>
                 <span className="badge-level text-xs">{c._count?.students || c.students?.length || 0} o'quvchi</span>
               </div>
-              <p className="text-xs text-dark-500">Code: <span className="font-mono text-brand-400">{c.inviteCode}</span></p>
+              <p className="text-xs text-dark-500">Kod: <span className="font-mono text-brand-400">{c.inviteCode}</span></p>
               {c.students?.slice(0, 5).map(s => (
                 <div key={s.student.id} className="flex items-center gap-2 mt-2 text-xs text-dark-400">
                   <div className="w-5 h-5 rounded bg-brand-600 flex items-center justify-center"><span className="text-[8px] font-bold text-white">{s.student.name[0]}</span></div>

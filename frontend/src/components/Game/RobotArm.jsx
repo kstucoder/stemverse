@@ -142,15 +142,15 @@ export default function RobotArm() {
       {/* HUD */}
       <div className="absolute top-4 left-4 right-4 flex justify-between">
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Angle</p>
+          <p className="text-xs text-dark-400">Burchak</p>
           <p className="font-game text-white text-lg">{baseAngle}°</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Arm</p>
+          <p className="text-xs text-dark-400">Qo'l</p>
           <p className="font-game text-white text-lg">{armAngle}°</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Timer</p>
+          <p className="text-xs text-dark-400">Taymer</p>
           <p className={`font-game text-lg ${timeLeft < 15 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
             {timeLeft}s
           </p>
@@ -161,24 +161,24 @@ export default function RobotArm() {
       <div className="absolute bottom-4 left-4 right-4">
         <div className="flex justify-between items-center">
           <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Collected</p>
+            <p className="text-xs text-dark-400">Yig'ilgan</p>
             <p className="font-game text-white text-lg">{targetsCollected}/3</p>
           </div>
           <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Score</p>
+            <p className="text-xs text-dark-400">Ball</p>
             <p className="font-game text-white text-lg">{score}</p>
           </div>
           <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Next</p>
+            <p className="text-xs text-dark-400">Keyingi</p>
             <p className="font-game text-white text-lg" style={{ color: target?.color }}>{target?.label}</p>
           </div>
         </div>
 
         {/* Controls hint */}
         <div className="flex gap-2 mt-2 justify-center">
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">POT → Rotate</span>
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">DIST → Arm</span>
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">BTN → Grab</span>
+          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">POT → Aylanish</span>
+          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">DIST → Qo'l</span>
+          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">BTN → Olish</span>
         </div>
       </div>
     </div>

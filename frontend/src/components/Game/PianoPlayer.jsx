@@ -104,10 +104,10 @@ export default function PianoPlayer() {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '12px sans-serif';
-    ctx.fillText('🎵 Play "Twinkle Twinkle" — press notes in order!', w / 2, 85);
+	    ctx.fillText('🎵 "Twinkle Twinkle" ni ijro eting — notalarni tartib bilan bosing!', w / 2, 85);
     ctx.fillStyle = '#ef4444';
     ctx.font = '11px sans-serif';
-    ctx.fillText('❌ Mistakes: ' + mistakes, w / 2, 105);
+	    ctx.fillText('❌ Xatolar: ' + mistakes, w / 2, 105);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);

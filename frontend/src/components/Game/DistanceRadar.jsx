@@ -120,13 +120,13 @@ export default function DistanceRadar() {
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText('📡 Distance', 20, 30);
+    ctx.fillText('📡 Masofa', 20, 30);
     ctx.fillStyle = '#00f5ff';
     ctx.font = 'bold 20px monospace';
     ctx.fillText(dist + 'cm', 20, 55);
     ctx.fillStyle = '#ffdd00';
     ctx.font = '11px sans-serif';
-    ctx.fillText('🎯 ' + detected.current.size + '/5 found', 20, 72);
+    ctx.fillText('🎯 ' + detected.current.size + '/5 topildi', 20, 72);
   }, [serialData.distance, score, winConditions, onWin, incrementScore]);
 
   return (

@@ -39,11 +39,11 @@ export default function SecretCodeDoor() {
       const pos = enteredCode.length;
       if (pos < CODE_LENGTH) {
         if (newCode[pos] !== secretCode.current[pos]) {
-          setFeedback('❌ Wrong digit!');
+          setFeedback('❌ Xato raqam!');
           playError();
           particles.current.emit(50, 50, '#ef4444', 10, 80);
         } else {
-          setFeedback(`✅ Digit ${pos + 1} correct!`);
+          setFeedback(`✅ ${pos + 1}-raqam to'g'ri!`);
           particles.current.emit(50, 50, '#00ff88', 5, 50);
         }
       }
@@ -53,7 +53,7 @@ export default function SecretCodeDoor() {
         const correct = newCode.every((d, i) => d === secretCode.current[i]);
         if (correct) {
           setDoorOpen(true);
-          setFeedback('🔓 DOOR OPENED!');
+          setFeedback('🔓 ESHIK OCHILDI!');
           playWin();
           particles.current.emit(50, 70, '#ffdd00', 50, 200);
           if (!winRef.current && winConditions) {
@@ -64,12 +64,12 @@ export default function SecretCodeDoor() {
         } else {
           setAttempts(a => a - 1);
           if (attempts <= 1) {
-            setFeedback('🔒 SYSTEM LOCKED!');
+            setFeedback('🔒 TIZIM BLOKLANDI!');
             setEnteredCode([]);
             setAttempts(MAX_ATTEMPTS);
             secretCode.current = Array.from({ length: CODE_LENGTH }, () => Math.round(Math.random()));
           } else {
-            setFeedback(`❌ Wrong code! ${attempts - 1} attempts left`);
+            setFeedback(`❌ Xato kod! ${attempts - 1} urinish qoldi`);
             playError();
             setEnteredCode([]);
           }
@@ -164,7 +164,7 @@ export default function SecretCodeDoor() {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`Attempts: ${'❤️'.repeat(attempts)}${'🖤'.repeat(MAX_ATTEMPTS - attempts)}`, 15, 25);
+	    ctx.fillText(`Urinishlar: ${'❤️'.repeat(attempts)}${'🖤'.repeat(MAX_ATTEMPTS - attempts)}`, 15, 25);
 
     // Secret code hint (small, for debugging/show)
     ctx.fillStyle = '#334155';

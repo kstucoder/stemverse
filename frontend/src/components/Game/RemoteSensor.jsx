@@ -116,7 +116,7 @@ export default function RemoteSensor() {
     ctx.fillText(`[${ts}] 🔥 Firebase: { temp: ${Math.round(temp)}°C, dist: ${Math.round(dist)}cm, power: ${Math.round(pot / 10.23)}% }`, 25, h - 65);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '9px sans-serif';
-    ctx.fillText('📶 ESP32 Connected | 📡 Data sync every 1s | 🌍 Remote monitoring active', 25, h - 42);
+    ctx.fillText('📶 ESP32 Ulangan | 📡 1s sinxronlash | 🌍 Masofaviy kuzatuv faol', 25, h - 42);
 
     // Win: collect all data types
     if (temp > 20 && dist > 50 && pot > 300 && !winRef.current && winConditions) {

@@ -83,7 +83,7 @@ export default function ParkingAssistant() {
 
     ctx.fillStyle = isParked ? '#00ff88' : '#94a3b8';
     ctx.font = '14px sans-serif';
-    ctx.fillText(isParked ? '✅ PERFECT PARK!' : '🚗 Back up slowly...', w / 2, h - 100);
+	    ctx.fillText(isParked ? '✅ MUKAMMAL PARK!' : '🚗 Sekin orqaga...', w / 2, h - 100);
 
     // Win check
     if (isParked) {
@@ -119,7 +119,7 @@ export default function ParkingAssistant() {
         <p className="font-game text-white text-lg">{score}</p>
       </div>
       <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        📡 DIST &lt; 5cm = Parked!<br />
+	        📡 MAS &lt; 5cm = Joylashdi!<br />
         🔴 &lt;10cm ⚠️ &lt;30cm 🟢 &gt;30cm
       </div>
     </GameCanvas>

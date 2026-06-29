@@ -67,8 +67,8 @@ export default function LightTheremin() {
     ctx.fillText(note + Math.floor(freqVal) + 'Hz', w / 2, 50);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '14px sans-serif';
-    ctx.fillText('☀️ Move hand over LDR sensor', w / 2, 80);
-    ctx.fillText('Light → Higher pitch', w / 2, 100);
+    ctx.fillText("☀️ Qo'lingizni LDR sensor ustida harakatlantiring", w / 2, 80);
+    ctx.fillText("Yorug'lik → Yuqori ovoz", w / 2, 100);
   }, [serialData.ldr, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (

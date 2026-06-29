@@ -149,7 +149,7 @@ export default function CutscenePlayer({ scene, onComplete, skipable = true }) {
       if (skipable && elapsed > 1) {
         ctx.fillStyle = 'rgba(148,163,184,0.5)';
         ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
-        ctx.fillText('⏭ Skip', w - 12, h - 12);
+	        ctx.fillText("⏭ O'tkazish", w - 12, h - 12);
       }
 
       ctx.restore();

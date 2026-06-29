@@ -69,10 +69,10 @@ export default function ReactionChampion() {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 28px sans-serif';
     ctx.fillText(
-      state === 'waiting' ? '⏳ Get Ready...' :
-      state === 'ready' ? '👀 Watch...' :
-      state === 'go' ? '🔥 PRESS NOW!' :
-      '🎉 Player 1 Wins!',
+state === 'waiting' ? "⏳ Tayyorlaning..." :
+	      state === 'ready' ? "👀 Kuzating..." :
+	      state === 'go' ? "🔥 BOSING!" :
+	      "🎉 1-o'yinchi yutdi!",
       cx, cy - 60
     );
 
@@ -86,10 +86,10 @@ export default function ReactionChampion() {
     ctx.fillStyle = '#00f5ff';
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('P1: ' + p1Score, 30, 50);
+    ctx.fillText('O1: ' + p1Score, 30, 50);
     ctx.fillStyle = '#ff00e5';
     ctx.textAlign = 'right';
-    ctx.fillText('P2: ' + p2Score, w - 30, 50);
+    ctx.fillText('O2: ' + p2Score, w - 30, 50);
 
     // Progress to win
     ctx.fillStyle = '#1e293b';
@@ -112,8 +112,8 @@ export default function ReactionChampion() {
         <p className="font-game text-white text-lg">{score}</p>
       </div>
       <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        Player 1: BTN (pin 2)<br />
-        Player 2: BTN (pin 3) - not connected
+        1-o'yinchi: BTN (pin 2)<br />
+        2-o'yinchi: BTN (pin 3) - ulanmagan
       </div>
     </GameCanvas>
   );

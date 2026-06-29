@@ -3,16 +3,16 @@ import { Sparkles, Play, Pause } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 
 const PATTERNS = [
-  { name: 'Wave', sequence: [1,0,1,0], colors: ['#00f5ff', '#9900ff'] },
-  { name: 'Blink', sequence: [1,1,0,0], colors: ['#ff00e5', '#ffdd00'] },
-  { name: 'Fade', sequence: [1,0,0,1], colors: ['#00ff88', '#6366f1'] },
-  { name: 'Random', sequence: [], colors: ['#ff6600', '#ff00e5'] },
+  { name: "To'lqin", sequence: [1,0,1,0], colors: ['#00f5ff', '#9900ff'] },
+  { name: 'Miltillash', sequence: [1,1,0,0], colors: ['#ff00e5', '#ffdd00'] },
+  { name: 'Suzish', sequence: [1,0,0,1], colors: ['#00ff88', '#6366f1'] },
+  { name: 'Tasodifiy', sequence: [], colors: ['#ff6600', '#ff00e5'] },
 ];
 
 const TARGET_PATTERNS = [
-  { name: 'Dance 1', pattern: [0,1,0,1,0,1,1,0], points: 50 },
-  { name: 'Dance 2', pattern: [1,1,0,0,1,0,1,1], points: 100 },
-  { name: 'Dance 3', pattern: [1,0,1,1,0,0,1,0], points: 150 },
+  { name: 'Raqs 1', pattern: [0,1,0,1,0,1,1,0], points: 50 },
+  { name: 'Raqs 2', pattern: [1,1,0,0,1,0,1,1], points: 100 },
+  { name: 'Raqs 3', pattern: [1,0,1,1,0,0,1,0], points: 150 },
 ];
 
 export default function LightShow() {
@@ -139,7 +139,7 @@ export default function LightShow() {
         <div className="glass rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-game text-white text-lg">
-              {stage === 'setup' ? '🎵 Light Show' : '🎯 Dance Challenge'}
+              {stage === 'setup' ? "🎵 Yorug'lik Shousi" : '🎯 Raqs Musobaqasi'}
             </h3>
             <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 rounded-lg bg-dark-700 hover:bg-dark-600">
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -160,14 +160,14 @@ export default function LightShow() {
           {/* Target Pattern */}
           {stage === 'play' && targetPattern && (
             <div className="mb-3">
-              <p className="text-xs text-dark-400 mb-1">Target: {targetPattern.name}</p>
+              <p className="text-xs text-dark-400 mb-1">Maqsad: {targetPattern.name}</p>
               <div className="flex gap-1">
                 {targetPattern.pattern.map((val, i) => (
                   <div key={i} className={`flex-1 h-6 rounded ${val ? 'bg-neon-yellow' : 'bg-dark-600'}`} />
                 ))}
               </div>
               <p className="text-xs text-dark-500 mt-1">
-                Recorded: {recordedPattern.length}/8 presses
+                Yozilgan: {recordedPattern.length}/8 bosish
               </p>
             </div>
           )}
@@ -176,11 +176,11 @@ export default function LightShow() {
             <span className="text-xs text-dark-400">Pattern: {PATTERNS[currentPattern].name}</span>
             <div className="flex gap-2">
               <button onClick={cyclePattern} className="btn-secondary text-xs py-1 px-3">
-                Cycle Pattern
+                Patternni aylantirish
               </button>
               {stage === 'setup' && (
                 <button onClick={startDance} className="btn-primary text-xs py-1 px-3">
-                  Start Dance!
+                  Raqsni boshlash!
                 </button>
               )}
             </div>
@@ -191,11 +191,11 @@ export default function LightShow() {
       {/* Score + Progress */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between">
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Score</p>
+          <p className="text-xs text-dark-400">Ball</p>
           <p className="font-game text-white text-lg">{score}</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Dances</p>
+          <p className="text-xs text-dark-400">Raqlar</p>
           <p className="font-game text-white text-lg">{completedDances}/3</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
@@ -208,7 +208,7 @@ export default function LightShow() {
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2">
         <div className="glass rounded-xl px-4 py-2 text-center">
           <Sparkles className={`w-5 h-5 mx-auto ${isPlaying ? 'text-neon-yellow animate-spin' : 'text-dark-400'}`} />
-          <p className="text-xs text-dark-400 mt-1">{isPlaying ? 'Playing' : 'Ready'}</p>
+          <p className="text-xs text-dark-400 mt-1">{isPlaying ? 'Ijro etilmoqda' : 'Tayyor'}</p>
         </div>
       </div>
     </div>

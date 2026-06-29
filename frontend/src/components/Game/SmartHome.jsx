@@ -70,10 +70,10 @@ export default function SmartHome() {
 
     // Status indicators
     const status = [
-      { label: '💡 Lights', active: devices.current.lights, x: w * 0.12, y: h * 0.65 },
-      { label: '❄️ AC ' + acTemp + '°C', active: devices.current.ac, x: w * 0.35, y: h * 0.65 },
-      { label: '🚪 Door', active: devices.current.door, x: w * 0.58, y: h * 0.65 },
-      { label: '🔔 Alarm', active: temp > 28 || dist < 10, x: w * 0.78, y: h * 0.65 },
+      { label: '💡 Chiroqlar', active: devices.current.lights, x: w * 0.12, y: h * 0.65 },
+      { label: '❄️ Konditsioner ' + acTemp + '°C', active: devices.current.ac, x: w * 0.35, y: h * 0.65 },
+      { label: '🚪 Eshik', active: devices.current.door, x: w * 0.58, y: h * 0.65 },
+      { label: '🔔 Signal', active: temp > 28 || dist < 10, x: w * 0.78, y: h * 0.65 },
     ];
 
     status.forEach((s, i) => {
@@ -103,7 +103,7 @@ export default function SmartHome() {
     ctx.fillStyle = '#fff';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('⚡ Energy: ' + energy + '%', w / 2, h * 0.77 + 12);
+    ctx.fillText('⚡ Energiya: ' + energy + '%', w / 2, h * 0.77 + 12);
 
     // Firebase connection
     ctx.fillStyle = 'rgba(255,193,7,0.15)';
@@ -113,7 +113,7 @@ export default function SmartHome() {
     ctx.fillStyle = '#ffc107';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🔥 ESP32 + Firebase — Smart Home Controller | Real-time cloud sync', w / 2, h * 0.85 + 15);
+    ctx.fillText('🔥 ESP32 + Firebase — Aqlli Uy Boshqaruvi | Real-time bulut sinxronlash', w / 2, h * 0.85 + 15);
 
     // Particles
     if (devices.current.lights) particles.current.emit(w * 0.5, h * 0.5, '#ffdd00', 1, 20);

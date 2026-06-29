@@ -73,7 +73,7 @@ export default function MusicVisualizer() {
     ctx.fillText(noteName + ' ' + Math.round(freq) + 'Hz', 20, 42);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText('POT → Frequency', 20, 65);
+	    ctx.fillText('POT → Chastota', 20, 65);
 
     // Particle effects on beat
     if (samples.current[16] > 0.6) {

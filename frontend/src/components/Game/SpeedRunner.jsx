@@ -174,9 +174,9 @@ export default function SpeedRunner() {
       {gameOver && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
           <div className="text-center">
-            <h2 className="text-4xl font-game text-red-500 mb-2">CRASH!</h2>
-            <p className="text-dark-300 mb-4">You ran {Math.round(distance)}m</p>
-            <button onClick={restart} className="btn-primary">Try Again</button>
+            <h2 className="text-4xl font-game text-red-500 mb-2">HALOKAT!</h2>
+            <p className="text-dark-300 mb-4">Siz {Math.round(distance)}m yugurdingiz</p>
+            <button onClick={restart} className="btn-primary">Qayta urinish</button>
           </div>
         </div>
       )}
@@ -184,15 +184,15 @@ export default function SpeedRunner() {
       {/* HUD */}
       <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Distance</p>
+          <p className="text-xs text-dark-400">Masofa</p>
           <p className="font-game text-white text-lg">{Math.round(distance)}m</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Speed</p>
+          <p className="text-xs text-dark-400">Tezlik</p>
           <p className="font-game text-white text-lg">{speed}x</p>
         </div>
         <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Score</p>
+          <p className="text-xs text-dark-400">Ball</p>
           <p className="font-game text-white text-lg">{score}</p>
         </div>
       </div>
@@ -200,8 +200,8 @@ export default function SpeedRunner() {
       {/* Controls hint */}
       <div className="absolute bottom-[35%] left-4 z-10">
         <div className="glass rounded-xl px-3 py-2">
-          <p className="text-xs text-neon-cyan">{'POT → Speed'}</p>
-          <p className="text-xs text-neon-yellow">{'BTN → Jump'}</p>
+          <p className="text-xs text-neon-cyan">{'POT → Tezlik'}</p>
+          <p className="text-xs text-neon-yellow">{'BTN → Sakrash'}</p>
         </div>
       </div>
 

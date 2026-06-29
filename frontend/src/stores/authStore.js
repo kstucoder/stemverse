@@ -21,7 +21,7 @@ const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.error || 'Login failed';
+      const msg = err.response?.data?.error || 'Kirishda xatolik';
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
@@ -36,7 +36,7 @@ const useAuthStore = create((set) => ({
       set({ user: data.user, token: data.token, loading: false });
       return data;
     } catch (err) {
-      const msg = err.response?.data?.error || 'Registration failed';
+      const msg = err.response?.data?.error || "Ro'yxatdan o'tishda xatolik";
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
