@@ -24,15 +24,14 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
 
-// Database seed endpoint (trigger via POST /api/seed)
+// Database seed endpoint
 app.post('/api/seed', async (req, res) => {
   try {
-    const { exec } = await import('child_process');
-    exec('node prisma/seed.js', { cwd: process.cwd() }, (error, stdout, stderr) => {
-      if (error) return res.status(500).json({ error: stderr });
-      res.json({ success: true, output: stdout });
-    });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const seed = await import('../prisma/seed.js');
+    res.json({ success: true, message: 'Seed complete' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Server error' }); });
 if (process.env.NODE_ENV !== 'vercel') {
