@@ -21,8 +21,9 @@ export default function Darslar() {
           <p className="text-dark-400 mt-2">Darslarni tugatib, yangi qurilmalarni oching!</p>
         </div>
         <div className="space-y-4">
-          {lessons.map((l) => (
-            l.locked ? (
+          {lessons.map((l) => {
+            if (l.locked) {
+              return (
               <div key={l.id} className="block rounded-2xl border border-dark-700 p-6 bg-dark-800/30 opacity-60">
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-dark-700">
@@ -43,9 +44,11 @@ export default function Darslar() {
                   </div>
                 </div>
               </div>
-            ) : (
-            <Link key={l.id} to={`/lessons/${l.id}`}
-              className={`block rounded-2xl border p-6 transition-all ${l.progress?.completed ? 'bg-dark-800/50 border-neon-green/30' : 'card-glow'}`}>
+              );
+            }
+            return (
+              <Link key={l.id} to={`/lessons/${l.id}`}
+              className={'block rounded-2xl border p-6 transition-all ' + (l.progress?.completed ? 'bg-dark-800/50 border-neon-green/30' : 'card-glow')}>
               <div className="flex items-start gap-4">
                 <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${l.progress?.completed ? 'bg-neon-green/20' : 'bg-dark-700'}`}>
                   {l.progress?.completed ? <CheckCircle className="w-7 h-7 text-neon-green" /> : <Cpu className="w-7 h-7 text-dark-400" />}
@@ -70,7 +73,8 @@ export default function Darslar() {
                 <div className="hidden sm:flex items-center"><ArrowRight className="w-5 h-5 text-dark-500" /></div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
         {lessons.length === 0 && (
           <div className="text-center py-16"><Sparkles className="w-12 h-12 text-dark-500 mx-auto mb-4" /><h3 className="text-xl font-game text-dark-400">No lessons yet</h3></div>
