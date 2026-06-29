@@ -27,8 +27,7 @@
   .btn-primary {
     @apply px-6 py-3 bg-brand-gradient rounded-xl font-game text-white text-lg relative overflow-hidden
            hover:opacity-90 hover:shadow-glow-sm
-           active:scale-[0.97]
-           transition-all duration-200 ease-out
+           transition-opacity duration-200 ease-out
            cursor-pointer select-none
            disabled:opacity-40 disabled:cursor-not-allowed;
   }
@@ -36,24 +35,22 @@
   .btn-secondary {
     @apply px-6 py-3 bg-[#1a2440] border border-[#2a3a5c] rounded-xl font-game text-white text-lg
            hover:bg-[#1e2d50] hover:border-[#3a4a6c]
-           active:scale-[0.97]
-           transition-all duration-200 ease-out
+           transition-colors duration-200 ease-out
            cursor-pointer select-none
            disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-neon {
     @apply px-6 py-3 bg-neon-gradient rounded-xl font-game text-white text-lg
-           hover:opacity-90 hover:shadow-lg
-           active:scale-[0.97]
-           transition-all duration-200 ease-out
+           hover:opacity-90
+           transition-opacity duration-200 ease-out
            cursor-pointer select-none
            disabled:opacity-40;
   }
 
   .card {
     @apply bg-[#141d30] border border-[#1e293b] rounded-2xl p-6
-           transition-all duration-300 ease-out
+           transition-shadow duration-300 ease-out
            shadow-card;
   }
   .card-glow {
@@ -65,8 +62,8 @@
   .input-field {
     @apply w-full px-4 py-3 bg-[#141d30] border border-[#2a3a5c] rounded-xl text-[#e2e8f0]
            placeholder:text-[#64748b]
-           focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 focus:bg-[#1a2440]
-           transition-all duration-200;
+           focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20
+           transition-colors duration-200;
   }
 
   .game-container {
