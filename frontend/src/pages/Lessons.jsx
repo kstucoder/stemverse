@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, CheckCircle, Cpu, ArrowRight, Loader2, Sparkles, Zap } from 'lucide-react';
+import { BookOpen, CheckCircle, Cpu, ArrowRight, Loader2, Sparkles, Zap, Lock } from 'lucide-react';
 import { lessonsAPI } from '../lib/api';
 
 const levelLabels = { 1: "Boshlangich", 2: "O'rta", 3: 'Murakkab' };
@@ -22,6 +22,28 @@ export default function Darslar() {
         </div>
         <div className="space-y-4">
           {lessons.map((l) => (
+            l.locked ? (
+              <div key={l.id} className="block rounded-2xl border border-dark-700 p-6 bg-dark-800/30 opacity-60">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-dark-700">
+                    <Lock className="w-7 h-7 text-dark-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-game text-dark-400">{l.title}</h3>
+                        <p className="text-sm text-dark-600 mt-1">{l.description}</p>
+                      </div>
+                      <span className="badge-locked text-xs">Qulflangan</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-4">
+                      <span className="badge bg-dark-700 text-dark-500 text-xs">Level {l.level}</span>
+                      <span className="text-xs text-dark-600">Keyingi levelda ochiladi</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <Link key={l.id} to={`/lessons/${l.id}`}
               className={`block rounded-2xl border p-6 transition-all ${l.progress?.completed ? 'bg-dark-800/50 border-neon-green/30' : 'card-glow'}`}>
               <div className="flex items-start gap-4">

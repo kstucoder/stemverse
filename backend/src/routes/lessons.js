@@ -11,7 +11,17 @@ router.get('/', authenticate, async (req, res) => {
     const progress = await prisma.userProgress.findMany({ where: { userId: req.user.id, lessonId: { in: lessons.map(l => l.id) } } });
     const pm = {};
     progress.forEach(p => { pm[p.lessonId] = { completed: p.completed, score: p.score }; });
-    res.json(lessons.map(l => ({ ...l, progress: pm[l.id] || { completed: false, score: 0 } })));
+    
+    // Progressive unlock: required student level for each lesson level
+    const unlockLevel = { 1: 1, 2: 3, 3: 6, 4: 11 };
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const studentLevel = user?.level || 1;
+    
+    res.json(lessons.map(l => ({
+      ...l,
+      progress: pm[l.id] || { completed: false, score: 0 },
+      locked: isAdmin ? false : studentLevel < (unlockLevel[l.level] || 1),
+    })));
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
@@ -21,7 +31,13 @@ router.get('/:id', authenticate, async (req, res) => {
     if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
     if (!lesson.published && req.user.role === 'STUDENT') return res.status(403).json({ error: 'Not available' });
     const progress = await prisma.userProgress.findUnique({ where: { userId_lessonId: { userId: req.user.id, lessonId: lesson.id } } });
-    res.json({ ...lesson, progress });
+    
+    // Check if locked
+    const unlockLevel = { 1: 1, 2: 3, 3: 6, 4: 11 };
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const locked = req.user.role === 'STUDENT' && (user?.level || 1) < (unlockLevel[lesson.level] || 1);
+    
+    res.json({ ...lesson, progress, locked });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 

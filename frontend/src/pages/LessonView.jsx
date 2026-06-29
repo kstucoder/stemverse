@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CircuitBoard, Code, Cpu, Gamepad2, Loader2 } from 'lucide-react';
+import { ArrowLeft, CircuitBoard, Code, Cpu, Gamepad2, Loader2, Lock } from 'lucide-react';
 import { lessonsAPI, progressAPI } from '../lib/api';
 import SerialConnector from '../components/SerialConnector';
 import { getGameComponent } from '../components/Game/GameEngine';
@@ -55,6 +55,16 @@ export default function LessonView() {
 
   if (loading) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>;
   if (!lesson) return <div className="min-h-screen bg-dark-900 flex items-center justify-center"><p className="text-dark-400">Not found</p></div>;
+  if (lesson.locked) return (
+    <div className="min-h-screen bg-dark-900 flex items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <div className="w-20 h-20 rounded-2xl bg-dark-700 flex items-center justify-center mx-auto mb-4"><Lock className="w-10 h-10 text-dark-500" /></div>
+        <h1 className="text-2xl font-game text-dark-400 mb-2">Dars qulflangan</h1>
+        <p className="text-dark-500 mb-6">Bu darsni ochish uchun oldingi darslarni bajarib, yetarli XP to'plang.</p>
+        <button onClick={() => navigate('/lessons')} className="btn-primary">Darslar ro'yxatiga qaytish</button>
+      </div>
+    </div>
+  );
 
   const isCompleted = lesson.progress?.completed;
   const GameComponent = getGameComponent(lesson.gameConfig?.gameType);
