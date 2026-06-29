@@ -5,24 +5,110 @@
 @layer base {
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { min-height: 100vh; overflow-x: hidden; }
-  ::-webkit-scrollbar { width: 8px; }
+  
+  /* Focus states for accessibility */
+  *:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; border-radius: 4px; }
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: #0f172a; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
 }
 
 @layer components {
-  .btn-primary { @apply px-6 py-3 bg-brand-gradient rounded-xl font-game text-white text-lg hover:opacity-90 transition-all duration-200 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-secondary { @apply px-6 py-3 bg-dark-700 border border-dark-400 rounded-xl font-game text-white text-lg hover:bg-dark-600 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-neon { @apply px-6 py-3 bg-neon-gradient rounded-xl font-game text-white text-lg hover:opacity-90 transition-all duration-200 shadow-lg shadow-neon-cyan/25 active:scale-95 disabled:opacity-50; }
-  .card { @apply bg-dark-800 border border-dark-700 rounded-2xl p-6 hover:border-dark-500 transition-all duration-300; }
-  .card-glow { @apply card hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/10; }
-  .input-field { @apply w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder:text-dark-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all; }
-  .game-container { @apply relative overflow-hidden rounded-2xl border-2 border-dark-600 bg-game-gradient; }
-  .badge { @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold; }
-  .badge-xp { @apply badge bg-neon-green/20 text-neon-green border border-neon-green/30; }
-  .badge-level { @apply badge bg-brand-500/20 text-brand-300 border border-brand-500/30; }
-  .badge-completed { @apply badge bg-neon-green/20 text-neon-green border border-neon-green/30; }
+  /* Buttons */
+  .btn-primary {
+    @apply px-6 py-3 bg-brand-gradient rounded-xl font-game text-white text-lg relative overflow-hidden
+           hover:opacity-90 hover:shadow-lg hover:shadow-brand-500/30
+           active:scale-[0.97] active:opacity-80
+           transition-all duration-200 ease-out
+           cursor-pointer select-none
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-dark-700 border border-dark-400 rounded-xl font-game text-white text-lg
+           hover:bg-dark-600 hover:border-dark-300
+           active:scale-[0.97]
+           transition-all duration-200 ease-out
+           cursor-pointer select-none
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-neon {
+    @apply px-6 py-3 bg-neon-gradient rounded-xl font-game text-white text-lg
+           hover:opacity-90 hover:shadow-lg hover:shadow-neon-cyan/30
+           active:scale-[0.97]
+           transition-all duration-200 ease-out
+           cursor-pointer select-none
+           disabled:opacity-40;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-dark-800 border border-dark-700 rounded-2xl p-6
+           transition-all duration-300 ease-out;
+  }
+  .card-glow {
+    @apply card
+           hover:border-brand-500/40 hover:shadow-lg hover:shadow-brand-500/10
+           cursor-pointer;
+  }
+
+  /* Inputs */
+  .input-field {
+    @apply w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white
+           placeholder:text-dark-400
+           focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:bg-dark-700
+           transition-all duration-200;
+  }
+
+  /* Game container */
+  .game-container {
+    @apply relative overflow-hidden rounded-2xl border border-dark-600 bg-game-gradient;
+  }
+
+  /* Badges */
+  .badge { @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold; }
+  .badge-xp { @apply badge bg-neon-green/15 text-neon-green border border-neon-green/25; }
+  .badge-level { @apply badge bg-brand-500/15 text-brand-300 border border-brand-500/25; }
+  .badge-completed { @apply badge bg-neon-green/15 text-neon-green border border-neon-green/25; }
   .badge-locked { @apply badge bg-dark-700 text-dark-400 border border-dark-600; }
-  .glass { @apply bg-dark-800/80 backdrop-blur-md border border-dark-700/50; }
+
+  /* Glass */
+  .glass {
+    @apply bg-dark-800/70 backdrop-blur-xl border border-dark-700/40;
+  }
+
+  /* Gradients */
   .text-gradient { @apply bg-clip-text text-transparent bg-brand-gradient; }
+
+  /* Hover card lift effect */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg;
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  .animate-glow-pulse { animation: glowPulse 2s ease-in-out infinite alternate; }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes glowPulse {
+    0% { box-shadow: 0 0 10px rgba(99,102,241,0.15); }
+    100% { box-shadow: 0 0 25px rgba(99,102,241,0.3); }
+  }
+
+  /* Text balance for headings */
+  .text-balance { text-wrap: balance; }
 }
