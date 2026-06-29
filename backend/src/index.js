@@ -50,7 +50,7 @@ app.post('/api/seed', async (req, res) => {
       { id: 'led_master', title: "LED Ustasi", description: '3 ta LED darsini tugating', icon: '\uD83D\uDCA1', xpReward: 100, condition: { type: 'lessons_completed', count: 3 } },
       { id: 'kit_activated', title: "Kit Faollashtirildi", description: 'STEMVERSE kitini faollashtiring', icon: '\uD83C\uDFAE', xpReward: 50, condition: { type: 'kit_activated' } },
       { id: 'sensor_expert', title: "Sensor Mutaxassisi", description: '5 ta sensor darsini tugating', icon: '\uD83D\uDCE1', xpReward: 150, condition: { type: 'lessons_completed', count: 5 } },
-      { id: 'xp_collector', title: "XP Yig'uvchi", description: '500 XP to'plang', icon: '\uD83C\uDFC6', xpReward: 250, condition: { type: 'xp_reached', xp: 500 } },
+      { id: 'xp_collector', title: "XP Yig'uvchi", description: "500 XP to'plang", icon: '\uD83C\uDFC6', xpReward: 250, condition: { type: 'xp_reached', xp: 500 } },
       { id: 'master_engineer', title: "Bosh Muhandis", description: 'Barcha 20 darsni tugating', icon: '\uD83D\uDC51', xpReward: 500, condition: { type: 'lessons_completed', count: 20 } },
     ];
     for (const a of achievements) { await prisma.achievement.upsert({ where: { id: a.id }, update: {}, create: a }); }
