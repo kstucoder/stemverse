@@ -1,8 +1,6 @@
-import { Link } from 'react-router-dom';
-
-export default function BootScreen({ onSkip }) {
+export default function BootScreen({ onSkip, done }) {
   return (
-    <div id="boot" className="done" style={{ animation: 'none' }}>
+    <div id="boot" className={done ? 'done' : ''}>
       <div className="boot-city"></div>
       <div className="boot-eyes"><span></span><span></span></div>
       <div className="boot-core">

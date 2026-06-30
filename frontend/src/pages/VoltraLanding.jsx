@@ -31,23 +31,18 @@ import '../landing.css';
 export default function VoltraLanding() {
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const isMobile = useMediaQuery('(max-width: 1024px)');
-  const { booting, skipBoot } = useBoot(reduceMotion);
+  const { booting, bootDone, skipBoot } = useBoot(reduceMotion);
   const revealRef = useReveal();
   const countersRef = useCounters();
   const sceneRef = useParallax(reduceMotion, isMobile);
   const canvasRef = useParticles(reduceMotion);
 
+  // Clean up body classes on unmount
   useEffect(() => {
-    document.body.classList.add('booting');
     return () => {
-      document.body.classList.remove('booting', 'is-mobile');
+      document.body.style.overflow = '';
     };
   }, []);
-
-  useEffect(() => {
-    if (isMobile) document.body.classList.add('is-mobile');
-    else document.body.classList.remove('is-mobile');
-  }, [isMobile]);
 
   // Toast notification for buy buttons
   useEffect(() => {
@@ -99,10 +94,11 @@ export default function VoltraLanding() {
     return () => io.disconnect();
   }, []);
 
-  if (booting) return <BootScreen onSkip={skipBoot} />;
-
   return (
-    <div className="voltra-landing">
+    <div className={`voltra-landing${isMobile ? ' is-mobile' : ''}`}>
+      {/* Boot screen overlays content until animation completes */}
+      {booting && <BootScreen onSkip={skipBoot} done={bootDone} />}
+
       <canvas id="fx" ref={canvasRef}></canvas>
       <div className="vignette"></div>
       <div className="app">

@@ -196,7 +196,7 @@
 .voltra-landing .device-banner .inner svg{flex:0 0 22px;color:var(--energy)}
 .voltra-landing .device-banner b{font-family:'Chakra Petch';color:#fff}
 .voltra-landing .device-banner p{margin:0;font-size:.92rem;color:#bcd0ea}
-.voltra-landing .is-mobile .device-banner{display:block}
+.voltra-landing.is-mobile .device-banner{display:block}
 
 /* ---------- PARENTS ---------- */
 .voltra-landing .pcards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}

@@ -4,23 +4,19 @@ export default function useReveal() {
   const ref = useRef(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.querySelectorAll('.reveal').forEach((child) => {
-              child.classList.add('revealed');
-            });
+            entry.target.classList.add('in');
             io.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.16 }
     );
-    io.observe(el);
+    // Observe ALL .reveal elements on the page (not just inside a single container)
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
 

@@ -1,18 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function useBoot(reduceMotion) {
-  const [booting, setBooting] = useState(true);
+  // 'active' → 'exiting' (CSS fade-out 0.9s) → 'hidden' (unmount)
+  const [phase, setPhase] = useState('active');
+  const doneRef = useRef(false);
 
-  const skipBoot = () => setBooting(false);
+  const endBoot = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    document.body.classList.remove('booting');
+    setPhase('exiting');
+    setTimeout(() => setPhase('hidden'), 900);
+  };
 
   useEffect(() => {
-    if (reduceMotion) {
-      setBooting(false);
-      return;
-    }
-    const timer = setTimeout(() => setBooting(false), 3000);
-    return () => clearTimeout(timer);
-  }, [reduceMotion]);
+    let seen = false;
+    try {
+      seen = !!sessionStorage.getItem('voltra_booted');
+      sessionStorage.setItem('voltra_booted', '1');
+    } catch (e) {}
 
-  return { booting, skipBoot };
+    const delay = (reduceMotion || seen) ? 200 : 5000;
+    const t = setTimeout(endBoot, delay);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    booting: phase !== 'hidden',   // true while active OR exiting (keep BootScreen mounted)
+    bootDone: phase === 'exiting', // true during CSS fade-out
+    skipBoot: endBoot,
+  };
 }
