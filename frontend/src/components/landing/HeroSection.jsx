@@ -100,21 +100,31 @@ export default function HeroSection({ sceneRef }) {
 
         {/* ─── Scene ─── */}
         <div className="scene" id="scene" ref={sceneRef}>
-          <div className="poster-layer layer" data-depth="16">
+          {/* Subtle circuit atmosphere layer */}
+          <div className="poster-layer layer" data-depth="8" style={{ opacity: 0.1 }}>
             <PosterSvg />
           </div>
+
+          {/* Real product photo — main hero visual */}
           <div className="floating-kit layer" data-depth="40">
-            <div className="kit-box">
-              <div className="kit-face front">VOLTRA TO'PLAMI</div>
-              <div className="kit-face back">20+ MISSIYA</div>
-              <div className="kit-face right">USB · ARDUINO</div>
-              <div className="kit-face left">SENSORLAR</div>
+            <div className="kit-img-wrap">
+              <img
+                src="/images/kit-box.jpeg"
+                alt="VOLTRA Arduino STEM to'plami — quti ichida Arduino Uno, sensorlar va simlar"
+                className="kit-photo"
+              />
+              <div className="kit-photo-glow" />
             </div>
             <div className="kit-label">
               <b>VOLTRA to'plami</b>
               20+ interaktiv missiyani och
             </div>
             <Link to="/activate" className="kit-cta">Hozir faollashtir</Link>
+          </div>
+
+          {/* Mascot — floating companion */}
+          <div className="hero-mascot" aria-hidden="true">
+            <img src="/images/mascot.jpeg" alt="" />
           </div>
         </div>
       </div>

@@ -1,7 +1,12 @@
 export default function CommunitySection() {
   return (
-    <section className="section-pad" id="community">
-      <div className="wrap">
+    <section
+      className="section-pad"
+      id="community"
+      style={{ backgroundImage: 'url(/images/community.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center top' }}
+    >
+      <div className="comm-overlay" />
+      <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
         <div className="head">
           <div>
             <span className="eyebrow">O'yinchilar yaratgan</span>
@@ -56,3 +61,4 @@ export default function CommunitySection() {
     </section>
   );
 }
+

@@ -28,6 +28,22 @@ export default function HowItWorks() {
             <p>USB orqali ula — haqiqiy zanjiring ekrandagi o'yin dunyosini boshqaradi.</p>
           </div>
         </div>
+        {/* Real kit photo between steps and USB strip */}
+        <div className="kit-showcase reveal">
+          <img
+            src="/images/kit-flatlay.jpeg"
+            alt="VOLTRA to'plami komponentlari — Arduino Uno, LED, sensor, breadboard va simlar"
+            className="kit-showcase-img"
+          />
+          <div className="kit-showcase-caption">
+            <span>40+ haqiqiy komponent</span>
+            <span className="dot" />
+            <span>Arduino Uno R3</span>
+            <span className="dot" />
+            <span>Sensorlar · Servo · LED</span>
+          </div>
+        </div>
+
         <div className="usb-strip reveal">
           <span className="node">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>
