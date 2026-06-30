@@ -11,7 +11,7 @@ import teacherRoutes from './routes/teacher.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://voltra-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://voltra-dusky.vercel.app', process.env.FRONTEND_URL || '*'].filter(Boolean),
+  origin: ['http://localhost:5173', 'https://stemverse-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://stemverse-dusky.vercel.app', 'https://voltra-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://voltra-dusky.vercel.app', process.env.FRONTEND_URL || '*'].filter(Boolean),
   credentials: true,
 }));
 app.use(express.json());
