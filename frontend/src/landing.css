@@ -472,17 +472,27 @@
 
 /* ========== IMAGES INTEGRATION ========== */
 
-/* --- Hero: real product photo --- */
-.voltra-landing .floating-kit{right:1%;bottom:auto;top:50%;width:340px;transform:translateY(-50%);perspective:none}
-.voltra-landing .kit-img-wrap{position:relative;border-radius:20px;overflow:hidden;
-  box-shadow:0 0 0 1px rgba(25,227,255,.22),0 30px 90px rgba(0,0,0,.75),0 0 100px rgba(25,227,255,.1)}
-.voltra-landing .kit-photo{width:100%;height:auto;display:block;animation:kitFloat 6s ease-in-out infinite}
-@keyframes kitFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.012)}}
-.voltra-landing .kit-photo-glow{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse 70% 50% at 30% 20%,rgba(25,227,255,.06),transparent 60%)}
+/* --- Hero: main product visual (fills scene) --- */
+.voltra-landing .hero-product-visual{
+  position:absolute;inset:0 0 88px 0;
+  display:flex;align-items:center;justify-content:center;z-index:3;
+}
+.voltra-landing .hero-kit-main{
+  width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 0 60px rgba(25,227,255,.14)) drop-shadow(0 28px 56px rgba(0,0,0,.55));
+  animation:kitFloat 6s ease-in-out infinite;
+}
+@keyframes kitFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-16px) scale(1.015)}}
 
-/* --- Hero: mascot floating companion --- */
-.voltra-landing .hero-mascot{position:absolute;right:-18px;bottom:50px;width:108px;z-index:7;
+/* --- Hero: bottom card (label + CTA) --- */
+.voltra-landing .hero-kit-card{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding-bottom:8px;z-index:5;
+}
+
+/* --- Hero: mascot floating companion (bottom-left) --- */
+.voltra-landing .hero-mascot{position:absolute;left:0;bottom:90px;width:110px;z-index:7;
   animation:mascotFloat 4.5s ease-in-out infinite}
 .voltra-landing .hero-mascot img{width:100%;border-radius:14px;
   box-shadow:0 0 0 1px rgba(25,227,255,.15),0 16px 40px rgba(0,0,0,.65),0 0 40px rgba(25,227,255,.15)}
@@ -506,9 +516,11 @@
 /* Responsive overrides */
 @media (max-width:1024px){
   .voltra-landing .hero-mascot{display:none}
-  .voltra-landing .kit-showcase-img{height:200px}
+  .voltra-landing .hero-product-visual{inset:0 0 72px 0}
+  .voltra-landing .kit-showcase-img{height:220px}
 }
 @media (max-width:640px){
+  .voltra-landing .hero-product-visual{inset:0 0 56px 0}
   .voltra-landing .kit-showcase-img{height:160px}
   .voltra-landing .kit-showcase-caption{font-size:.68rem;gap:8px}
 }

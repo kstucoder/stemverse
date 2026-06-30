@@ -28,11 +28,11 @@ export default function HowItWorks() {
             <p>USB orqali ula — haqiqiy zanjiring ekrandagi o'yin dunyosini boshqaradi.</p>
           </div>
         </div>
-        {/* Real kit photo between steps and USB strip */}
+        {/* Kit exploded view — "what's inside" visual */}
         <div className="kit-showcase reveal">
           <img
-            src="/images/kit-flatlay.jpeg"
-            alt="VOLTRA to'plami komponentlari — Arduino Uno, LED, sensor, breadboard va simlar"
+            src="/images/kit-exploded.jpeg"
+            alt="VOLTRA to'plami ichidagi barcha komponentlar — Arduino, sensorlar, LED, servo, breadboard"
             className="kit-showcase-img"
           />
           <div className="kit-showcase-caption">
