@@ -24,8 +24,11 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
 
-// Database seed endpoint — with built-in Uzbek translations
+// Database seed endpoint — only allowed outside production
 app.post('/api/seed', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Seed is disabled in production. Set NODE_ENV=development to enable.' });
+  }
   try {
     const bcrypt = (await import('bcryptjs')).default;
     const { PrismaClient } = await import('@prisma/client');

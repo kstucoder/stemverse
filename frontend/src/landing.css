@@ -14,7 +14,8 @@
 .voltra-landing a{color:inherit;text-decoration:none}
 .voltra-landing button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .voltra-landing :focus-visible{outline:2px solid var(--energy);outline-offset:3px;border-radius:6px}
-.voltra-landing h1, .voltra-landing h2, .voltra-landing h3, .voltra-landing h4{font-family:'Oswald',sans-serif;font-weight:700;line-height:1.04;margin:0;letter-spacing:.4px}
+.voltra-landing h1, .voltra-landing h2, .voltra-landing h3, .voltra-landing h4{font-family:'Orbitron','Oswald',sans-serif;font-weight:700;line-height:1.04;margin:0;letter-spacing:.06em}
+.voltra-landing h3, .voltra-landing h4{font-family:'Chakra Petch','Oswald',sans-serif;letter-spacing:.04em}
 .voltra-landing .mono{font-family:'Chakra Petch',sans-serif}
 .voltra-landing .eyebrow{font-family:'Chakra Petch',sans-serif;font-weight:600;letter-spacing:.32em;text-transform:uppercase;
   font-size:.72rem;color:var(--energy);display:inline-flex;align-items:center;gap:.7em}
@@ -104,7 +105,7 @@
 /* ---------- HEAD ---------- */
 .voltra-landing .head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:36px;flex-wrap:wrap}
 .voltra-landing .head.center{justify-content:center;text-align:center;flex-direction:column}
-.voltra-landing .head h2{font-size:clamp(1.9rem,3.8vw,3rem);text-transform:uppercase}
+.voltra-landing .head h2{font-size:clamp(1.7rem,3.4vw,2.8rem);text-transform:uppercase;letter-spacing:.04em}
 .voltra-landing .head .eyebrow{margin-bottom:14px;display:inline-flex}
 .voltra-landing .head .sub{color:var(--muted);max-width:560px;margin-top:8px}
 .voltra-landing .head .link{font-family:'Chakra Petch';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--energy);display:inline-flex;align-items:center;gap:8px;transition:gap .2s}
@@ -115,22 +116,47 @@
 .voltra-landing .reveal.in{opacity:1;transform:none}
 
 /* ---------- HERO ---------- */
-.voltra-landing .hero{min-height:100vh;display:flex;align-items:center;padding-top:var(--nav-h);overflow:hidden}
-.voltra-landing .hero .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center;width:100%}
+.voltra-landing .hero{min-height:100vh;display:flex;align-items:center;padding-top:var(--nav-h);overflow:hidden;position:relative}
+
+/* Hero ambient background */
+.voltra-landing .hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 65% 40%, rgba(25,227,255,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 20% 60%, rgba(255,122,44,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 50% 0%, rgba(0,0,0,0) 0%, var(--void) 100%);
+}
+
+/* Circuit grid in hero */
+.voltra-landing .hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(25,227,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(25,227,255,0.035) 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask:radial-gradient(ellipse 80% 80% at 60% 40%,black 20%,transparent 75%);
+  mask:radial-gradient(ellipse 80% 80% at 60% 40%,black 20%,transparent 75%);
+}
+
+.voltra-landing .hero .wrap{display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;align-items:center;width:100%;position:relative;z-index:4}
 .voltra-landing .hero-copy{position:relative;z-index:4}
-.voltra-landing .hero-tag{margin-bottom:20px}
-.voltra-landing .hero h1{font-size:clamp(2.6rem,6vw,5.4rem);text-transform:uppercase}
-.voltra-landing .hero h1 .blue{color:var(--energy);text-shadow:0 0 34px rgba(25,227,255,.5)}
-.voltra-landing .hero h1 .strike{position:relative;color:var(--muted)}
-.voltra-landing .hero h1 .strike::after{content:"";position:absolute;left:-2%;right:-2%;top:52%;height:4px;background:var(--orange);box-shadow:0 0 16px var(--orange);transform:scaleX(0);transform-origin:left;animation:strike .6s ease 4.9s forwards}
+.voltra-landing .hero-tag{margin-bottom:24px}
+.voltra-landing .hero h1{font-size:clamp(2.4rem,5.5vw,5rem);text-transform:uppercase;letter-spacing:.03em;line-height:1.06}
+.voltra-landing .hero h1 .blue{color:var(--energy);text-shadow:0 0 40px rgba(25,227,255,0.6),0 0 80px rgba(25,227,255,0.2)}
+.voltra-landing .hero h1 .strike{position:relative;color:var(--muted);opacity:.65}
+.voltra-landing .hero h1 .strike::after{content:"";position:absolute;left:-2%;right:-2%;top:54%;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--orange),var(--gold));box-shadow:0 0 16px var(--orange);transform:scaleX(0);transform-origin:left;animation:strike .6s ease 4.9s forwards}
 @keyframes strike{to{transform:scaleX(1)}}
-.voltra-landing .hero p.sub{font-size:1.16rem;color:#b6c5e0;max-width:520px;margin:24px 0 0}
+.voltra-landing .hero p.sub{font-size:1.1rem;color:#b6c5e0;max-width:520px;margin:26px 0 0;line-height:1.65;font-family:'DM Sans',sans-serif}
 .voltra-landing .hero p.sub b{color:var(--ink);font-weight:600}
-.voltra-landing .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
-.voltra-landing .hero-badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
-.voltra-landing .hero-badges span{font-family:'Chakra Petch';font-size:.74rem;letter-spacing:.04em;color:#bcd0ea;padding:8px 14px;border-radius:30px;
-  border:1px solid var(--line);background:rgba(25,227,255,.05);display:inline-flex;align-items:center;gap:8px}
-.voltra-landing .hero-badges span i{width:7px;height:7px;border-radius:50%;background:var(--energy);box-shadow:0 0 8px var(--energy)}
+.voltra-landing .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+.voltra-landing .hero-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.voltra-landing .hero-badges span{font-family:'Chakra Petch';font-size:.72rem;letter-spacing:.05em;color:#bcd0ea;padding:7px 13px;border-radius:30px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);display:inline-flex;align-items:center;gap:8px}
+.voltra-landing .hero-badges span i{width:6px;height:6px;border-radius:50%;background:var(--energy);box-shadow:0 0 8px var(--energy)}
+
+/* Hero glow orb */
+.voltra-landing .hero-orb{position:absolute;top:50%;left:60%;width:500px;height:500px;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(25,227,255,.06) 0%,rgba(25,227,255,.02) 40%,transparent 70%);
+  animation:orbPulse 5s ease-in-out infinite;pointer-events:none;z-index:1}
+@keyframes orbPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.6}50%{transform:translate(-50%,-50%) scale(1.15);opacity:1}}
 
 .voltra-landing .scene{position:relative;height:580px;z-index:3}
 .voltra-landing .scene .layer{position:absolute;inset:0;will-change:transform}

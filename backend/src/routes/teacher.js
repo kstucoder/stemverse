@@ -5,6 +5,26 @@ import crypto from 'crypto';
 
 const router = Router();
 router.use(authenticate);
+
+// Join classroom via invite code — accessible to ALL authenticated users (students included)
+router.post('/join', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Invite code required' });
+    const classroom = await prisma.classroom.findUnique({ where: { inviteCode: code.trim().toUpperCase() } });
+    if (!classroom) return res.status(404).json({ error: 'Invalid invite code' });
+    const existing = await prisma.classroomStudent.findUnique({
+      where: { classroomId_studentId: { classroomId: classroom.id, studentId: req.user.id } },
+    });
+    if (existing) return res.status(409).json({ error: 'Already in this classroom' });
+    await prisma.classroomStudent.create({
+      data: { classroomId: classroom.id, studentId: req.user.id },
+    });
+    res.json({ success: true, classroom: { id: classroom.id, name: classroom.name } });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// All routes below require TEACHER or ADMIN role
 router.use(requireRole('TEACHER', 'ADMIN'));
 
 // Get teacher's classrooms
@@ -67,24 +87,6 @@ router.delete('/classrooms/:id', async (req, res) => {
     await prisma.classroomStudent.deleteMany({ where: { classroomId: req.params.id } });
     await prisma.classroom.delete({ where: { id: req.params.id } });
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// Join classroom via invite code
-router.post('/join', async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: 'Invite code required' });
-    const classroom = await prisma.classroom.findUnique({ where: { inviteCode: code.trim().toUpperCase() } });
-    if (!classroom) return res.status(404).json({ error: 'Invalid invite code' });
-    const existing = await prisma.classroomStudent.findUnique({
-      where: { classroomId_studentId: { classroomId: classroom.id, studentId: req.user.id } },
-    });
-    if (existing) return res.status(409).json({ error: 'Already in this classroom' });
-    await prisma.classroomStudent.create({
-      data: { classroomId: classroom.id, studentId: req.user.id },
-    });
-    res.json({ success: true, classroom: { id: classroom.id, name: classroom.name } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

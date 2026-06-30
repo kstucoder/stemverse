@@ -1,69 +1,158 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Zap, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Zap, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import toast from 'react-hot-toast';
 
 export default function Register() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm]     = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [showPw, setShowPw] = useState(false);
   const { register, loading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { toast.error('Parollar mos kelmadi'); return; }
-    if (form.password.length < 6) { toast.error('Parol kamida 6 belgidan iborat bo\'lishi kerak'); return; }
-    try { await register(form.name, form.email, form.password); toast.success('Hisob yaratildi! 🚀'); navigate('/dashboard'); }
-    catch (err) { toast.error(err.message); }
+    if (form.password.length < 6) { toast.error("Parol kamida 6 belgidan iborat bo'lishi kerak"); return; }
+    try {
+      await register(form.name, form.email, form.password);
+      toast.success('Hisob yaratildi!');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   const u = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  const fields = [
+    { key: 'name',            label: 'Ismingiz',        type: 'text',     icon: User,  placeholder: 'To\'liq ismingiz'      },
+    { key: 'email',           label: 'Email',           type: 'email',    icon: Mail,  placeholder: 'email@example.com'     },
+    { key: 'password',        label: 'Parol',           type: 'password', icon: Lock,  placeholder: 'Kamida 6 belgi'        },
+    { key: 'confirmPassword', label: 'Parolni takror',  type: 'password', icon: Lock,  placeholder: 'Parolni qayta kiriting' },
+  ];
+
   return (
-    <div className="min-h-screen bg-game-gradient flex items-center justify-center p-4">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-neon-pink/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/3 left-1/3 w-96 h-96 bg-neon-cyan/5 rounded-full blur-3xl" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'var(--bg-void)' }}
+    >
+      {/* Ambient glows */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '10%', right: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,238,255,0.05), transparent 70%)', filter: 'blur(50px)' }} />
+        <div style={{ position: 'absolute', bottom: '15%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,93,229,0.04), transparent 70%)', filter: 'blur(40px)' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0,238,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,238,255,0.02) 1px, transparent 1px)', backgroundSize: '56px 56px' }} />
       </div>
-      <div className="relative w-full max-w-md">
+
+      <div className="relative w-full max-w-md py-8">
+
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-brand-gradient flex items-center justify-center mx-auto mb-2"><Zap className="w-8 h-8 text-white" /></div>
-          <h1 className="font-game text-3xl text-white">STEM<span className="text-gradient">VERSE</span></h1>
-          <p className="text-dark-400 mt-2">Elektronika sarguzashtini boshlang!</p>
-        </div>
-        <div className="card-glow">
-          <h2 className="text-2xl font-game text-white mb-6">Hisob yaratish</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Ismingiz</label>
-              <div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="text" value={form.name} onChange={e => u('name', e.target.value)} placeholder="Ismingiz" className="input-field pl-10" required /></div>
+          <Link to="/" className="inline-flex flex-col items-center gap-3">
+            <div
+              style={{
+                width: 64, height: 64, borderRadius: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative',
+                background: 'linear-gradient(145deg, #0b3a4a, #04202e)',
+                border: '2px solid rgba(0,238,255,0.4)',
+                boxShadow: '0 0 32px rgba(0,238,255,0.25)',
+              }}
+            >
+              <div style={{ position: 'absolute', inset: 12, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,238,255,0.6), transparent 70%)' }} />
+              <Zap className="w-7 h-7 text-white relative z-10" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Email</label>
-              <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="email" value={form.email} onChange={e => u('email', e.target.value)} placeholder="email@example.com" className="input-field pl-10" required /></div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Parol</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => u('password', e.target.value)} placeholder="Kamida 6 belgi" className="input-field pl-10 pr-10" required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+              <div style={{ fontFamily: 'Orbitron, monospace', fontWeight: 800, fontSize: '1.4rem', letterSpacing: '0.1em', lineHeight: 1 }}>
+                <span className="text-white">STEM</span>
+                <span style={{ color: 'var(--cyan)', textShadow: '0 0 12px rgba(0,238,255,0.6)' }}>VERSE</span>
               </div>
+              <p style={{ color: 'var(--text-muted)', fontFamily: 'Chakra Petch, monospace', fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 4 }}>
+                Muhandis bo'lish vaqti keldi
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark-300 mb-1.5">Parolni takrorlang</label>
-              <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" /><input type="password" value={form.confirmPassword} onChange={e => u('confirmPassword', e.target.value)} placeholder="Parolni qayta kiriting" className="input-field pl-10" required /></div>
+          </Link>
+        </div>
+
+        {/* Card */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #080E1C, #0B1120)',
+            border: '1px solid rgba(0,238,255,0.12)',
+            borderRadius: 16,
+            padding: '2rem',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,238,255,0.04)',
+            position: 'relative',
+          }}
+        >
+          {/* Top glow line */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,105,32,0.3), transparent)', borderRadius: '16px 16px 0 0' }} />
+
+          <div style={{ marginBottom: '1.75rem' }}>
+            <h2 style={{ fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '1.3rem', letterSpacing: '0.05em', color: 'white', marginBottom: 6 }}>
+              Hisob yaratish
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem' }}>
+              Sarguzashtni boshlash uchun ro'yxatdan o'ting
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              {fields.map(({ key, label, type, icon: Icon, placeholder }) => (
+                <div key={key}>
+                  <label style={{ display: 'block', fontFamily: 'Chakra Petch, monospace', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(234,243,255,0.5)', marginBottom: 8 }}>
+                    {label}
+                  </label>
+                  <div className="relative">
+                    <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                    <input
+                      type={type === 'password' ? (showPw ? 'text' : 'password') : type}
+                      value={form[key]}
+                      onChange={e => u(key, e.target.value)}
+                      placeholder={placeholder}
+                      className="input-field"
+                      style={{ paddingLeft: '2.5rem', paddingRight: type === 'password' && key === 'password' ? '2.5rem' : undefined }}
+                      required
+                    />
+                    {key === 'password' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPw(!showPw)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full"
+                style={{ marginTop: 8 }}
+              >
+                {loading
+                  ? <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Yaratilmoqda...</>
+                  : 'Hisob yaratish →'
+                }
+              </button>
             </div>
-            <button type="submit" disabled={loading} className="btn-neon w-full flex items-center justify-center gap-2">
-              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-              {loading ? 'Yaratilmoqda...' : 'Hisob yaratish'}
-            </button>
           </form>
-          <div className="mt-6 text-center">
-            <p className="text-dark-400">Hisobingiz bormi? <Link to="/auth/login" className="text-brand-400 hover:text-brand-300 font-semibold">Kirish</Link></p>
+
+          <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid rgba(0,238,255,0.06)', paddingTop: '1.25rem' }}>
+            <span style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem' }}>
+              Hisobingiz bormi?{' '}
+            </span>
+            <Link
+              to="/auth/login"
+              style={{ color: 'var(--cyan)', fontFamily: 'Chakra Petch, monospace', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.04em' }}
+            >
+              Kirish
+            </Link>
           </div>
         </div>
       </div>

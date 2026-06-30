@@ -152,6 +152,25 @@ const useGameStore = create((set, get) => ({
 
   resetCombo: () => set({ combo: 0 }),
   getComboMultiplier: () => Math.floor((get().combo || 0) / 5) + 1,
+
+  // Universal progress reporter — game components call this to trigger win checks
+  // for non-sensor-driven conditions (cycles, dances, distance, time, targets)
+  reportProgress: (type, value) => {
+    const state = get();
+    const { winConditions, onWin, gameActive } = state;
+    if (!winConditions || !onWin || !gameActive) return;
+    if (winConditions.type !== type) return;
+
+    let won = false;
+    const needed = winConditions.count ?? winConditions.value ?? 1;
+    if (value >= needed) won = true;
+
+    if (won) {
+      set({ gameActive: false });
+      playWin();
+      onWin(state.score);
+    }
+  },
 }));
 
 export default useGameStore;
