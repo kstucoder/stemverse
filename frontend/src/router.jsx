@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import ProtectedRoute from './components/ProtectedRoute';
-import Landing from './pages/Landing';
+import VoltraLanding from './pages/VoltraLanding';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -23,7 +23,7 @@ const router = createBrowserRouter([
     path: '/',
     element: <App />,
     children: [
-      { index: true, element: <Landing /> },
+      { index: true, element: <VoltraLanding /> },
       { path: 'auth/login', element: <Login /> },
       { path: 'auth/register', element: <Register /> },
       { path: 'auth/forgot-password', element: <ForgotPassword /> },
