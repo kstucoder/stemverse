@@ -1,4 +1,4 @@
-# STEMVERSE — 20 Games Design Document
+# VOLTRA — 20 Games Design Document
 
 ## Philosophy
 Each game must be:

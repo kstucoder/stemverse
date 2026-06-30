@@ -90,7 +90,7 @@ export default function KitActivation() {
                 KITni Aktivlashtirish
               </h1>
               <p style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem', lineHeight: 1.55 }}>
-                STEMVERSE to'plam qutisidagi kodni kiriting va missiyalarni oching
+                VOLTRA to'plam qutisidagi kodni kiriting va missiyalarni oching
               </p>
             </div>
 
@@ -136,7 +136,7 @@ export default function KitActivation() {
                     onBlur={e  => { e.target.style.borderColor = 'rgba(255,196,0,0.15)'; e.target.style.boxShadow = 'none'; }}
                   />
                   <p style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', marginTop: 8, textAlign: 'center' }}>
-                    STEMVERSE to'plam qutisi ichidagi stikerda topishingiz mumkin
+                    VOLTRA to'plam qutisi ichidagi stikerda topishingiz mumkin
                   </p>
                 </div>
 

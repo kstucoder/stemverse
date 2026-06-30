@@ -29,13 +29,25 @@ export default function HowItWorks() {
           </div>
         </div>
         <div className="usb-strip reveal">
-          <span className="node">🧩 Haqiqiy plata</span>
+          <span className="node">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>
+            Haqiqiy plata
+          </span>
           <span className="wire"></span>
-          <span className="node">🔌 USB kabel</span>
+          <span className="node">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 2v6m0 0 3-3m-3 3-3-3"/><rect x="5" y="8" width="14" height="8" rx="1"/><path d="M8 16v3m4-3v3m4-3v3"/></svg>
+            USB kabel
+          </span>
           <span className="wire"></span>
-          <span className="node">💻 Kompyuter</span>
+          <span className="node">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Kompyuter
+          </span>
           <span className="wire"></span>
-          <span className="node" style={{ borderColor: 'var(--energy)', color: '#fff' }}>🎮 Missiya jonli javob beradi</span>
+          <span className="node" style={{ borderColor: 'var(--energy)', color: '#fff' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--energy)" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Missiya jonli javob beradi
+          </span>
         </div>
       </div>
     </section>

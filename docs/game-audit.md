@@ -1,4 +1,4 @@
-# STEMVERSE — Game Design Audit & Recommendations
+# VOLTRA — Game Design Audit & Recommendations
 
 ## Role: Lead Game Engineer + Sales Strategist
 
@@ -7,7 +7,7 @@
 ## 1. MARKET ANALYSIS (Sales Perspective)
 
 ### Target Pain Points
-| Customer | Pain Point | How STEMVERSE Solves It |
+| Customer | Pain Point | How VOLTRA Solves It |
 |----------|------------|------------------------|
 | Parent | "Bolam telefon o'yinlaridan boshqa narsa qilmaydi" | Real hardware + virtual game — learning disguised as play |
 | School | "Arduino kurslari zerikarli" | Each lesson is a story where student is the hero |

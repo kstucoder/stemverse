@@ -7,7 +7,7 @@ export default function MissionsSection() {
   return (
     <section className="section-pad" id="missions">
       <div className="wrap head">
-        <div><span className="eyebrow">🔥 Missiyalar kutubxonasi</span><h2>Missiyangni tanla</h2></div>
+        <div><span className="eyebrow">Missiyalar kutubxonasi</span><h2>Missiyangni tanla</h2></div>
         <a href="#" className="link">Barcha 100 tasi →</a>
       </div>
       <div className="rail-wrap">

@@ -418,7 +418,7 @@ const stories = {
     mission: 'ESP32 va Firebase bilan aqlli uyni sozlang. Energiya sarfini optimallashtiring!',
     problem: '🏠 Uy aqlli emas',
     solution: '🔧 ESP32 → Firebase bilan boshqarish',
-    climax: 'Aqlli uy to\'liq ishga tushdi! Sen — STEMVERSE chempionisan!',
+    climax: 'Aqlli uy to\'liq ishga tushdi! Sen — VOLTRA chempionisan!',
   },
 };
 

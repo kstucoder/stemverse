@@ -14,7 +14,7 @@ router.post('/activate', authenticate, async (req, res) => {
     if (existingKit) return res.status(409).json({ error: 'You already have a kit' });
     await prisma.$transaction([
       prisma.activationCode.update({ where: { id: ac.id }, data: { used: true, usedById: req.user.id, usedAt: new Date() } }),
-      prisma.kit.create({ data: { activationCode: ac.code, name: 'STEMVERSE Kit', userId: req.user.id, activatedAt: new Date() } }),
+      prisma.kit.create({ data: { activationCode: ac.code, name: 'VOLTRA Kit', userId: req.user.id, activatedAt: new Date() } }),
     ]);
     await prisma.user.update({ where: { id: req.user.id }, data: { xp: { increment: 50 } } });
     res.json({ success: true, xpEarned: 50 });

@@ -11,7 +11,7 @@ import teacherRoutes from './routes/teacher.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://stemverse-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://stemverse-dusky.vercel.app', process.env.FRONTEND_URL || '*'].filter(Boolean),
+  origin: ['http://localhost:5173', 'https://voltra-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://voltra-dusky.vercel.app', process.env.FRONTEND_URL || '*'].filter(Boolean),
   credentials: true,
 }));
 app.use(express.json());
@@ -36,16 +36,16 @@ app.post('/api/seed', async (req, res) => {
 
     // Users
     const ap = await bcrypt.hash('admin123', 12);
-    await prisma.user.upsert({ where: { email: 'admin@stemverse.io' }, update: {}, create: { name: 'Admin', email: 'admin@stemverse.io', password: ap, role: 'ADMIN', xp: 9999, level: 50 } });
+    await prisma.user.upsert({ where: { email: 'admin@voltra.io' }, update: {}, create: { name: 'Admin', email: 'admin@voltra.io', password: ap, role: 'ADMIN', xp: 9999, level: 50 } });
     const sp = await bcrypt.hash('student123', 12);
-    await prisma.user.upsert({ where: { email: 'student@stemverse.io' }, update: {}, create: { name: 'Demo Student', email: 'student@stemverse.io', password: sp, role: 'STUDENT', xp: 150, level: 1 } });
+    await prisma.user.upsert({ where: { email: 'student@voltra.io' }, update: {}, create: { name: 'Demo Student', email: 'student@voltra.io', password: sp, role: 'STUDENT', xp: 150, level: 1 } });
     const tp = await bcrypt.hash('teacher123', 12);
-    await prisma.user.upsert({ where: { email: 'teacher@stemverse.io' }, update: {}, create: { name: 'Ms. Karimova', email: 'teacher@stemverse.io', password: tp, role: 'TEACHER', xp: 0, level: 1 } });
+    await prisma.user.upsert({ where: { email: 'teacher@voltra.io' }, update: {}, create: { name: 'Ms. Karimova', email: 'teacher@voltra.io', password: tp, role: 'TEACHER', xp: 0, level: 1 } });
     
     // Reset demo student XP
-    await prisma.user.update({ where: { email: 'student@stemverse.io' }, data: { xp: 0, level: 1 } });
+    await prisma.user.update({ where: { email: 'student@voltra.io' }, data: { xp: 0, level: 1 } });
     // Clear old progress and achievements
-    const student = await prisma.user.findUnique({ where: { email: 'student@stemverse.io' } });
+    const student = await prisma.user.findUnique({ where: { email: 'student@voltra.io' } });
     if (student) {
       await prisma.userProgress.deleteMany({ where: { userId: student.id } });
       await prisma.userAchievement.deleteMany({ where: { userId: student.id } });
@@ -60,7 +60,7 @@ app.post('/api/seed', async (req, res) => {
     const achievements = [
       { id: 'first_circuit', title: "Birinchi Sxema", description: "Birinchi darsni tugating", icon: '\uD83D\uDD0C', xpReward: 50, condition: { type: 'first_lesson' } },
       { id: 'led_master', title: "LED Ustasi", description: '3 ta LED darsini tugating', icon: '\uD83D\uDCA1', xpReward: 100, condition: { type: 'lessons_completed', count: 3 } },
-      { id: 'kit_activated', title: "To'plam Faollashtirildi", description: "STEMVERSE to'plamini faollashtiring", icon: '\uD83C\uDFAE', xpReward: 50, condition: { type: 'kit_activated' } },
+      { id: 'kit_activated', title: "To'plam Faollashtirildi", description: "VOLTRA to'plamini faollashtiring", icon: '\uD83C\uDFAE', xpReward: 50, condition: { type: 'kit_activated' } },
       { id: 'sensor_expert', title: "Sensor Mutaxassisi", description: '5 ta sensor darsini tugating', icon: '\uD83D\uDCE1', xpReward: 150, condition: { type: 'lessons_completed', count: 5 } },
       { id: 'speed_demon', title: "Tezlik Demon", description: "Tezlik Poygasi darsini tugating", icon: '\uD83C\uDFC3', xpReward: 100, condition: { type: 'lessons_completed', count: 6 } },
       { id: 'music_maestro', title: "Musiqa Ustasi", description: "Musiqa komponentlari bilan o'ynang", icon: '\uD83C\uDFB5', xpReward: 100, condition: { type: 'lessons_completed', count: 7 } },
@@ -102,6 +102,6 @@ app.post('/api/seed', async (req, res) => {
 });
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Server error' }); });
 if (process.env.NODE_ENV !== 'vercel') {
-  app.listen(PORT, () => console.log('STEMVERSE API on http://localhost:' + PORT));
+  app.listen(PORT, () => console.log('VOLTRA API on http://localhost:' + PORT));
 }
 export default app;

@@ -1,6 +1,40 @@
 import { Link } from 'react-router-dom';
 import PosterSvg from './PosterSvg';
 
+// Inline SVG helpers — no emoji, no external deps
+const IcoCart = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+);
+const IcoPlay = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M5 3l14 9-14 9V3z"/>
+  </svg>
+);
+const IcoVideo = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="7" width="15" height="10" rx="2"/>
+    <path d="m17 9 5-3v12l-5-3V9z"/>
+  </svg>
+);
+const IcoStar = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" stroke="var(--gold)" strokeWidth="1" aria-hidden="true">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+  </svg>
+);
+const IcoReturn = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+  </svg>
+);
+const IcoTruck = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+
 export default function HeroSection({ sceneRef }) {
   return (
     <section className="hero" id="top">
@@ -38,25 +72,22 @@ export default function HeroSection({ sceneRef }) {
           {/* CTAs */}
           <div className="hero-cta">
             <button className="btn btn-amber" data-buy>
-              <span className="ico">🛒</span>
-              To'plamni olish — $49
+              <IcoCart /> To'plamni olish — $49
             </button>
             <Link to="/auth/register" className="btn btn-primary">
-              <span className="ico">▶</span>
-              Sarguzashtni boshlash
+              <IcoPlay /> Sarguzashtni boshlash
             </Link>
             <button className="btn btn-ghost">
-              <span className="ico">🎥</span>
-              Treyler
+              <IcoVideo /> Treyler
             </button>
           </div>
 
           {/* Trust pills */}
           <div className="hero-trust">
-            <span className="t-pill"><b>★ 4.9</b> ota-ona bahosi</span>
+            <span className="t-pill"><IcoStar /> <b>4.9</b> ota-ona bahosi</span>
             <span className="t-pill">20 ta o'yin missiyasi</span>
-            <span className="t-pill">↩ 30 kun qaytarish</span>
-            <span className="t-pill">🚚 Bepul yetkazish</span>
+            <span className="t-pill"><IcoReturn /> 30 kun qaytarish</span>
+            <span className="t-pill"><IcoTruck /> Bepul yetkazish</span>
           </div>
 
           {/* Feature badges */}

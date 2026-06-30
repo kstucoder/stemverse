@@ -24,23 +24,29 @@ export default function CommunitySection() {
                 <h3>{p.title}</h3>
                 <div className="by">{p.by}</div>
                 <div className="cproj-foot">
-                  <button onClick={(e) => {
-                    const btn = e.currentTarget;
-                    const count = btn.querySelector('.c');
-                    const heart = btn.querySelector('span:first-child');
-                    btn.classList.toggle('liked');
-                    if (btn.classList.contains('liked')) {
-                      count.textContent = +count.textContent + 1;
-                      heart.textContent = '♥';
-                    } else {
-                      count.textContent = +count.textContent - 1;
-                      heart.textContent = '♡';
-                    }
-                  }}>
-                    <span>♡</span> <span className="c">{p.likes}</span>
+                  <button
+                    aria-label={`Yoqtirish — ${p.likes}`}
+                    onClick={(e) => {
+                      const btn = e.currentTarget;
+                      const count = btn.querySelector('.c');
+                      btn.classList.toggle('liked');
+                      count.textContent = btn.classList.contains('liked')
+                        ? +count.textContent + 1
+                        : +count.textContent - 1;
+                      btn.setAttribute('aria-label', `Yoqtirish — ${count.textContent}`);
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span className="c">{p.likes}</span>
                   </button>
-                  <button>💬 {p.comments}</button>
-                  <span style={{ marginLeft: 'auto' }}>⚡ {p.cat}</span>
+                  <button aria-label={`Izohlar — ${p.comments}`}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    {p.comments}
+                  </button>
+                  <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--energy)" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    {p.cat}
+                  </span>
                 </div>
               </div>
             </article>

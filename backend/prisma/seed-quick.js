@@ -6,11 +6,11 @@ async function main() {
   console.log('Quick seeding...');
   // Create users
   const ap = await bcrypt.hash('admin123', 12);
-  await prisma.user.upsert({ where: { email: 'admin@stemverse.io' }, update: {}, create: { name: 'Admin', email: 'admin@stemverse.io', password: ap, role: 'ADMIN', xp: 9999, level: 50 } });
+  await prisma.user.upsert({ where: { email: 'admin@voltra.io' }, update: {}, create: { name: 'Admin', email: 'admin@voltra.io', password: ap, role: 'ADMIN', xp: 9999, level: 50 } });
   const sp = await bcrypt.hash('student123', 12);
-  await prisma.user.upsert({ where: { email: 'student@stemverse.io' }, update: {}, create: { name: 'Demo Student', email: 'student@stemverse.io', password: sp, role: 'STUDENT', xp: 150, level: 1 } });
+  await prisma.user.upsert({ where: { email: 'student@voltra.io' }, update: {}, create: { name: 'Demo Student', email: 'student@voltra.io', password: sp, role: 'STUDENT', xp: 150, level: 1 } });
   const tp = await bcrypt.hash('teacher123', 12);
-  await prisma.user.upsert({ where: { email: 'teacher@stemverse.io' }, update: {}, create: { name: 'Ms. Karimova', email: 'teacher@stemverse.io', password: tp, role: 'TEACHER', xp: 0, level: 1 } });
+  await prisma.user.upsert({ where: { email: 'teacher@voltra.io' }, update: {}, create: { name: 'Ms. Karimova', email: 'teacher@voltra.io', password: tp, role: 'TEACHER', xp: 0, level: 1 } });
   console.log('✓ Users');
   
   // Create 3 sample lessons
@@ -27,7 +27,7 @@ async function main() {
   // Create achievements
   const achievements = [
     { id: 'first_circuit', title: 'First Circuit', description: 'Complete your first lesson', icon: '🔌', xpReward: 50, condition: { type: 'first_lesson' } },
-    { id: 'kit_activated', title: 'Kit Activated', description: 'Activate your STEMVERSE kit', icon: '🎮', xpReward: 50, condition: { type: 'kit_activated' } },
+    { id: 'kit_activated', title: 'Kit Activated', description: 'Activate your VOLTRA kit', icon: '🎮', xpReward: 50, condition: { type: 'kit_activated' } },
   ];
   for (const a of achievements) {
     await prisma.achievement.upsert({ where: { id: a.id }, update: {}, create: a });

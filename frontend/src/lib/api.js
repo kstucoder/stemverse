@@ -8,7 +8,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('stemverse_token');
+  const token = localStorage.getItem('voltra_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -17,8 +17,8 @@ api.interceptors.response.use(
   (r) => r,
   (e) => {
     if (e.response?.status === 401) {
-      localStorage.removeItem('stemverse_token');
-      localStorage.removeItem('stemverse_user');
+      localStorage.removeItem('voltra_token');
+      localStorage.removeItem('voltra_user');
       if (window.location.pathname !== '/auth/login') window.location.href = '/auth/login';
     }
     return Promise.reject(e);

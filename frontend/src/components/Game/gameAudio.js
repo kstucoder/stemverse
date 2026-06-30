@@ -1,4 +1,4 @@
-// Web Audio API sound effects — premium audio feedback for STEMVERSE games
+// Web Audio API sound effects — premium audio feedback for VOLTRA games
 let audioCtx = null;
 
 function getContext() {

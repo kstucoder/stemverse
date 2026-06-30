@@ -58,8 +58,8 @@ export default function Login() {
               <div
                 style={{ fontFamily: 'Orbitron, monospace', fontWeight: 800, fontSize: '1.4rem', letterSpacing: '0.1em', lineHeight: 1 }}
               >
-                <span className="text-white">STEM</span>
-                <span style={{ color: 'var(--cyan)', textShadow: '0 0 12px rgba(0,238,255,0.6)' }}>VERSE</span>
+                <span className="text-white">VOL</span>
+                <span style={{ color: 'var(--cyan)', textShadow: '0 0 12px rgba(0,238,255,0.6)' }}>TRA</span>
               </div>
               <p style={{ color: 'var(--text-muted)', fontFamily: 'Chakra Petch, monospace', fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 4 }}>
                 Yasang · Ulang · O'rganing
@@ -187,7 +187,7 @@ export default function Login() {
           style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(0,238,255,0.04)', border: '1px solid rgba(0,238,255,0.08)', textAlign: 'center' }}
         >
           <span style={{ fontFamily: 'Chakra Petch, monospace', fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Demo: student@stemverse.io / student123
+            Demo: student@voltra.io / student123
           </span>
         </div>
       </div>

@@ -1,4 +1,4 @@
-# STEMVERSE — 20 DUNYO, 20 QAHROMON, 20 YECHIM
+# VOLTRA — 20 DUNYO, 20 QAHROMON, 20 YECHIM
 
 > Har bir dars — bu siz bosh qahramon bo'lgan bir hikoya.
 > Dunyoda muammo yuz beradi. Uni faqat siz hal qila olasiz.
@@ -458,7 +458,7 @@ Firebase orqali uyni boshqarasiz. LED ni internet orqali yoqasiz. ESP32 buyruqni
 
 Energiya sarfi optimal. Harorat mukammal. **Aqlli uy to'liq ishga tushdi.**
 
-**Siz — STEMVERSE chempionisiz! 🏆**
+**Siz — VOLTRA chempionisiz! 🏆**
 
 ---
 
@@ -475,7 +475,7 @@ BOSH:       Siz oddiy o'quvchi edingiz...
 ↓
 18-20:      Internet + bulut texnologiyalarini o'rgandingiz
 ↓
-YAKUN:      Siz — STEMVERSE muhandisisiz!
+YAKUN:      Siz — VOLTRA muhandisisiz!
 ```
 
 Har bir darsda:
@@ -485,4 +485,4 @@ Har bir darsda:
 4. **Kulminatsiya** — sizning qurilmangiz muammoni hal qiladi
 5. **Siz qahramonsiz** — dunyo saqlab qolindi
 
-> **STEMVERSE**: Learning by being a hero. 🦸
+> **VOLTRA**: Learning by being a hero. 🦸
