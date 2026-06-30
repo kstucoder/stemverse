@@ -4,7 +4,11 @@ import Header from './components/Header';
 
 export default function App() {
   const location = useLocation();
-  const isAuthPage = location.pathname.startsWith('/auth') || location.pathname === '/';
+  const isLanding = location.pathname === '/';
+  const isAuthPage = location.pathname.startsWith('/auth');
+
+  // Landing sahifa (VOLTRA) — hech qanday wrapper, to'liq mustaqil
+  if (isLanding) return <Outlet />;
 
   return (
     <div className="min-h-screen bg-dark-900">
