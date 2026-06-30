@@ -53,16 +53,20 @@ app.post('/api/seed', async (req, res) => {
       await prisma.activationCode.upsert({ where: { code: 'SV-DEMO-' + String(i).padStart(3, '0') }, update: {}, create: { code: 'SV-DEMO-' + String(i).padStart(3, '0') } });
     }
 
-    // Achievements (Uzbek)
+    // Achievements (Uzbek) — title va description doim yangilanadi
     const achievements = [
       { id: 'first_circuit', title: "Birinchi Sxema", description: "Birinchi darsni tugating", icon: '\uD83D\uDD0C', xpReward: 50, condition: { type: 'first_lesson' } },
       { id: 'led_master', title: "LED Ustasi", description: '3 ta LED darsini tugating', icon: '\uD83D\uDCA1', xpReward: 100, condition: { type: 'lessons_completed', count: 3 } },
-      { id: 'kit_activated', title: "Kit Faollashtirildi", description: 'STEMVERSE kitini faollashtiring', icon: '\uD83C\uDFAE', xpReward: 50, condition: { type: 'kit_activated' } },
+      { id: 'kit_activated', title: "To'plam Faollashtirildi", description: "STEMVERSE to'plamini faollashtiring", icon: '\uD83C\uDFAE', xpReward: 50, condition: { type: 'kit_activated' } },
       { id: 'sensor_expert', title: "Sensor Mutaxassisi", description: '5 ta sensor darsini tugating', icon: '\uD83D\uDCE1', xpReward: 150, condition: { type: 'lessons_completed', count: 5 } },
+      { id: 'speed_demon', title: "Tezlik Demon", description: "Tezlik Poygasi darsini tugating", icon: '\uD83C\uDFC3', xpReward: 100, condition: { type: 'lessons_completed', count: 6 } },
+      { id: 'music_maestro', title: "Musiqa Ustasi", description: "Musiqa komponentlari bilan o'ynang", icon: '\uD83C\uDFB5', xpReward: 100, condition: { type: 'lessons_completed', count: 7 } },
+      { id: 'robot_builder', title: "Robot Quruvchi", description: "Robot Qo'l darsini tugating", icon: '\uD83E\uDDBE', xpReward: 150, condition: { type: 'lessons_completed', count: 11 } },
       { id: 'xp_collector', title: "XP Yig'uvchi", description: "500 XP to'plang", icon: '\uD83C\uDFC6', xpReward: 250, condition: { type: 'xp_reached', xp: 500 } },
+      { id: 'engineer_5', title: "Muhandis 5-daraja", description: "5-darajaga yeting", icon: '\u2B50', xpReward: 200, condition: { type: 'xp_reached', xp: 1000 } },
       { id: 'master_engineer', title: "Bosh Muhandis", description: 'Barcha 20 darsni tugating', icon: '\uD83D\uDC51', xpReward: 500, condition: { type: 'lessons_completed', count: 20 } },
     ];
-    for (const a of achievements) { await prisma.achievement.upsert({ where: { id: a.id }, update: {}, create: a }); }
+    for (const a of achievements) { await prisma.achievement.upsert({ where: { id: a.id }, update: { title: a.title, description: a.description, icon: a.icon }, create: a }); }
 
     // Lessons (Uzbek)
     const lessons = [
