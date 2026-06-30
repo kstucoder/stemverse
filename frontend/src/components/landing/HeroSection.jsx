@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import PosterSvg from './PosterSvg';
 
 // Inline SVG helpers — no emoji, no external deps
 const IcoCart = () => (

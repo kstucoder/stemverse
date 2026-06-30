@@ -31,8 +31,8 @@ export default function HowItWorks() {
         {/* Kit exploded view — "what's inside" visual */}
         <div className="kit-showcase reveal">
           <img
-            src="/images/kit-exploded.jpeg"
-            alt="VOLTRA to'plami ichidagi barcha komponentlar — Arduino, sensorlar, LED, servo, breadboard"
+            src="/images/kit-flatlay.jpeg"
+            alt="VOLTRA to'plami komponentlari yoyib ko'rsatilgan — Arduino, LED, sensor, servo, breadboard"
             className="kit-showcase-img"
           />
           <div className="kit-showcase-caption">
