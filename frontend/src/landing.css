@@ -221,7 +221,7 @@
 
 /* ---------- MISSION RAIL ---------- */
 .voltra-landing .rail-wrap{max-width:var(--maxw);margin:0 auto;position:relative}
-.voltra-landing .rail{display:flex;gap:20px;overflow-x:auto;padding:8px 28px 26px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.voltra-landing .rail{display:flex;gap:20px;overflow-x:auto;padding:24px 28px 26px;scroll-snap-type:x mandatory;scrollbar-width:none}
 .voltra-landing .rail::-webkit-scrollbar{display:none}
 .voltra-landing .mcard{flex:0 0 clamp(290px,31vw,440px);scroll-snap-align:start;position:relative;aspect-ratio:16/9;border-radius:18px;overflow:hidden;
   cursor:pointer;border:1px solid var(--line-soft);background:var(--panel);transition:transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .4s,border-color .4s}
