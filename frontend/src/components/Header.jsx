@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Zap, User, LogOut, Trophy, BookOpen, LayoutDashboard, Menu, X, Cpu, School } from 'lucide-react';
+import { Zap, User, LogOut, Trophy, BookOpen, LayoutDashboard, Menu, X, School, ShoppingCart, Key } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import { useState } from 'react';
 
@@ -13,13 +13,20 @@ export default function Header() {
 
   const handleLogout = () => { logout(); navigate('/auth/login'); };
 
-  const navItems = [
-    { to: '/dashboard',   icon: LayoutDashboard, label: 'Bosh sahifa' },
-    { to: '/lessons',     icon: BookOpen,         label: 'Missiyalar'   },
-    { to: '/achievements',icon: Trophy,           label: 'Yutuqlar'     },
-  ];
-  if (user.role === 'ADMIN')
-    navItems.push({ to: '/admin', icon: Cpu, label: 'Admin' });
+  const isAdmin = user.role === 'ADMIN';
+
+  const navItems = isAdmin
+    ? [
+        { to: '/admin', icon: LayoutDashboard, label: 'Panel' },
+        { to: '/admin/orders', icon: ShoppingCart, label: 'Buyurtmalar' },
+        { to: '/admin/lessons', icon: BookOpen, label: 'Darslar' },
+        { to: '/admin/codes', icon: Key, label: 'Kodlar' },
+      ]
+    : [
+        { to: '/dashboard',   icon: LayoutDashboard, label: 'Bosh sahifa' },
+        { to: '/lessons',     icon: BookOpen,         label: 'Missiyalar'   },
+        { to: '/achievements',icon: Trophy,           label: 'Yutuqlar'     },
+      ];
   if (user.role === 'TEACHER' || user.role === 'ADMIN')
     navItems.push({ to: '/teacher', icon: School, label: "O'qituvchi" });
 
@@ -85,29 +92,31 @@ export default function Header() {
           {/* Right side */}
           <div className="flex items-center gap-2 ml-auto">
 
-            {/* XP / Level pill — desktop */}
-            <div
-              className="hidden sm:flex flex-col items-end pr-3 border-r"
-              style={{ borderColor: 'rgba(0,238,255,0.08)' }}
-            >
-              <div className="flex items-center gap-2 mb-0.5">
-                <span
-                  className="font-ui text-xs font-semibold tracking-widest uppercase"
-                  style={{ color: 'var(--cyan)', fontFamily: 'Chakra Petch, monospace' }}
-                >
-                  LV.{user.level}
-                </span>
-                <span
-                  className="font-ui text-xs font-semibold tracking-widest uppercase"
-                  style={{ color: '#00FF88', fontFamily: 'Chakra Petch, monospace' }}
-                >
-                  {user.xp} XP
-                </span>
+            {/* XP / Level pill — desktop (faqat student/teacher) */}
+            {!isAdmin && (
+              <div
+                className="hidden sm:flex flex-col items-end pr-3 border-r"
+                style={{ borderColor: 'rgba(0,238,255,0.08)' }}
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span
+                    className="font-ui text-xs font-semibold tracking-widest uppercase"
+                    style={{ color: 'var(--cyan)', fontFamily: 'Chakra Petch, monospace' }}
+                  >
+                    LV.{user.level}
+                  </span>
+                  <span
+                    className="font-ui text-xs font-semibold tracking-widest uppercase"
+                    style={{ color: '#00FF88', fontFamily: 'Chakra Petch, monospace' }}
+                  >
+                    {user.xp} XP
+                  </span>
+                </div>
+                <div className="xp-bar w-24">
+                  <div className="xp-bar-fill" style={{ width: `${levelProgress}%` }} />
+                </div>
               </div>
-              <div className="xp-bar w-24">
-                <div className="xp-bar-fill" style={{ width: `${levelProgress}%` }} />
-              </div>
-            </div>
+            )}
 
             {/* Avatar */}
             <Link
@@ -200,15 +209,17 @@ export default function Header() {
               style={{ color: 'rgba(234,243,255,0.5)' }}
             >
               <User className="w-4 h-4" />
-              <div>
-                <div className="text-white text-sm font-semibold" style={{ fontFamily: 'DM Sans' }}>{user.name}</div>
-                <div
-                  className="text-xs mt-0.5"
-                  style={{ color: 'var(--cyan)', fontFamily: 'Chakra Petch, monospace' }}
-                >
-                  Lv.{user.level} · {user.xp} XP
-                </div>
-              </div>
+                  <div>
+                    <div className="text-white text-sm font-semibold" style={{ fontFamily: 'DM Sans' }}>{user.name}</div>
+                    {!isAdmin && (
+                      <div
+                        className="text-xs mt-0.5"
+                        style={{ color: 'var(--cyan)', fontFamily: 'Chakra Petch, monospace' }}
+                      >
+                        Lv.{user.level} · {user.xp} XP
+                      </div>
+                    )}
+                  </div>
             </Link>
 
             <button
