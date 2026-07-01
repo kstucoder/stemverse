@@ -100,27 +100,24 @@ export default function HeroSection({ sceneRef }) {
         {/* ─── Scene ─── */}
         <div className="scene" id="scene" ref={sceneRef}>
 
-          {/* Main hero visual: product box photo fills the scene */}
+          {/* Kit box photo — fades into page at edges */}
           <div className="hero-product-visual">
             <img
               src="/images/kit-box.jpeg"
               alt="VOLTRA Arduino STEM to'plami"
               className="hero-kit-main"
             />
+            {/* Edge fades: blends photo into dark page background */}
+            <div className="hero-kit-fade" />
           </div>
 
-          {/* Bottom card: label + CTA */}
+          {/* Label + CTA overlaid at bottom */}
           <div className="hero-kit-card">
             <div className="kit-label">
               <b>VOLTRA to'plami</b>
               20+ interaktiv missiyani och
             </div>
             <Link to="/activate" className="kit-cta">Hozir faollashtir</Link>
-          </div>
-
-          {/* Mascot — small floating companion, bottom-left */}
-          <div className="hero-mascot" aria-hidden="true">
-            <img src="/images/mascot.jpeg" alt="" />
           </div>
         </div>
       </div>
