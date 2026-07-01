@@ -11,26 +11,13 @@ const cutsceneScenes = {
     stars: 50, buildings: { count: 12, maxW: 25, maxH: 55 },
     clouds: 2, rain: 100, road: true,
     lightning: { time: 2.5 }, shake: true, shakeTrigger: (e) => e > 2 && e < 2.3, shakeIntensity: 1,
-    phases: (e) => e < 2 ? 'calm' : e < 3.5 ? 'strike' : e < 5 ? 'blackout' : 'resolve',
+    phases: (e) => e < 2 ? 'calm' : e < 3.5 ? 'strike' : 'blackout',
     text: [
       { time: 0.8, text: '🌇 Energy City — tinch kech...', alpha: 0.8 },
       { time: 2.6, text: '⚡ YASHIN! ⚡', y: 120, size: '24px', alpha: 0.9 },
-      { time: 3.8, text: 'Chiroqlar o\'chdi...', alpha: 0.6 },
+      { time: 3.8, text: 'Chiroqlar o\'chdi...', alpha: 0.8 },
+      { time: 5.5, text: '"Electra, shaharni qutqar!"', y: 100, size: '20px', alpha: 0.9, color: '#FFD700' },
     ],
-    draw: (ctx, w, h, e, dt, phase) => {
-      if (phase === 'resolve') {
-        const a = Math.min(1, (e - 5) * 2);
-        ctx.fillStyle = `rgba(255,221,0,${a})`;
-        ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('"Electra, shaharni qutqar!"', w / 2, 55);
-        if (e > 5) {
-          const p = ((e - 5) * 2) % 1;
-          ctx.strokeStyle = `rgba(255,221,0,${0.15 * (1 - p)})`;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(w / 2, h / 2, 30 + p * 60, 0, Math.PI * 2); ctx.stroke();
-        }
-      }
-    },
   },
   traffic_light: {
     duration: 6, sky: (e, f) => ['#1a2a3a', '#0f1f2a', '#0a0a1a'],
