@@ -12,7 +12,19 @@ import orderRoutes from './routes/orders.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://stemverse-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://stemverse-dusky.vercel.app', 'https://voltra-dhq64y7ic-kstu-coders-projects.vercel.app', 'https://voltra-dusky.vercel.app', process.env.FRONTEND_URL || '*'].filter(Boolean),
+  origin: function (origin, cb) {
+    const allowed = [
+      'http://localhost:5173',
+      'https://stemverse-dhq64y7ic-kstu-coders-projects.vercel.app',
+      'https://stemverse-dusky.vercel.app',
+      'https://voltra-dhq64y7ic-kstu-coders-projects.vercel.app',
+      'https://voltra-dusky.vercel.app',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
+    if (!origin || allowed.includes(origin)) return cb(null, true);
+    // Allow any origin when credentials not required (fallback)
+    cb(null, { origin: true });
+  },
   credentials: true,
 }));
 app.use(express.json());
