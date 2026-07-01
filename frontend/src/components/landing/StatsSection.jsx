@@ -4,7 +4,7 @@ export default function StatsSection({ countersRef }) {
       <div className="wrap">
         <div className="stats-band">
           <div className="stat glass reveal">
-            <div className="num"><span data-to="100">0</span><span className="suf">+</span></div>
+            <div className="num"><span data-to="20">0</span></div>
             <div className="lbl">Interaktiv missiya</div>
           </div>
           <div className="stat glass reveal">

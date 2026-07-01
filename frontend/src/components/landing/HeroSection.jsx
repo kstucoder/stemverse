@@ -122,7 +122,7 @@ export default function HeroSection({ sceneRef }) {
           <div className="hero-kit-card">
             <div className="kit-label">
               <b>VOLTRA to'plami</b>
-              20+ interaktiv missiyani och
+              20 ta interaktiv missiyani och
             </div>
             <Link to="/activate" className="kit-cta">Hozir faollashtir</Link>
           </div>

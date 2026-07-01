@@ -13,7 +13,7 @@ export default function HardwareSection() {
             alt="VOLTRA to'plami ochiq — Arduino, sensorlar, LED, servo, breadboard va barcha komponentlar"
             className="hw-exploded-img"
           />
-          <div className="hw-note">+ jumperlar, tugmalar, rezistorlar, zummer va USB kabel — 100+ missiya uchun hammasi.</div>
+          <div className="hw-note">+ jumperlar, tugmalar, rezistorlar, zummer va USB kabel — barcha 20 missiya uchun hammasi.</div>
         </div>
       </div>
     </section>
