@@ -70,8 +70,8 @@ export default function Header() {
               className="hidden sm:block font-game text-base tracking-wider"
               style={{ fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '0.9rem' }}
             >
-              <span className="text-white">STEM</span>
-              <span style={{ color: 'var(--cyan)', textShadow: '0 0 8px rgba(0,238,255,0.6)' }}>VERSE</span>
+              <span className="text-white">VOL</span>
+              <span style={{ color: 'var(--cyan)', textShadow: '0 0 8px rgba(0,238,255,0.6)' }}>TRA</span>
             </span>
           </Link>
 
