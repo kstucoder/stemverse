@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 // SVG icons for each project type — no emoji
 const PrjIcons = {
   svetofor: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="2" fill="#ff5f5f" stroke="none"/><circle cx="12" cy="12" r="2" fill="#ffc400" stroke="none"/><circle cx="12" cy="17" r="2" fill="#4ade80" stroke="none"/></svg>,
@@ -29,16 +31,16 @@ export default function ProjectsSection() {
             <span className="eyebrow">Haqiqatda qur</span>
             <h2>Loyihalar ko'rgazmasi</h2>
           </div>
-          <a href="#" className="link">Barcha loyihalar →</a>
+          <Link to="/auth/register" className="link">Barcha loyihalar →</Link>
         </div>
         <div className="proj-grid">
           {projects.map((p, i) => (
-            <div key={i} className="prj reveal" style={{ '--reveal-delay': `${i * 60}ms` }}>
+            <Link to="/auth/register" key={i} className="prj reveal" style={{ '--reveal-delay': `${i * 60}ms` }}>
               <div className="prj-art" style={{ background: p.bg, color: p.color }}>
                 <span className="prj-ico">{PrjIcons[p.icon]}</span>
               </div>
               <div className="prj-body"><h3>{p.title}</h3><span>{p.tag}</span></div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

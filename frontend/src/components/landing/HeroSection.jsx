@@ -76,7 +76,7 @@ export default function HeroSection({ sceneRef }) {
             <Link to="/auth/register" className="btn btn-primary">
               <IcoPlay /> Sarguzashtni boshlash
             </Link>
-            <button className="btn btn-ghost">
+            <button className="btn btn-ghost" data-toast="🎬 Treyler tez orada!">
               <IcoVideo /> Treyler
             </button>
           </div>

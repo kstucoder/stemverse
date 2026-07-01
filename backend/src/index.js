@@ -8,6 +8,7 @@ import achievementRoutes from './routes/achievements.js';
 import progressRoutes from './routes/progress.js';
 import adminRoutes from './routes/admin.js';
 import teacherRoutes from './routes/teacher.js';
+import orderRoutes from './routes/orders.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors({
@@ -23,6 +24,7 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Database seed endpoint — only allowed outside production
 app.post('/api/seed', async (req, res) => {

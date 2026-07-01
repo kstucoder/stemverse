@@ -25,6 +25,7 @@ import FinalCta from '../components/landing/FinalCta';
 import LandingFooter from '../components/landing/LandingFooter';
 import StickyBuyBar from '../components/landing/StickyBuyBar';
 import MobileModal from '../components/landing/MobileModal';
+import CheckoutModal from '../components/landing/CheckoutModal';
 
 import '../landing.css';
 
@@ -44,20 +45,25 @@ export default function VoltraLanding() {
     };
   }, []);
 
-  // Toast notification for buy buttons
+  // Toast notification for placeholder actions (data-toast). [data-buy] buttons
+  // are handled separately by CheckoutModal, which opens the real order form.
   useEffect(() => {
-    const showToast = () => {
+    const showToast = (msg) => {
       const toast = document.getElementById('toast');
       if (toast) {
-        toast.textContent = "🛒 To'plam savatga qo'shildi — to'lov sahifasi tez orada (demo).";
+        toast.textContent = msg;
         toast.classList.add('show');
         clearTimeout(toast._h);
         toast._h = setTimeout(() => toast.classList.remove('show'), 3400);
       }
     };
-    const btns = document.querySelectorAll('[data-buy]');
-    btns.forEach(b => b.addEventListener('click', showToast));
-    return () => btns.forEach(b => b.removeEventListener('click', showToast));
+    const handleClick = (e) => {
+      e.preventDefault();
+      showToast(e.currentTarget.dataset.toast);
+    };
+    const btns = document.querySelectorAll('[data-toast]');
+    btns.forEach(b => b.addEventListener('click', handleClick));
+    return () => btns.forEach(b => b.removeEventListener('click', handleClick));
   }, []);
 
   // Sticky buy bar - show when hero is scrolled past
@@ -148,6 +154,7 @@ export default function VoltraLanding() {
       </div>
       <StickyBuyBar />
       <MobileModal />
+      <CheckoutModal />
       <div className="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
   );

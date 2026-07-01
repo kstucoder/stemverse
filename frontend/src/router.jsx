@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageLessons from './pages/admin/ManageLessons';
 import ManageCodes from './pages/admin/ManageCodes';
+import ManageOrders from './pages/admin/ManageOrders';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ClassroomList from './pages/ClassroomList';
 import ClassroomView from './pages/ClassroomView';
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'admin', element: <ProtectedRoute role="ADMIN"><AdminDashboard /></ProtectedRoute> },
       { path: 'admin/lessons', element: <ProtectedRoute role="ADMIN"><ManageLessons /></ProtectedRoute> },
       { path: 'admin/codes', element: <ProtectedRoute role="ADMIN"><ManageCodes /></ProtectedRoute> },
+      { path: 'admin/orders', element: <ProtectedRoute role="ADMIN"><ManageOrders /></ProtectedRoute> },
       // Teacher routes
       { path: 'teacher', element: <ProtectedRoute role="TEACHER"><TeacherDashboard /></ProtectedRoute> },
       { path: 'teacher/classrooms', element: <ProtectedRoute role="TEACHER"><ClassroomList /></ProtectedRoute> },

@@ -50,13 +50,14 @@ router.get('/codes', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const [tu, ts, tt, tl, pl, tk, ak, cl, tc, uc] = await Promise.all([
+    const [tu, ts, tt, tl, pl, tk, ak, cl, tc, uc, to, po] = await Promise.all([
       prisma.user.count(), prisma.user.count({ where: { role: 'STUDENT' } }), prisma.user.count({ where: { role: 'TEACHER' } }),
       prisma.lesson.count(), prisma.lesson.count({ where: { published: true } }), prisma.kit.count(),
       prisma.kit.count({ where: { userId: { not: null } } }), prisma.userProgress.count({ where: { completed: true } }),
       prisma.activationCode.count(), prisma.activationCode.count({ where: { used: true } }),
+      prisma.order.count(), prisma.order.count({ where: { status: 'PENDING' } }),
     ]);
-    res.json({ users: { total: tu, students: ts, teachers: tt }, lessons: { total: tl, published: pl }, kits: { total: tk, activated: ak }, progress: { completedLessons: cl }, codes: { total: tc, used: uc } });
+    res.json({ users: { total: tu, students: ts, teachers: tt }, lessons: { total: tl, published: pl }, kits: { total: tk, activated: ak }, progress: { completedLessons: cl }, codes: { total: tc, used: uc }, orders: { total: to, pending: po } });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 

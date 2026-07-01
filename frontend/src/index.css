@@ -335,6 +335,12 @@
     color: #FF8C42;
     border: 1px solid rgba(255,105,32,0.25);
   }
+  .badge-cancelled {
+    @apply badge;
+    background: rgba(255,72,72,0.1);
+    color: #FF6B6B;
+    border: 1px solid rgba(255,72,72,0.25);
+  }
 
   /* ── Glassmorphism ── */
   .glass {

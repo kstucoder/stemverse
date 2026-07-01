@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, Key, Users, BarChart3, Loader2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Key, Users, BarChart3, Loader2, ShoppingCart } from 'lucide-react';
 import { adminAPI } from '../../lib/api';
 
 export default function AdminDashboard() {
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
     { label: 'Nashr qilingan', value: stats?.lessons?.published || 0, icon: BarChart3, color: 'text-neon-yellow', bg: 'bg-neon-yellow/20' },
       { label: "To'plamlar", value: stats?.kits?.activated || 0, icon: Key, color: 'text-neon-pink', bg: 'bg-neon-pink/20' },
     { label: 'Kodlar ishlatilgan', value: `${stats?.codes?.used || 0}/${stats?.codes?.total || 0}`, icon: Key, color: 'text-neon-orange', bg: 'bg-neon-orange/20' },
+    { label: 'Buyurtmalar', value: stats?.orders?.total || 0, icon: ShoppingCart, color: 'text-neon-pink', bg: 'bg-neon-pink/20' },
   ];
 
   return (
@@ -33,9 +34,16 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-4 gap-4">
           <Link to="/admin/lessons" className="card-glow flex items-center gap-4"><BookOpen className="w-6 h-6 text-brand-400" /><div><h3 className="font-semibold text-white">Darslar</h3><p className="text-xs text-dark-400">Boshqarish</p></div></Link>
           <Link to="/admin/codes" className="card-glow flex items-center gap-4"><Key className="w-6 h-6 text-neon-cyan" /><div><h3 className="font-semibold text-white">Kodlar</h3><p className="text-xs text-dark-400">Yaratish</p></div></Link>
+          <Link to="/admin/orders" className="card-glow flex items-center gap-4 relative">
+            <ShoppingCart className="w-6 h-6 text-neon-orange" />
+            <div><h3 className="font-semibold text-white">Buyurtmalar</h3><p className="text-xs text-dark-400">Boshqarish</p></div>
+            {(stats?.orders?.pending || 0) > 0 && (
+              <span className="absolute top-3 right-3 min-w-[20px] h-5 px-1.5 rounded-full bg-neon-orange text-dark-900 text-[11px] font-bold flex items-center justify-center">{stats.orders.pending}</span>
+            )}
+          </Link>
           <div className="card-glow flex items-center gap-4"><BarChart3 className="w-6 h-6 text-neon-green" /><div><h3 className="font-semibold text-white">{stats?.progress?.completedLessons || 0}</h3><p className="text-xs text-dark-400">Bajarilgan</p></div></div>
         </div>
       </div>
