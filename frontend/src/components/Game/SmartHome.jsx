@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function SmartHome() {
@@ -12,7 +12,7 @@ export default function SmartHome() {
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#0a0a1a', '#1a1a2a', '#0a0a1a']);
+    drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
 
     const btn = serialData.button || 0;
     const pot = serialData.potentiometer || 512;
@@ -42,7 +42,7 @@ export default function SmartHome() {
     ];
 
     rooms.forEach(room => {
-      ctx.fillStyle = '#1e293b';
+      ctx.fillStyle = C.PANEL;
       ctx.beginPath();
       ctx.roundRect(room.x, room.y, room.w, room.h, 4);
       ctx.fill();
@@ -77,31 +77,25 @@ export default function SmartHome() {
     ];
 
     status.forEach((s, i) => {
-      ctx.fillStyle = s.active ? '#00ff88' : '#1e293b';
-      ctx.shadowColor = s.active ? '#00ff88' : 'transparent';
+      ctx.fillStyle = s.active ? C.GREEN : C.PANEL;
+      ctx.shadowColor = s.active ? C.GREEN : 'transparent';
       ctx.shadowBlur = s.active ? 10 : 0;
       ctx.beginPath();
       ctx.roundRect(s.x, s.y, 80, 28, 6);
       ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = s.active ? '#0a0a1a' : '#64748b';
-      ctx.font = '9px sans-serif';
+      ctx.fillStyle = s.active ? C.DARK : '#64748b';
+      ctx.font = '9px Chakra Petch, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(s.label, s.x + 40, s.y + 18);
     });
 
     // Energy meter
     const energy = (devices.current.lights ? 30 : 0) + (devices.current.ac ? 50 : 0) + (devices.current.door ? 10 : 0);
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(w * 0.12, h * 0.75, w * 0.76, 18, 9);
-    ctx.fill();
-    ctx.fillStyle = energy > 60 ? '#ef4444' : energy > 30 ? '#ffdd00' : '#00ff88';
-    ctx.beginPath();
-    ctx.roundRect(w * 0.12, h * 0.75, w * 0.76 * (energy / 100), 18, 9);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px sans-serif';
+    drawProgressBar(ctx, w * 0.12, h * 0.75, w * 0.76, 18, energy / 100,
+      energy > 60 ? '#ef4444' : energy > 30 ? C.GOLD : C.GREEN);
+    ctx.fillStyle = C.WHITE;
+    ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('⚡ Energiya: ' + energy + '%', w / 2, h * 0.77 + 12);
 
@@ -111,14 +105,18 @@ export default function SmartHome() {
     ctx.roundRect(w * 0.12, h * 0.85, w * 0.76, 22, 6);
     ctx.fill();
     ctx.fillStyle = '#ffc107';
-    ctx.font = '9px sans-serif';
+    ctx.font = '9px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('🔥 ESP32 + Firebase — Aqlli Uy Boshqaruvi | Real-time bulut sinxronlash', w / 2, h * 0.85 + 15);
 
     // Particles
-    if (devices.current.lights) particles.current.emit(w * 0.5, h * 0.5, '#ffdd00', 1, 20);
+    if (devices.current.lights) particles.current.emit(w * 0.5, h * 0.5, C.GOLD, 1, 20);
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
 
     // Win: manage energy efficiently
     if (energy > 20 && energy < 60 && temp < 28 && !winRef.current && winConditions) {

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function ParkingAssistant() {
@@ -10,23 +10,23 @@ export default function ParkingAssistant() {
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#0a0a1a', '#1a1a2a', '#0a0a1a']);
+    drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
 
     const dist = serialData.distance || 200;
     const isParked = dist < 5 && dist > 0;
 
     // Parking spot
-    ctx.strokeStyle = '#ffdd00';
+    ctx.strokeStyle = C.GOLD;
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 10]);
     ctx.strokeRect(w * 0.15, h * 0.2, w * 0.7, h * 0.5);
     ctx.setLineDash([]);
 
     // "P" sign
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = C.PANEL;
     ctx.fillRect(w * 0.12, h * 0.15, 40, 30);
-    ctx.fillStyle = '#ffdd00';
-    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = C.GOLD;
+    ctx.font = 'bold 18px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('P', w * 0.12 + 20, h * 0.15 + 22);
 
@@ -36,8 +36,8 @@ export default function ParkingAssistant() {
     const carScale = 1 - Math.min(dist / 200, 0.3);
 
     // Car body
-    ctx.fillStyle = isParked ? '#00ff88' : '#3b82f6';
-    ctx.shadowColor = isParked ? '#00ff88' : '#3b82f6';
+    ctx.fillStyle = isParked ? C.GREEN : '#3b82f6';
+    ctx.shadowColor = isParked ? C.GREEN : '#3b82f6';
     ctx.shadowBlur = isParked ? 30 : 10;
     ctx.beginPath();
     ctx.roundRect(carX - 40 * carScale, carY - 15 * carScale, 80 * carScale, 30 * carScale, 5);
@@ -56,7 +56,7 @@ export default function ParkingAssistant() {
     ctx.fillRect(carX + 2 * carScale, carY - 20 * carScale, 18 * carScale, 10 * carScale);
 
     // Wheels
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = C.DARK;
     ctx.beginPath();
     ctx.arc(carX - 25 * carScale, carY + 16 * carScale, 5, 0, Math.PI * 2);
     ctx.fill();
@@ -66,24 +66,18 @@ export default function ParkingAssistant() {
 
     // Distance indicator
     const barW = 200;
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w / 2 - barW / 2, h - 60, barW, 12);
     const distPct = Math.min(dist / 100, 1);
-    const barColor = dist < 10 ? '#ef4444' : dist < 30 ? '#ffdd00' : '#00ff88';
-    ctx.fillStyle = barColor;
-    ctx.shadowColor = barColor;
-    ctx.shadowBlur = 10;
-    ctx.fillRect(w / 2 - barW / 2, h - 60, barW * (1 - distPct), 12);
-    ctx.shadowBlur = 0;
+    const barColor = dist < 10 ? '#ef4444' : dist < 30 ? C.GOLD : C.GREEN;
+    drawProgressBar(ctx, w / 2 - barW / 2, h - 60, barW, 12, 1 - distPct, barColor);
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = C.WHITE;
+    ctx.font = 'bold 20px Chakra Petch, monospace';
     ctx.fillText(Math.round(dist) + ' cm', w / 2, h - 80);
 
-    ctx.fillStyle = isParked ? '#00ff88' : '#94a3b8';
-    ctx.font = '14px sans-serif';
-	    ctx.fillText(isParked ? '✅ MUKAMMAL PARK!' : '🚗 Sekin orqaga...', w / 2, h - 100);
+    ctx.fillStyle = isParked ? C.GREEN : C.MUTED;
+    ctx.font = '14px Chakra Petch, monospace';
+    ctx.fillText(isParked ? '✅ MUKAMMAL PARK!' : '🚗 Sekin orqaga...', w / 2, h - 100);
 
     // Win check
     if (isParked) {
@@ -100,6 +94,10 @@ export default function ParkingAssistant() {
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
 
     // Proximity beep visualization
     if (dist < 30 && dist > 0) {

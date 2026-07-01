@@ -1,43 +1,42 @@
-// Energy City — Canvas flagship game with particles, night/day, tram, stars
+// ⚡ VOLTRA Energy City — Premium Edition
+// Arduino LED shaharni yoritadi, tramvay harakatlanadi
+
 import { useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas';
-import { drawGradientBackground, drawGlow, ParticleSystem } from './gameHelpers';
+import {
+  C, ParticleSystem, generateStars, drawStarField,
+  drawGradientBackground, drawGround, drawGlow,
+  drawGlassPanel, drawNeonStat, drawProgressBar,
+  drawVignette, drawScanlines, drawGrid,
+} from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
-import { playTram, playScore } from './gameAudio';
+import { playTram } from './gameAudio';
 
 export default function EnergyCity() {
   const { serialData, cityState, score, incrementScore, addPopup } = useGameStore();
   const particles = useRef(new ParticleSystem());
-  const starsRef = useRef(generateStars());
+  const starsRef = useRef(generateStars(80));
   const buildingsRef = useRef(generateBuildings());
   const tramPos = useRef(0);
+  const lastScoreTime = useRef(0);
 
-  // Auto-score timer
+  // Auto-score
   useEffect(() => {
     const timer = setInterval(() => incrementScore(1), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  function generateStars() {
-    return Array.from({ length: 60 }, () => ({
-      x: Math.random(), y: Math.random() * 0.5,
-      size: 0.5 + Math.random() * 2,
-      brightness: 0.3 + Math.random() * 0.7,
-      phase: Math.random() * Math.PI * 2,
-    }));
-  }
-
   function generateBuildings() {
     return Array.from({ length: cityState.totalBuildings || 8 }, (_, i) => ({
-      width: 30 + Math.random() * 20,
-      height: 60 + Math.sin(i * 1.5) * 40 + Math.random() * 40,
-      x: 0,
-      windows: Array.from({ length: 4 + Math.floor(Math.random() * 4) }, () => ({
-        x: 3 + Math.random() * 8,
-        y: 5 + Math.random() * 20,
-        w: 4 + Math.random() * 3,
-        h: 4 + Math.random() * 3,
+      width: 40 + Math.random() * 30,
+      height: 80 + Math.sin(i * 1.5) * 50 + Math.random() * 60,
+      windows: Array.from({ length: 5 + Math.floor(Math.random() * 6) }, () => ({
+        x: 4 + Math.random() * 12,
+        y: 8 + Math.random() * 30,
+        w: 4 + Math.random() * 4,
+        h: 4 + Math.random() * 4,
       })),
+      antenna: Math.random() > 0.6,
     }));
   }
 
@@ -46,226 +45,242 @@ export default function EnergyCity() {
 
     const isNight = cityState.isNight;
     const buildings = buildingsRef.current;
-    const totalW = buildings.reduce((s, b) => s + b.width + 8, 0);
+    const totalW = buildings.reduce((s, b) => s + b.width + 10, 0);
     const startX = (w - totalW) / 2;
+    const groundY = h * 0.75;
 
-    // Sky
+    // === SKY ===
     if (isNight) {
-      drawGradientBackground(ctx, w, h, ['#020617', '#0f172a', '#1e293b']);
-      // Stars
-      starsRef.current.forEach((s) => {
-        const twinkle = 0.5 + 0.5 * Math.sin(t * 2 + s.phase);
-        ctx.globalAlpha = twinkle * s.brightness;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(s.x * w, s.y * h, s.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-    } else {
-      drawGradientBackground(ctx, w, h, ['#1e1b4b', '#3730a3', '#6366f1', '#818cf8']);
-      // Sun
-      ctx.fillStyle = '#ffdd00';
-      ctx.shadowColor = '#ffdd00';
-      ctx.shadowBlur = 40;
+      drawGradientBackground(ctx, w, h, ['#020617', '#070B16', '#0B1120']);
+      drawStarField(ctx, w, h, starsRef.current, t);
+      // Moon
+      drawGlow(ctx, w - 100, 80, 80, 'rgba(0,238,255,0.08)');
+      ctx.fillStyle = '#EAF3FF';
+      ctx.shadowColor = '#00EEFF';
+      ctx.shadowBlur = 20;
       ctx.beginPath();
-      ctx.arc(w - 80, 70, 30, 0, Math.PI * 2);
+      ctx.arc(w - 100, 80, 25, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
-      // Sun rays
-      ctx.strokeStyle = 'rgba(255,221,0,0.15)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2 + t;
-        ctx.beginPath();
-        ctx.moveTo(w - 80 + Math.cos(a) * 35, 70 + Math.sin(a) * 35);
-        ctx.lineTo(w - 80 + Math.cos(a) * 55, 70 + Math.sin(a) * 55);
-        ctx.stroke();
-      }
+    } else {
+      drawGradientBackground(ctx, w, h, ['#0a0a2a', '#1a1050', '#2a1a70', '#4a3080']);
+      // Sun with glow
+      drawGlow(ctx, w - 100, 80, 100, 'rgba(255,215,0,0.2)');
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 50;
+      ctx.beginPath();
+      ctx.arc(w - 100, 80, 35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
 
-    // Ground
-    const gh = h * 0.2;
-    ctx.fillStyle = isNight ? '#0f172a' : '#1e293b';
-    ctx.fillRect(0, h - gh, w, gh);
-    // Road
-    ctx.fillStyle = isNight ? '#1e293b' : '#334155';
-    ctx.fillRect(0, h - gh - 20, w, 20);
-    // Road lines
-    ctx.setLineDash([15, 15]);
-    ctx.strokeStyle = 'rgba(255,221,0,0.2)';
-    ctx.lineWidth = 1;
+    // === GRID ===
+    drawGrid(ctx, w, h, 50, 0.03);
+
+    // === GROUND + ROAD ===
+    drawGround(ctx, w, groundY, C.DARK, C.PANEL);
+    ctx.fillStyle = 'rgba(0,238,255,0.04)';
+    ctx.fillRect(0, groundY + 15, w, 18);
+    // Road dashes
+    ctx.setLineDash([20, 20]);
+    ctx.strokeStyle = `rgba(255,215,0,0.15)`;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, h - gh - 10);
-    ctx.lineTo(w, h - gh - 10);
+    ctx.moveTo(0, groundY + 24);
+    ctx.lineTo(w, groundY + 24);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Buildings
+    // === BUILDINGS ===
     buildings.forEach((b, i) => {
-      const bx = startX + buildings.slice(0, i).reduce((s, bb) => s + bb.width + 8, 0);
+      const bx = startX + buildings.slice(0, i).reduce((s, bb) => s + bb.width + 10, 0);
       const bh = b.height;
       const lit = i < Math.floor(cityState.buildingsLit);
 
-      // Building body
-      ctx.fillStyle = lit
-        ? `hsl(${40 + i * 5}, 80%, ${40 + Math.sin(t + i) * 10}%)`
-        : '#1e293b';
-      ctx.fillRect(bx, h - gh - 20 - bh, b.width, bh);
-
-      // Building border
-      ctx.strokeStyle = lit ? 'rgba(255,221,0,0.2)' : '#334155';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx, h - gh - 20 - bh, b.width, bh);
-
-      // Glow when lit
+      // Building body with gradient
+      const bgrad = ctx.createLinearGradient(0, groundY + 15 - bh, 0, groundY + 15);
       if (lit) {
-        drawGlow(ctx, bx + b.width / 2, h - gh - 20 - bh / 2, 30, 'rgba(255,221,0,0.08)');
-        // Windows
+        bgrad.addColorStop(0, `hsl(${40 + i * 8}, 90%, ${45 + Math.sin(t + i) * 10}%)`);
+        bgrad.addColorStop(1, `hsl(${40 + i * 8}, 60%, 25%)`);
+      } else {
+        bgrad.addColorStop(0, '#1a2440');
+        bgrad.addColorStop(1, '#0f172a');
+      }
+      ctx.fillStyle = bgrad;
+      ctx.fillRect(bx, groundY + 15 - bh, b.width, bh);
+
+      // Building border glow
+      if (lit) {
+        ctx.strokeStyle = `rgba(255,215,0,0.2)`;
+        ctx.shadowColor = 'rgba(255,215,0,0.3)';
+        ctx.shadowBlur = 6;
+      } else {
+        ctx.strokeStyle = C.LINE;
+        ctx.shadowBlur = 0;
+      }
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, groundY + 15 - bh, b.width, bh);
+      ctx.shadowBlur = 0;
+
+      // Windows (when lit)
+      if (lit) {
         b.windows.forEach((win) => {
-          ctx.fillStyle = `rgba(255,221,0,${0.6 + 0.4 * Math.sin(t * 2 + i + win.x)})`;
-          ctx.fillRect(bx + win.x, h - gh - 20 - bh + win.y, win.w, win.h);
+          const wx = bx + win.x + win.w / 2;
+          const wy = groundY + 15 - bh + win.y + win.h / 2;
+          drawGlow(ctx, wx, wy, 8, 'rgba(255,215,0,0.1)');
+          ctx.fillStyle = `rgba(255,215,0,${0.5 + 0.5 * Math.sin(t * 3 + i + win.x)})`;
+          ctx.fillRect(bx + win.x, groundY + 15 - bh + win.y, win.w, win.h);
         });
       }
 
-      // Roof
-      ctx.fillStyle = lit ? '#ffdd00' : '#334155';
-      ctx.fillRect(bx - 2, h - gh - 20 - bh - 4, b.width + 4, 4);
+      // Antenna
+      if (b.antenna) {
+        ctx.strokeStyle = lit ? 'rgba(255,215,0,0.3)' : C.MUTED;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(bx + b.width / 2, groundY + 15 - bh);
+        ctx.lineTo(bx + b.width / 2, groundY + 15 - bh - 15);
+        ctx.stroke();
+        if (lit) {
+          ctx.fillStyle = '#FF2D78';
+          ctx.shadowColor = '#FF2D78';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(bx + b.width / 2, groundY + 15 - bh - 15, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // Roof line glow
+      if (lit) {
+        ctx.strokeStyle = '#FFD700';
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bx, groundY + 15 - bh);
+        ctx.lineTo(bx + b.width, groundY + 15 - bh);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
     });
 
-    // Power lines between buildings
-    if (!isNight) {
-      ctx.strokeStyle = 'rgba(148,163,184,0.2)';
-      ctx.lineWidth = 1;
-      buildings.forEach((_, i) => {
-        if (i < buildings.length - 1) {
-          const x1 = startX + buildings.slice(0, i + 1).reduce((s, b) => s + b.width + 8, 0) - 8;
-          const x2 = startX + buildings.slice(0, i + 2).reduce((s, b) => s + b.width + 8, 0) - 8;
-          ctx.beginPath();
-          ctx.moveTo(x1, h - gh - 20 - buildings[i].height - 15);
-          ctx.quadraticCurveTo((x1 + x2) / 2, h - gh - 20 - Math.max(buildings[i].height, buildings[i + 1].height) - 30, x2, h - gh - 20 - buildings[i + 1].height - 15);
-          ctx.stroke();
-        }
-      });
-    }
+    // === Power lines ===
+    buildings.forEach((_, i) => {
+      if (i < buildings.length - 1) {
+        const x1 = startX + buildings.slice(0, i + 1).reduce((s, b) => s + b.width + 10, 0) - 5;
+        const x2 = startX + buildings.slice(0, i + 2).reduce((s, b) => s + b.width + 10, 0) - 5;
+        ctx.strokeStyle = 'rgba(0,238,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, groundY + 15 - buildings[i].height - 10);
+        ctx.quadraticCurveTo(
+          (x1 + x2) / 2,
+          groundY + 15 - Math.max(buildings[i].height, buildings[i + 1].height) - 25,
+          x2, groundY + 15 - buildings[i + 1].height - 10
+        );
+        ctx.stroke();
+      }
+    });
 
-    // Tram on road
-    tramPos.current = (tramPos.current + (cityState.tramActive ? 2 : 0.3)) % (w + 100);
+    // === TRAM ===
+    tramPos.current = (tramPos.current + (cityState.tramActive ? 2.5 : 0.3)) % (w + 100);
     const tx = tramPos.current - 50;
-    ctx.fillStyle = cityState.tramActive ? '#00f5ff' : '#475569';
-    ctx.shadowColor = cityState.tramActive ? '#00f5ff' : 'transparent';
-    ctx.shadowBlur = cityState.tramActive ? 15 : 0;
-    ctx.fillRect(tx, h - gh - 12, 40, 12);
+    const tramLit = cityState.tramActive;
+    
+    // Tram body
+    ctx.fillStyle = tramLit ? C.CYAN : '#334155';
+    ctx.shadowColor = tramLit ? C.CYAN : 'transparent';
+    ctx.shadowBlur = tramLit ? 15 : 0;
+    const tramY = groundY + 18;
+    ctx.fillRect(tx, tramY, 42, 10);
     ctx.shadowBlur = 0;
     // Tram windows
-    ctx.fillStyle = cityState.tramActive ? '#fff' : '#64748b';
-    ctx.fillRect(tx + 5, h - gh - 10, 8, 8);
-    ctx.fillRect(tx + 18, h - gh - 10, 8, 8);
-    ctx.fillRect(tx + 31, h - gh - 10, 8, 8);
-    // Tram line
-    if (cityState.tramActive) {
-      ctx.fillStyle = 'rgba(0,245,255,0.3)';
-      ctx.fillRect(tx + 15, h - gh - 14, 10, 2);
+    ctx.fillStyle = tramLit ? C.WHITE : '#475569';
+    [6, 19, 32].forEach(ox => {
+      ctx.fillRect(tx + ox, tramY + 2, 7, 6);
+    });
+    // Tram glow trail
+    if (tramLit) {
+      ctx.fillStyle = 'rgba(0,238,255,0.15)';
+      ctx.fillRect(tx + 42, tramY + 2, 20, 6);
     }
 
-    // Particles for lit city
-    if (cityState.buildingsLit > 3 && Math.random() < 0.05) {
-      particles.current.emit(Math.random() * w, h - gh - 50, '#ffdd00', 1, -20);
+    // === PARTICLES (sparks from active buildings) ===
+    if (cityState.buildingsLit > 2 && Math.random() < 0.04) {
+      const bi = Math.floor(Math.random() * Math.floor(cityState.buildingsLit));
+      const bx2 = startX + buildings.slice(0, bi).reduce((s, b) => s + b.width + 10, 0) + buildings[bi].width / 2;
+      particles.current.emit(bx2, groundY - buildings[bi].height + 10, '#FFD700', 3, 30);
     }
     particles.current.update(0.016);
     particles.current.draw(ctx);
 
-    // HUD
-    ctx.fillStyle = 'rgba(15,23,42,0.85)';
-    // Score
-    ctx.beginPath();
-    ctx.roundRect(10, 10, 95, 35, 8);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`🏙️ ${score}`, 18, 33);
+    // === SCANLINES ===
+    drawScanlines(ctx, w, h);
 
-    // Power
-    ctx.beginPath();
-    ctx.roundRect(115, 10, 95, 35, 8);
-    ctx.fill();
-    ctx.fillStyle = cityState.energyLevel > 50 ? '#00ff88' : '#ff6600';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(`⚡ ${cityState.energyLevel}%`, 123, 33);
+    // === HUD: Stats ===
+    drawNeonStat(ctx, '🏙️', score, 'Ball', 16, 16, C.CYAN);
+    drawNeonStat(ctx, '⚡', `${cityState.energyLevel}%`, 'Quvvat', 120, 16, C.CYAN);
+    drawNeonStat(ctx, '😊', `${Math.round(cityState.citizenHappiness)}%`, 'Baxt', 224, 16, C.PINK);
 
-    // Happiness
-    ctx.beginPath();
-    ctx.roundRect(220, 10, 95, 35, 8);
-    ctx.fill();
-    ctx.fillStyle = cityState.citizenHappiness > 70 ? '#ff00e5' : '#ef4444';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(`😊 ${Math.round(cityState.citizenHappiness)}%`, 228, 33);
+    // === HUD: Building count indicator ===
+    const bx = w - 130;
+    drawGlassPanel(ctx, bx, 12, 116, 36, 10);
+    ctx.font = 'bold 13px Chakra Petch, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.WHITE;
+    ctx.shadowColor = C.CYAN;
+    ctx.shadowBlur = 4;
+    ctx.fillText(`${cityState.buildingsLit}/${cityState.totalBuildings}`, bx + 58, 30);
+    ctx.shadowBlur = 0;
+    ctx.font = '8px Chakra Petch, sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.fillText('BINOLAR', bx + 58, 42);
 
-    // Progress to win
+    // === PROGRESS BAR ===
     const progress = Math.min(cityState.buildingsLit / cityState.totalBuildings, 1);
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(w / 2 - 80, h - 30, 160, 8, 4);
-    ctx.fill();
-    ctx.fillStyle = '#ffdd00';
-    ctx.shadowColor = '#ffdd00';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.roundRect(w / 2 - 80, h - 30, 160 * progress, 8, 4);
-    ctx.fill();
+    drawProgressBar(ctx, w / 2 - 100, h - 38, 200, 10, progress, C.GOLD);
+    ctx.font = 'bold 10px Chakra Petch, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.WHITE;
+    ctx.shadowColor = C.GOLD;
+    ctx.shadowBlur = 3;
+    ctx.fillText(`${Math.round(progress * 100)}%`, w / 2, h - 44);
     ctx.shadowBlur = 0;
 
-    // Serial status indicators (bottom-left)
-    const indicators = [
-      { active: serialData.led === 1, color: '#00ff88', label: 'LED' },
-      { active: serialData.button === 1, color: '#00f5ff', label: 'BTN' },
+    // === SERIAL INDICATORS ===
+    const inds = [
+      { active: serialData.led === 1, color: C.CYAN, label: 'LED', x: 20 },
+      { active: serialData.button === 1, color: C.PINK, label: 'BTN', x: 70 },
     ];
-    indicators.forEach((ind, i) => {
-      ctx.fillStyle = ind.active ? ind.color : '#1e293b';
+    inds.forEach(ind => {
+      ctx.fillStyle = ind.active ? ind.color : 'rgba(255,255,255,0.06)';
       ctx.shadowColor = ind.active ? ind.color : 'transparent';
-      ctx.shadowBlur = ind.active ? 8 : 0;
+      ctx.shadowBlur = ind.active ? 10 : 0;
       ctx.beginPath();
-      ctx.arc(20 + i * 40, h - 55, 5, 0, Math.PI * 2);
+      ctx.arc(ind.x, h - 60, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#64748b';
-      ctx.font = '9px sans-serif';
+      ctx.font = '9px Chakra Petch, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(ind.label, 20 + i * 40, h - 43);
+      ctx.fillStyle = ind.active ? ind.color : C.MUTED;
+      ctx.fillText(ind.label, ind.x, h - 45);
     });
 
     // POT meter
-    const potW = (serialData.potentiometer / 1023) * 60;
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.roundRect(100, h - 58, 60, 8, 4);
-    ctx.fill();
-    ctx.fillStyle = '#ffdd00';
-    ctx.beginPath();
-    ctx.roundRect(100, h - 58, potW, 8, 4);
-    ctx.fill();
+    const potVal = serialData.potentiometer || 0;
+    const potPct = potVal / 1023;
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '9px Chakra Petch, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('POT', 120, h - 45);
+    drawProgressBar(ctx, 100, h - 58, 60, 4, potPct, C.GREEN);
 
-    // Serial data label
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '8px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`POT: ${serialData.potentiometer || 0}`, 100, h - 63);
+    // === VIGNETTE ===
+    drawVignette(ctx, w, h);
 
-    // Combo display
-    const combo = useGameStore.getState().combo;
-    if (combo > 2) {
-      ctx.fillStyle = '#ffdd00';
-      ctx.font = `bold ${14 + Math.min(combo, 20)}px sans-serif`;
-      ctx.textAlign = 'right';
-      ctx.fillText(`🔥 ${combo}x`, w - 15, 70);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '9px sans-serif';
-      ctx.fillText('KOMBO', w - 15, 82);
-    }
-  }, [cityState, serialData, score, incrementScore, addPopup]);
+  }, [cityState, serialData, score]);
 
-  return (
-    <GameCanvas draw={draw} className="rounded-2xl" />
-  );
+  return <GameCanvas draw={draw} className="rounded-xl overflow-hidden" />;
 }

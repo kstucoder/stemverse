@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function RemoteSensor() {
@@ -104,18 +104,15 @@ export default function RemoteSensor() {
     particles.current.draw(ctx);
 
     // Data log
-    ctx.fillStyle = 'rgba(15,23,42,0.85)';
-    ctx.beginPath();
-    ctx.roundRect(15, h - 85, w - 30, 70, 8);
-    ctx.fill();
+    drawGlassPanel(ctx, 15, h - 85, w - 30, 70, 8);
 
-    ctx.fillStyle = '#00ff88';
-    ctx.font = '10px monospace';
+    ctx.fillStyle = C.GREEN;
+    ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     const ts = new Date().toLocaleTimeString();
     ctx.fillText(`[${ts}] 🔥 Firebase: { temp: ${Math.round(temp)}°C, dist: ${Math.round(dist)}cm, power: ${Math.round(pot / 10.23)}% }`, 25, h - 65);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '9px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '9px Chakra Petch, monospace';
     ctx.fillText('📶 ESP32 Ulangan | 📡 1s sinxronlash | 🌍 Masofaviy kuzatuv faol', 25, h - 42);
 
     // Win: collect all data types
@@ -124,6 +121,10 @@ export default function RemoteSensor() {
       incrementScore(450);
       if (onWin) onWin(score + 450);
     }
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.temperature, serialData.potentiometer, serialData.distance, serialData.button, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (

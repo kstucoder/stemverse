@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas';
-import { ParticleSystem, drawGlow } from './gameHelpers';
+import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 const NOTES = [
@@ -53,11 +53,7 @@ export default function PianoPlayer() {
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(1, '#1a1020');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
+    drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL]);
 
     // Piano keys
     const keyW = w / 8;
@@ -66,7 +62,7 @@ export default function PianoPlayer() {
 
     NOTES.forEach((note, i) => {
       const isActive = i === activeNote;
-      ctx.fillStyle = isActive ? note.color : '#1e293b';
+      ctx.fillStyle = isActive ? note.color : C.PANEL;
       ctx.shadowColor = isActive ? note.color : 'transparent';
       ctx.shadowBlur = isActive ? 30 : 0;
       ctx.fillRect(i * keyW + 4, keyY, keyW - 8, keyH);
@@ -77,9 +73,9 @@ export default function PianoPlayer() {
       ctx.strokeRect(i * keyW + 4, keyY, keyW - 8, keyH);
 
       // Note name
-      ctx.fillStyle = isActive ? '#fff' : '#64748b';
+      ctx.fillStyle = isActive ? C.WHITE : '#64748b';
       ctx.textAlign = 'center';
-      ctx.font = isActive ? 'bold 16px sans-serif' : '12px sans-serif';
+      ctx.font = isActive ? 'bold 16px Chakra Petch, monospace' : '12px Chakra Petch, monospace';
       ctx.fillText(note.name, i * keyW + keyW / 2, keyY + keyH - 15);
 
       if (isActive) {
@@ -89,28 +85,29 @@ export default function PianoPlayer() {
 
     // Tune progress
     const progress = tunePos / TUNE.length;
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w / 2 - 150, 35, 300, 6);
-    ctx.fillStyle = '#8b5cf6';
-    ctx.fillRect(w / 2 - 150, 35, 300 * progress, 6);
+    drawProgressBar(ctx, w / 2 - 150, 35, 300, 6, progress, C.PURPLE);
 
     // Tune notes
     TUNE.forEach((n, i) => {
-      ctx.fillStyle = i < tunePos ? NOTES[n].color : '#1e293b';
+      ctx.fillStyle = i < tunePos ? NOTES[n].color : C.PANEL;
       ctx.fillRect(w / 2 - 150 + i * (300 / TUNE.length), 50, 300 / TUNE.length - 2, i === tunePos ? 10 : 6);
     });
 
     // Info
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px sans-serif';
-	    ctx.fillText('🎵 "Twinkle Twinkle" ni ijro eting — notalarni tartib bilan bosing!', w / 2, 85);
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '12px Chakra Petch, monospace';
+    ctx.fillText('🎵 "Twinkle Twinkle" ni ijro eting — notalarni tartib bilan bosing!', w / 2, 85);
     ctx.fillStyle = '#ef4444';
-    ctx.font = '11px sans-serif';
-	    ctx.fillText('❌ Xatolar: ' + mistakes, w / 2, 105);
+    ctx.font = '11px Chakra Petch, monospace';
+    ctx.fillText('❌ Xatolar: ' + mistakes, w / 2, 105);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [activeNote, tunePos, mistakes]);
 
   return (

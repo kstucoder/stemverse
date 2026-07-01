@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas';
+import { C, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function ColorMixer() {
@@ -11,8 +12,8 @@ export default function ColorMixer() {
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(1, '#1a1a2a');
+    grad.addColorStop(0, C.DARK);
+    grad.addColorStop(1, C.PANEL);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
@@ -40,8 +41,8 @@ export default function ColorMixer() {
 
     // Labels
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '14px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '14px Chakra Petch, monospace';
     ctx.fillText('🎯 MAQSAD', w / 2 - tw - 20 + tw / 2, h / 2 - th / 2 - 15);
     ctx.fillText('🎨 SIZNING ARALASHMAN', w / 2 + 20 + tw / 2, h / 2 - th / 2 - 15);
 
@@ -61,15 +62,13 @@ export default function ColorMixer() {
     const diff = Math.abs(r - target.r) + Math.abs(g - target.g) + Math.abs(b - target.b);
     const similarity = Math.max(0, 100 - diff / 7.65);
 
-    ctx.fillStyle = similarity > 80 ? '#00ff88' : similarity > 50 ? '#ffdd00' : '#ef4444';
-    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = similarity > 80 ? C.GREEN : similarity > 50 ? C.GOLD : '#ef4444';
+    ctx.font = 'bold 18px Chakra Petch, monospace';
     ctx.fillText(`Moslik: ${Math.round(similarity)}%`, w / 2, h - 80);
 
     // Similarity bar
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w / 2 - 100, h - 60, 200, 10);
-    ctx.fillStyle = similarity > 80 ? '#00ff88' : similarity > 50 ? '#ffdd00' : '#ef4444';
-    ctx.fillRect(w / 2 - 100, h - 60, 200 * (similarity / 100), 10);
+    drawProgressBar(ctx, w / 2 - 100, h - 60, 200, 10, similarity / 100,
+      similarity > 80 ? C.GREEN : similarity > 50 ? C.GOLD : '#ef4444');
 
     // Win condition
     if (similarity > 90 && !winRef.current && winConditions) {
@@ -88,13 +87,16 @@ export default function ColorMixer() {
       winRef.current = false; // Allow multiple rounds
     }
 
-    // Score
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, 10, 100, 35);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px sans-serif';
+    // Score panel
+    drawGlassPanel(ctx, 10, 10, 120, 35, 10);
+    ctx.fillStyle = C.WHITE;
+    ctx.font = 'bold 14px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     ctx.fillText('Tur: ' + roundRef.current + '/3', 20, 32);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.potentiometer, serialData.distance, serialData.led, target, score, winConditions, onWin, incrementScore]);
 
   return (

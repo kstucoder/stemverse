@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas';
-import { drawGradientBackground, ParticleSystem, drawGlow } from './gameHelpers';
+import { C, drawGradientBackground, drawGlassPanel, drawNeonStat, drawProgressBar, drawVignette, drawScanlines, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function TempGarden() {
@@ -128,21 +128,21 @@ export default function TempGarden() {
     }
 
     // HUD
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, 10, 180, 60);
-    ctx.strokeStyle = 'rgba(99,102,241,0.3)';
-    ctx.strokeRect(10, 10, 180, 60);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    drawGlassPanel(ctx, 10, 10, 180, 60, 10);
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText('🌡️ Harorat', 20, 30);
-    ctx.fillStyle = isPerfect ? '#4ade80' : isHot ? '#ef4444' : '#60a5fa';
-    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = isPerfect ? C.GREEN : isHot ? '#ef4444' : '#60a5fa';
+    ctx.font = 'bold 20px Chakra Petch, monospace';
     ctx.fillText(Math.round(temp) + '°C', 20, 55);
 
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText(isPerfect ? "✅ Zo'r!" : isHot ? '🔥 Juda issiq!' : "❄️ Juda sovuq!", 20, 70);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.temperature, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function IoTDashboard() {
@@ -21,36 +21,27 @@ export default function IoTDashboard() {
 
     // Dashboard grid
     const gauges = [
-      { label: 'POT', value: pot, max: 1023, unit: '', color: '#00f5ff', x: 30, y: 30 },
-      { label: 'BTN', value: btn, max: 1, unit: '', color: '#ff00e5', x: 220, y: 30 },
-      { label: 'DIST', value: dist, max: 400, unit: 'cm', color: '#00ff88', x: 30, y: 170 },
-      { label: 'TEMP', value: temp, max: 50, unit: '°C', color: '#ffdd00', x: 220, y: 170 },
+      { label: 'POT', value: pot, max: 1023, unit: '', color: C.CYAN, x: 30, y: 30 },
+      { label: 'BTN', value: btn, max: 1, unit: '', color: C.PINK, x: 220, y: 30 },
+      { label: 'DIST', value: dist, max: 400, unit: 'cm', color: C.GREEN, x: 30, y: 170 },
+      { label: 'TEMP', value: temp, max: 50, unit: '°C', color: C.GOLD, x: 220, y: 170 },
     ];
 
     gauges.forEach(g => {
-      ctx.fillStyle = 'rgba(15,23,42,0.85)';
-      ctx.beginPath();
-      ctx.roundRect(g.x, g.y, 170, 120, 10);
-      ctx.fill();
-
-      ctx.strokeStyle = g.color + '40';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(g.x, g.y, 170, 120, 10);
-      ctx.stroke();
+      drawGlassPanel(ctx, g.x, g.y, 170, 120, 10);
 
       ctx.fillStyle = g.color;
-      ctx.font = 'bold 36px monospace';
+      ctx.font = 'bold 36px Chakra Petch, monospace';
       ctx.textAlign = 'left';
       ctx.fillText(g.value + g.unit, g.x + 15, g.y + 45);
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10px sans-serif';
+      ctx.fillStyle = C.MUTED;
+      ctx.font = '10px Chakra Petch, monospace';
       ctx.fillText('📡 ' + g.label, g.x + 15, g.y + 18);
 
       // Gauge bar
       const pct = g.value / g.max;
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = C.DARK;
       ctx.beginPath();
       ctx.roundRect(g.x + 15, g.y + 65, 140, 8, 4);
       ctx.fill();
@@ -61,18 +52,15 @@ export default function IoTDashboard() {
     });
 
     // Live chart
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.beginPath();
-    ctx.roundRect(30, 310, w - 60, 120, 10);
-    ctx.fill();
+    drawGlassPanel(ctx, 30, 310, w - 60, 120, 10);
 
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '10px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     ctx.fillText("📈 Jonli Ma'lumot", 45, 332);
 
     // Draw lines
-    const colors = ['#00f5ff', '#ff00e5', '#00ff88', '#ffdd00'];
+    const colors = [C.CYAN, C.PINK, C.GREEN, C.GOLD];
     const fields = ['pot', 'btn', 'dist', 'temp'];
     const maxValues = [1023, 1, 400, 50];
 
@@ -90,15 +78,15 @@ export default function IoTDashboard() {
     });
 
     // WiFi indicator
-    ctx.fillStyle = '#00ff88';
-    ctx.shadowColor = '#00ff88';
+    ctx.fillStyle = C.GREEN;
+    ctx.shadowColor = C.GREEN;
     ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.arc(w - 40, 20, 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#fff';
-    ctx.font = '9px sans-serif';
+    ctx.fillStyle = C.WHITE;
+    ctx.font = '9px Chakra Petch, monospace';
     ctx.textAlign = 'right';
     ctx.fillText('📶 ESP8266 Ulangan', w - 55, 23);
 
@@ -108,7 +96,7 @@ export default function IoTDashboard() {
     ctx.roundRect(w - 160, 35, 140, 20, 5);
     ctx.fill();
     ctx.fillStyle = '#ffc107';
-    ctx.font = '9px sans-serif';
+    ctx.font = '9px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText('🔥 Firebase Sinx: FAOLLASHTIRILDI', w - 90, 48);
 
@@ -118,6 +106,10 @@ export default function IoTDashboard() {
       incrementScore(400);
       if (onWin) onWin(score + 400);
     }
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.potentiometer, serialData.button, serialData.distance, serialData.temperature, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function ObstacleCourse() {
@@ -58,7 +58,7 @@ export default function ObstacleCourse() {
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#0a1a2a', '#1a2a3a', '#0a1a2a']);
+    drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
 
     // Ground
     ctx.fillStyle = '#1a2a1a';
@@ -68,7 +68,7 @@ export default function ObstacleCourse() {
     ctx.fillStyle = '#2a2a2a';
     ctx.fillRect(0, h * 0.68, w, h * 0.04);
     ctx.setLineDash([20, 15]);
-    ctx.strokeStyle = '#ffdd00';
+    ctx.strokeStyle = C.GOLD;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, h * 0.7);
@@ -120,29 +120,29 @@ export default function ObstacleCourse() {
 
     // Distance counter
     const dist = Math.floor(carX.current);
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, 10, 160, 45);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px sans-serif';
+    drawGlassPanel(ctx, 10, 10, 160, 45, 8);
+    ctx.fillStyle = C.WHITE;
+    ctx.font = 'bold 20px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     ctx.fillText('🏁 ' + dist + 'm', 20, 40);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText('Maqsad: 2000m', 20, 58);
 
     // Speed indicator
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w / 2 - 100, 15, 200, 8);
-    ctx.fillStyle = speed.current > 150 ? '#00ff88' : '#ffdd00';
-    ctx.fillRect(w / 2 - 100, 15, 200 * (speed.current / 250), 8);
+    drawProgressBar(ctx, w / 2 - 100, 15, 200, 8, speed.current / 250, speed.current > 150 ? C.GREEN : C.GOLD);
 
     // BTN Jump indicator
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.textAlign = 'right';
     ctx.fillText('🏎️ POT: Tezlik  |  🔵 BTN: Kuchaytirish', w - 20, 40);
 
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, []);
 
   return (

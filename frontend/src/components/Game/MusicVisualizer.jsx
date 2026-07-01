@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function MusicVisualizer() {
@@ -38,7 +38,7 @@ export default function MusicVisualizer() {
     ctx.shadowBlur = 0;
 
     // Oscilloscope line
-    ctx.strokeStyle = '#00f5ff';
+    ctx.strokeStyle = C.CYAN;
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let x = 0; x < w; x += 3) {
@@ -65,23 +65,26 @@ export default function MusicVisualizer() {
     noteHistory.current.push(noteName);
     if (noteHistory.current.length > 50) noteHistory.current.shift();
 
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, 10, 150, 70);
-    ctx.fillStyle = '#00f5ff';
-    ctx.font = 'bold 32px sans-serif';
+    drawGlassPanel(ctx, 10, 10, 150, 70, 10);
+    ctx.fillStyle = C.CYAN;
+    ctx.font = 'bold 32px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     ctx.fillText(noteName + ' ' + Math.round(freq) + 'Hz', 20, 42);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
-	    ctx.fillText('POT → Chastota', 20, 65);
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
+    ctx.fillText('POT → Chastota', 20, 65);
 
     // Particle effects on beat
     if (samples.current[16] > 0.6) {
-      particles.current.emit(Math.random() * w, Math.random() * h, '#00f5ff', 3, 80);
+      particles.current.emit(Math.random() * w, Math.random() * h, C.CYAN, 3, 80);
     }
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
 
     // Win: get frequency high enough
     if (freq > 1800 && !winRef.current && winConditions) {

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas';
-import { drawGradientBackground, ParticleSystem, drawGlow } from './gameHelpers';
+import { C, drawGradientBackground, drawGlassPanel, drawVignette, drawScanlines, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function DistanceRadar() {
@@ -113,20 +113,20 @@ export default function DistanceRadar() {
     }
 
     // HUD
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, 10, 160, 55);
-    ctx.strokeStyle = 'rgba(0,245,255,0.3)';
-    ctx.strokeRect(10, 10, 160, 55);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    drawGlassPanel(ctx, 10, 10, 160, 55, 10);
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText('📡 Masofa', 20, 30);
-    ctx.fillStyle = '#00f5ff';
-    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = C.CYAN;
+    ctx.font = 'bold 20px Chakra Petch, monospace';
     ctx.fillText(dist + 'cm', 20, 55);
-    ctx.fillStyle = '#ffdd00';
-    ctx.font = '11px sans-serif';
+    ctx.fillStyle = C.GOLD;
+    ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText('🎯 ' + detected.current.size + '/5 topildi', 20, 72);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.distance, score, winConditions, onWin, incrementScore]);
 
   return (

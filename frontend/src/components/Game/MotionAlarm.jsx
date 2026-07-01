@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function MotionAlarm() {
@@ -72,28 +72,28 @@ export default function MotionAlarm() {
     }
 
     // Status bar
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(10, h - 55, 160, 40);
-    ctx.fillStyle = isAlarm ? '#ef4444' : '#22c55e';
-    ctx.font = 'bold 14px sans-serif';
+    drawGlassPanel(ctx, 10, h - 55, 160, 40, 8);
+    ctx.fillStyle = isAlarm ? '#ef4444' : C.GREEN;
+    ctx.font = 'bold 14px Chakra Petch, monospace';
     ctx.textAlign = 'left';
-	    ctx.fillText(isAlarm ? '🚨 SIGNAL!' : '🟢 XAVFSIZ', 20, h - 32);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
-	    ctx.fillText('Aniqlangan: ' + Math.floor(intruders.current / 10), 20, h - 15);
+    ctx.fillText(isAlarm ? '🚨 SIGNAL!' : '🟢 XAVFSIZ', 20, h - 32);
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '11px Chakra Petch, monospace';
+    ctx.fillText('Aniqlangan: ' + Math.floor(intruders.current / 10), 20, h - 15);
 
     // Progress
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w - 210, h - 45, 200, 15);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(w - 210, h - 45, 200 * Math.min(intruders.current / 100, 1), 15);
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px sans-serif';
+    drawProgressBar(ctx, w - 210, h - 45, 200, 15, Math.min(intruders.current / 100, 1), '#ef4444');
+    ctx.fillStyle = C.WHITE;
+    ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(Math.min(100, Math.floor(intruders.current)) + '%', w - 110, h - 34);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.button, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (

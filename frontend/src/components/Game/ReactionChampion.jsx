@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function ReactionChampion() {
@@ -56,8 +56,8 @@ export default function ReactionChampion() {
     const cx = w / 2, cy = h / 2;
     const pulse = state === 'go' ? 20 + 10 * Math.sin(t * 10) : 0;
 
-    ctx.fillStyle = state === 'go' ? '#00ff88' : state === 'ready' ? '#ffdd00' : '#334155';
-    ctx.shadowColor = state === 'go' ? '#00ff88' : state === 'ready' ? '#ffdd00' : 'transparent';
+    ctx.fillStyle = state === 'go' ? C.GREEN : state === 'ready' ? C.GOLD : '#334155';
+    ctx.shadowColor = state === 'go' ? C.GREEN : state === 'ready' ? C.GOLD : 'transparent';
     ctx.shadowBlur = pulse;
     ctx.beginPath();
     ctx.arc(cx, cy, state === 'waiting' ? 20 : 30 + pulse * 0.3, 0, Math.PI * 2);
@@ -66,8 +66,8 @@ export default function ReactionChampion() {
 
     // State text
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 28px sans-serif';
+    ctx.fillStyle = C.WHITE;
+    ctx.font = 'bold 28px Chakra Petch, monospace';
     ctx.fillText(
 state === 'waiting' ? "⏳ Tayyorlaning..." :
 	      state === 'ready' ? "👀 Kuzating..." :
@@ -78,27 +78,28 @@ state === 'waiting' ? "⏳ Tayyorlaning..." :
 
     if (state === 'go') {
       ctx.fillStyle = `rgba(0,255,136,${0.1 + 0.1 * Math.sin(t * 8)})`;
-      ctx.font = 'bold 72px sans-serif';
+      ctx.font = 'bold 72px Chakra Petch, monospace';
       ctx.fillText('🔥', cx, cy + 10);
     }
 
     // Player scores
-    ctx.fillStyle = '#00f5ff';
-    ctx.font = 'bold 24px monospace';
+    ctx.fillStyle = C.CYAN;
+    ctx.font = 'bold 24px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     ctx.fillText('O1: ' + p1Score, 30, 50);
-    ctx.fillStyle = '#ff00e5';
+    ctx.fillStyle = C.PINK;
     ctx.textAlign = 'right';
     ctx.fillText('O2: ' + p2Score, w - 30, 50);
 
     // Progress to win
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(w / 2 - 100, h - 40, 200, 8);
-    ctx.fillStyle = '#00f5ff';
-    ctx.fillRect(w / 2 - 100, h - 40, 200 * (p1Score / 5), 8);
+    drawProgressBar(ctx, w / 2 - 100, h - 40, 200, 8, p1Score / 5, C.CYAN);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
 
     // LED indicator
     ctx.fillStyle = `rgba(0,255,136,${state === 'go' ? 0.5 + 0.5 * Math.sin(t * 10) : 0.1})`;

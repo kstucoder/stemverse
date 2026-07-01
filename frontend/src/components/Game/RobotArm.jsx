@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Target, Move, RotateCcw } from 'lucide-react';
+import { C } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 const TARGETS = [
@@ -79,7 +80,8 @@ export default function RobotArm() {
   const endY = 50 - Math.sin((armAngle) * Math.PI / 180) * 25;
 
   return (
-    <div className="relative h-full min-h-[500px] bg-game-gradient rounded-2xl overflow-hidden p-6">
+    <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
+      style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
       {/* Grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="w-full h-full" style={{
@@ -91,30 +93,35 @@ export default function RobotArm() {
       {/* Robot Arm Base */}
       <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2">
         {/* Base */}
-        <div className="w-16 h-8 rounded-lg bg-gradient-to-r from-dark-600 to-dark-500 border border-dark-400 flex items-center justify-center">
-          <RotateCcw className="w-4 h-4 text-neon-cyan" />
+        <div className="w-16 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: `linear-gradient(90deg, ${C.PANEL}, #334155)`, border: `1px solid ${C.LINE}` }}>
+          <RotateCcw className="w-4 h-4" style={{ color: C.CYAN }} />
         </div>
 
         {/* Arm segment 1 */}
         <div className="relative origin-bottom-left transition-all duration-200"
           style={{ transform: `rotate(${baseAngle - 135}deg)` }}>
-          <div className="w-24 h-3 rounded bg-gradient-to-r from-brand-500 to-brand-400 ml-8">
+          <div className="w-24 h-3 rounded ml-8"
+            style={{ background: `linear-gradient(90deg, ${C.CYAN}, ${C.PURPLE})` }}>
             {/* Joint */}
-            <div className="absolute -left-1 -top-1 w-5 h-5 rounded-full bg-dark-600 border-2 border-brand-400" />
+            <div className="absolute -left-1 -top-1 w-5 h-5 rounded-full border-2"
+              style={{ background: C.DARK, borderColor: C.CYAN }} />
           </div>
 
           {/* Arm segment 2 */}
           <div className="relative origin-bottom-left transition-all duration-200 ml-20"
             style={{ transform: `rotate(${armAngle - 90}deg)` }}>
-            <div className="w-20 h-2.5 rounded bg-gradient-to-r from-brand-400 to-neon-cyan">
-              <div className="absolute -left-1 -top-1 w-4 h-4 rounded-full bg-dark-600 border-2 border-neon-cyan" />
+            <div className="w-20 h-2.5 rounded"
+              style={{ background: `linear-gradient(90deg, ${C.PURPLE}, ${C.CYAN})` }}>
+              <div className="absolute -left-1 -top-1 w-4 h-4 rounded-full border-2"
+                style={{ background: C.DARK, borderColor: C.CYAN }} />
             </div>
 
             {/* Gripper */}
             <div className="absolute -right-2 -top-2 transition-all duration-200">
               <div className={`flex gap-1 ${gripperOpen ? 'w-6' : 'w-2'}`}>
-                <div className="w-1 h-6 rounded bg-neon-green" />
-                <div className="w-1 h-6 rounded bg-neon-green" />
+                <div className="w-1 h-6 rounded" style={{ background: C.GREEN }} />
+                <div className="w-1 h-6 rounded" style={{ background: C.GREEN }} />
               </div>
             </div>
           </div>
@@ -127,31 +134,36 @@ export default function RobotArm() {
           <div key={i} className="absolute transition-all duration-300"
             style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center animate-pulse-slow
-              ${i === currentTarget ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-900' : ''}`}
-              style={{ backgroundColor: t.color }}>
-              <span className="text-xs font-bold text-dark-900">{t.label}</span>
+              ${i === currentTarget ? 'ring-2 ring-white' : ''}`}
+              style={{ backgroundColor: t.color, boxShadow: i === currentTarget ? `0 0 10px ${C.CYAN}` : 'none' }}>
+              <span className="text-xs font-bold" style={{ color: C.DARK }}>{t.label}</span>
             </div>
           </div>
         )
       ))}
 
       {/* Arm Position Indicator */}
-      <div className="absolute transition-all duration-200 w-3 h-3 rounded-full bg-neon-yellow shadow-lg shadow-neon-yellow/50"
-        style={{ left: `${endX}%`, top: `${endY}%`, transform: 'translate(-50%, -50%)' }} />
+      <div className="absolute transition-all duration-200 w-3 h-3 rounded-full"
+        style={{ left: `${endX}%`, top: `${endY}%`, transform: 'translate(-50%, -50%)',
+          background: C.GOLD, boxShadow: `0 0 15px ${C.GOLD}` }} />
 
       {/* HUD */}
       <div className="absolute top-4 left-4 right-4 flex justify-between">
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Burchak</p>
-          <p className="font-game text-white text-lg">{baseAngle}°</p>
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>Burchak</p>
+          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{baseAngle}°</p>
         </div>
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Qo'l</p>
-          <p className="font-game text-white text-lg">{armAngle}°</p>
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>Qo'l</p>
+          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{armAngle}°</p>
         </div>
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Taymer</p>
-          <p className={`font-game text-lg ${timeLeft < 15 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>Taymer</p>
+          <p className="text-lg" style={{
+            fontFamily: 'Chakra Petch, monospace',
+            color: timeLeft < 15 ? '#ef4444' : C.WHITE,
+            animation: timeLeft < 15 ? 'pulse 1s infinite' : 'none',
+          }}>
             {timeLeft}s
           </p>
         </div>
@@ -160,25 +172,25 @@ export default function RobotArm() {
       {/* Bottom Stats */}
       <div className="absolute bottom-4 left-4 right-4">
         <div className="flex justify-between items-center">
-          <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Yig'ilgan</p>
-            <p className="font-game text-white text-lg">{targetsCollected}/3</p>
+          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+            <p className="text-xs" style={{ color: C.MUTED }}>Yig'ilgan</p>
+            <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{targetsCollected}/3</p>
           </div>
-          <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Ball</p>
-            <p className="font-game text-white text-lg">{score}</p>
+          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+            <p className="text-xs" style={{ color: C.MUTED }}>Ball</p>
+            <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{score}</p>
           </div>
-          <div className="glass rounded-xl px-4 py-2">
-            <p className="text-xs text-dark-400">Keyingi</p>
-            <p className="font-game text-white text-lg" style={{ color: target?.color }}>{target?.label}</p>
+          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+            <p className="text-xs" style={{ color: C.MUTED }}>Keyingi</p>
+            <p className="text-lg" style={{ fontFamily: 'Chakra Petch, monospace', color: target?.color }}>{target?.label}</p>
           </div>
         </div>
 
         {/* Controls hint */}
         <div className="flex gap-2 mt-2 justify-center">
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">POT → Aylanish</span>
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">DIST → Qo'l</span>
-          <span className="text-xs text-dark-500 bg-dark-800/50 px-2 py-1 rounded">BTN → Olish</span>
+          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>POT → Aylanish</span>
+          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>DIST → Qo'l</span>
+          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>BTN → Olish</span>
         </div>
       </div>
     </div>

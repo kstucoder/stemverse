@@ -1,7 +1,7 @@
 // Secret Code Door — Spy-themed canvas game with code-breaking
 import { useState, useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas';
-import { drawGradientBackground, drawGlow, ParticleSystem, drawProgressBar } from './gameHelpers';
+import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 import { playClick, playError, playWin } from './gameAudio';
 
@@ -87,11 +87,11 @@ export default function SecretCodeDoor() {
     const dX = w / 2 - 80, dY = h / 2 - 100, dW = 160, dH = 200;
 
     // Door frame
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = C.PANEL;
     ctx.fillRect(dX - 5, dY - 5, dW + 10, dH + 10);
 
     // Door
-    ctx.fillStyle = doorOpen ? '#0f172a' : '#2a2a3a';
+    ctx.fillStyle = doorOpen ? C.DARK : '#2a2a3a';
     ctx.fillRect(dX, dY, dW, dH);
 
     if (!doorOpen) {
@@ -103,14 +103,14 @@ export default function SecretCodeDoor() {
       ctx.strokeRect(dX + 10, dY + 130, dW - 20, 50);
 
       // Code display
-      ctx.fillStyle = enteredCode.length > 0 ? '#00f5ff' : '#475569';
-      ctx.font = 'bold 24px monospace';
+      ctx.fillStyle = enteredCode.length > 0 ? C.CYAN : '#475569';
+      ctx.font = 'bold 24px Chakra Petch, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(enteredCode.map(() => '●').join(' ') || '— — — — —', w / 2, dY + 38);
 
       // Progress dots
       for (let i = 0; i < CODE_LENGTH; i++) {
-        ctx.fillStyle = i < enteredCode.length ? '#00ff88' : '#1e293b';
+        ctx.fillStyle = i < enteredCode.length ? C.GREEN : C.PANEL;
         ctx.beginPath();
         ctx.arc(w / 2 - 40 + i * 20, dY + 95, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -138,15 +138,15 @@ export default function SecretCodeDoor() {
     keys.forEach((row, ri) => {
       row.forEach((key, ci) => {
         const kx = w / 2 - 80 + ci * 40;
-        ctx.fillStyle = enteredCode.length > ri ? '#00f5ff' : '#1e293b';
-        ctx.shadowColor = enteredCode.length > ri ? '#00f5ff' : 'transparent';
+        ctx.fillStyle = enteredCode.length > ri ? C.CYAN : C.PANEL;
+        ctx.shadowColor = enteredCode.length > ri ? C.CYAN : 'transparent';
         ctx.shadowBlur = enteredCode.length > ri ? 8 : 0;
         ctx.beginPath();
         ctx.roundRect(kx, ky + ri * 30, 30, 22, 4);
         ctx.fill();
         ctx.shadowBlur = 0;
-        ctx.fillStyle = enteredCode.length > ri ? '#fff' : '#475569';
-        ctx.font = '10px monospace';
+        ctx.fillStyle = enteredCode.length > ri ? C.WHITE : '#475569';
+        ctx.font = '10px Chakra Petch, monospace';
         ctx.textAlign = 'center';
         ctx.fillText(secretCode.current[ri] || 0, kx + 15, ky + ri * 30 + 15);
       });
@@ -154,17 +154,17 @@ export default function SecretCodeDoor() {
 
     // Feedback text
     if (feedback) {
-      ctx.fillStyle = doorOpen ? '#00ff88' : feedback.includes('Wrong') || feedback.includes('LOCKED') ? '#ef4444' : '#ffdd00';
-      ctx.font = 'bold 14px sans-serif';
+      ctx.fillStyle = doorOpen ? C.GREEN : feedback.includes('Wrong') || feedback.includes('LOCKED') ? '#ef4444' : C.GOLD;
+      ctx.font = 'bold 14px Chakra Petch, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(feedback, w / 2, h - 40);
     }
 
     // Attempts
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '12px Chakra Petch, monospace';
     ctx.textAlign = 'left';
-	    ctx.fillText(`Urinishlar: ${'❤️'.repeat(attempts)}${'🖤'.repeat(MAX_ATTEMPTS - attempts)}`, 15, 25);
+    ctx.fillText(`Urinishlar: ${'❤️'.repeat(attempts)}${'🖤'.repeat(MAX_ATTEMPTS - attempts)}`, 15, 25);
 
     // Secret code hint (small, for debugging/show)
     ctx.fillStyle = '#334155';
@@ -173,13 +173,17 @@ export default function SecretCodeDoor() {
     ctx.fillText(`Target: ${secretCode.current.join('')}`, w - 15, h - 15);
 
     // Score
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.fillStyle = C.WHITE;
+    ctx.font = 'bold 14px Chakra Petch, monospace';
     ctx.textAlign = 'right';
     ctx.fillText(`Score: ${score}`, w - 15, 25);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [enteredCode, doorOpen, feedback, attempts, score, serialData.button]);
 
   return (

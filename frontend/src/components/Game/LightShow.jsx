@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { Sparkles, Play, Pause } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 
+import { C } from './gameHelpers';
+
 const PATTERNS = [
   { name: "To'lqin", sequence: [1,0,1,0], colors: ['#00f5ff', '#9900ff'] },
   { name: 'Miltillash', sequence: [1,1,0,0], colors: ['#ff00e5', '#ffdd00'] },
@@ -107,7 +109,8 @@ export default function LightShow() {
   };
 
   return (
-    <div className="relative h-full min-h-[500px] bg-game-gradient rounded-2xl overflow-hidden p-6">
+    <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
+      style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
       {/* Stage Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-purple-900/20 to-dark-900" />
       <div className="absolute inset-0">
@@ -124,7 +127,7 @@ export default function LightShow() {
           {/* LED Effect */}
           <div className="w-32 h-32 rounded-full transition-all duration-200 flex items-center justify-center"
             style={{
-              backgroundColor: currentLED() ? currentColor() : '#1e293b',
+              backgroundColor: currentLED() ? currentColor() : C.PANEL,
               boxShadow: currentLED() ? `0 0 60px ${currentColor()}, 0 0 120px ${currentColor()}40` : 'none',
             }}>
             <span className="text-4xl">{currentLED() ? '💡' : '⚫'}</span>
@@ -136,12 +139,13 @@ export default function LightShow() {
 
       {/* Pattern Display */}
       <div className="absolute top-4 left-4 right-4">
-        <div className="glass rounded-xl p-4">
+        <div className="rounded-xl p-4" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-game text-white text-lg">
+            <h3 className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>
               {stage === 'setup' ? "🎵 Yorug'lik Shousi" : '🎯 Raqs Musobaqasi'}
             </h3>
-            <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 rounded-lg bg-dark-700 hover:bg-dark-600">
+            <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 rounded-lg"
+              style={{ background: C.PANEL, border: `1px solid ${C.LINE}` }}>
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </button>
           </div>
@@ -151,8 +155,9 @@ export default function LightShow() {
             <div className="flex gap-1 mb-3">
               {PATTERNS[currentPattern].sequence.map((val, i) => (
                 <div key={i} className={`flex-1 h-8 rounded transition-all ${
-                  val ? 'bg-brand-500' : 'bg-dark-600'
-                } ${i === Math.floor(patternPos / 4) % PATTERNS[currentPattern].sequence.length ? 'ring-2 ring-white' : ''}`} />
+                  i === Math.floor(patternPos / 4) % PATTERNS[currentPattern].sequence.length ? 'ring-2 ring-white' : ''
+                }`}
+                  style={{ background: val ? C.CYAN : C.PANEL }} />
               ))}
             </div>
           )}
@@ -160,26 +165,29 @@ export default function LightShow() {
           {/* Target Pattern */}
           {stage === 'play' && targetPattern && (
             <div className="mb-3">
-              <p className="text-xs text-dark-400 mb-1">Maqsad: {targetPattern.name}</p>
+              <p className="text-xs mb-1" style={{ color: C.MUTED }}>Maqsad: {targetPattern.name}</p>
               <div className="flex gap-1">
                 {targetPattern.pattern.map((val, i) => (
-                  <div key={i} className={`flex-1 h-6 rounded ${val ? 'bg-neon-yellow' : 'bg-dark-600'}`} />
+                  <div key={i} className={`flex-1 h-6 rounded ${val ? 'bg-neon-yellow' : ''}`}
+                    style={{ background: val ? C.GOLD : C.PANEL }} />
                 ))}
               </div>
-              <p className="text-xs text-dark-500 mt-1">
+              <p className="text-xs mt-1" style={{ color: C.MUTED }}>
                 Yozilgan: {recordedPattern.length}/8 bosish
               </p>
             </div>
           )}
 
           <div className="flex items-center justify-between">
-            <span className="text-xs text-dark-400">Pattern: {PATTERNS[currentPattern].name}</span>
+            <span className="text-xs" style={{ color: C.MUTED }}>Pattern: {PATTERNS[currentPattern].name}</span>
             <div className="flex gap-2">
-              <button onClick={cyclePattern} className="btn-secondary text-xs py-1 px-3">
+              <button onClick={cyclePattern} className="text-xs py-1 px-3 rounded-lg"
+                style={{ background: C.PANEL, color: C.MUTED, border: `1px solid ${C.LINE}`, fontFamily: 'Chakra Petch, monospace' }}>
                 Patternni aylantirish
               </button>
               {stage === 'setup' && (
-                <button onClick={startDance} className="btn-primary text-xs py-1 px-3">
+                <button onClick={startDance} className="text-xs py-1 px-3 rounded-lg"
+                  style={{ background: `linear-gradient(135deg, ${C.CYAN}, ${C.PURPLE})`, color: C.DARK, fontFamily: 'Chakra Petch, monospace', fontWeight: 'bold' }}>
                   Raqsni boshlash!
                 </button>
               )}
@@ -190,25 +198,27 @@ export default function LightShow() {
 
       {/* Score + Progress */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between">
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Ball</p>
-          <p className="font-game text-white text-lg">{score}</p>
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>Ball</p>
+          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{score}</p>
         </div>
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">Raqlar</p>
-          <p className="font-game text-white text-lg">{completedDances}/3</p>
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>Raqlar</p>
+          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{completedDances}/3</p>
         </div>
-        <div className="glass rounded-xl px-4 py-2">
-          <p className="text-xs text-dark-400">LED</p>
-          <div className={`w-5 h-5 rounded-full mt-1 ${currentLED() ? 'bg-neon-green shadow-lg shadow-neon-green/50 animate-pulse' : 'bg-dark-600'}`} />
+        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <p className="text-xs" style={{ color: C.MUTED }}>LED</p>
+          <div className={`w-5 h-5 rounded-full mt-1 ${currentLED() ? 'animate-pulse' : ''}`}
+            style={{ background: currentLED() ? C.GREEN : C.PANEL, boxShadow: currentLED() ? `0 0 10px ${C.GREEN}` : 'none' }} />
         </div>
       </div>
 
       {/* Stage indicator */}
       <div className="absolute bottom-20 left-1/2 -translate-x-1/2">
-        <div className="glass rounded-xl px-4 py-2 text-center">
-          <Sparkles className={`w-5 h-5 mx-auto ${isPlaying ? 'text-neon-yellow animate-spin' : 'text-dark-400'}`} />
-          <p className="text-xs text-dark-400 mt-1">{isPlaying ? 'Ijro etilmoqda' : 'Tayyor'}</p>
+        <div className="rounded-xl px-4 py-2 text-center" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
+          <Sparkles className={`w-5 h-5 mx-auto ${isPlaying ? 'animate-spin' : ''}`}
+            style={{ color: isPlaying ? C.GOLD : C.MUTED }} />
+          <p className="text-xs mt-1" style={{ color: C.MUTED, fontFamily: 'Chakra Petch, monospace' }}>{isPlaying ? 'Ijro etilmoqda' : 'Tayyor'}</p>
         </div>
       </div>
     </div>

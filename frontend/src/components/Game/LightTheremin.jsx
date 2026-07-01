@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { drawGradientBackground, drawGlow, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function LightTheremin() {
@@ -36,17 +36,17 @@ export default function LightTheremin() {
     const bars = Math.floor((freqVal / 2000) * 20);
     for (let i = 0; i < 20; i++) {
       const barH = (i < bars) ? 8 + i * 3 : 4;
-      ctx.fillStyle = i < bars ? `hsl(${180 + i * 8}, 100%, ${50 + i * 2}%)` : '#1e293b';
+      ctx.fillStyle = i < bars ? `hsl(${180 + i * 8}, 100%, ${50 + i * 2}%)` : C.PANEL;
       ctx.fillRect(w / 2 - 100 + i * 10, h - 80 - barH, 6, barH);
     }
 
     // Glow effect
-    drawGlow(ctx, w / 2, h / 2, 40 + amp, `rgba(0,245,255,${0.05 + amp / 500})`);
+    drawGlow(ctx, w / 2, h / 2, 40 + amp, C.CYAN_GLOW);
 
     // Particles
     if (amp > 30) {
-      particles.current.emit(w / 2, h / 2, '#00f5ff', 1, 50 + amp);
-      particles.current.emit(w / 2, h / 2, '#9900ff', 1, 30 + amp * 0.5);
+      particles.current.emit(w / 2, h / 2, C.CYAN, 1, 50 + amp);
+      particles.current.emit(w / 2, h / 2, C.PURPLE, 1, 30 + amp * 0.5);
     }
     particles.current.update(0.016);
     particles.current.draw(ctx);
@@ -59,16 +59,18 @@ export default function LightTheremin() {
     }
 
     // HUD
-    ctx.fillStyle = 'rgba(15,23,42,0.7)';
-    const note = ['C','D','E','F','G','A','B'][Math.floor((freqVal / 2000) * 7) % 7];
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = 'bold 24px Chakra Petch, monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#00f5ff';
+    ctx.fillStyle = C.CYAN;
     ctx.fillText(note + Math.floor(freqVal) + 'Hz', w / 2, 50);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '14px sans-serif';
+    ctx.fillStyle = C.MUTED;
+    ctx.font = '14px Chakra Petch, monospace';
     ctx.fillText("☀️ Qo'lingizni LDR sensor ustida harakatlantiring", w / 2, 80);
     ctx.fillText("Yorug'lik → Yuqori ovoz", w / 2, 100);
+
+    // Vignette + scanlines
+    drawVignette(ctx, w, h);
+    drawScanlines(ctx, w, h);
   }, [serialData.ldr, serialData.led, score, winConditions, onWin, incrementScore]);
 
   return (
