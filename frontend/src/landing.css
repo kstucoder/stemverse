@@ -184,7 +184,7 @@
 .voltra-landing .kit-cta{display:inline-block;margin-top:12px;font-family:'Chakra Petch';font-weight:700;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;
   color:#1a1300;padding:9px 18px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold-deep));box-shadow:0 8px 22px rgba(255,159,28,.4);transition:transform .2s}
 .voltra-landing .kit-cta:hover{transform:translateY(-2px)}
-.voltra-landing .scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:6;font-family:'Chakra Petch';font-size:.66rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:8px;animation:floaty 2.4s ease-in-out infinite}
+.voltra-landing .scroll-hint{position:fixed;right:24px;bottom:44px;transform:none;z-index:999;display:flex;flex-direction:column;align-items:center;gap:8px;animation:floaty 2.4s ease-in-out infinite}
 .voltra-landing .scroll-hint i{width:22px;height:34px;border:1.5px solid var(--line);border-radius:12px;position:relative}
 .voltra-landing .scroll-hint i::after{content:"";position:absolute;left:50%;top:6px;width:3px;height:7px;border-radius:3px;background:var(--energy);transform:translateX(-50%);animation:wheel 1.6s ease-in-out infinite}
 @keyframes wheel{0%{opacity:0;top:6px}40%{opacity:1}100%{opacity:0;top:18px}}
@@ -479,28 +479,33 @@
   display:flex;align-items:flex-start;justify-content:center;
   padding-top:0;z-index:3;
 }
+/* Outer wrapper — owns ONLY the glow (filter) animation */
+.voltra-landing .hero-kit-glow-wrap{
+  width:100%;display:flex;align-items:flex-start;justify-content:center;
+  will-change:filter;
+  animation:kitGlow 3s ease-in-out infinite;
+}
+/* Img — owns ONLY the float (transform) animation; NO static filter here */
 .voltra-landing .hero-kit-main{
   width:100%;height:auto;display:block;
-  filter:
-    drop-shadow(0 0 50px rgba(25,227,255,.5))
-    drop-shadow(0 0 120px rgba(25,227,255,.18))
-    drop-shadow(0 40px 80px rgba(0,0,0,.7));
-  animation:kitFloat 4s ease-in-out infinite, kitGlow 3s ease-in-out infinite;
+  will-change:transform;
+  animation:kitFloat 3.8s ease-in-out infinite;
 }
 @keyframes kitFloat{
-  0%,100%{transform:translateY(0) rotate(0deg)}
-  40%{transform:translateY(-34px) rotate(2.5deg)}
-  70%{transform:translateY(-14px) rotate(-1.2deg)}
+  0%  {transform:translateY(0)    rotate(-4deg)}
+  45% {transform:translateY(-60px) rotate(4deg)}
+  75% {transform:translateY(-24px) rotate(-2deg)}
+  100%{transform:translateY(0)    rotate(-4deg)}
 }
 @keyframes kitGlow{
   0%,100%{filter:
-    drop-shadow(0 0 40px rgba(25,227,255,.4))
-    drop-shadow(0 0 90px rgba(25,227,255,.12))
-    drop-shadow(0 40px 80px rgba(0,0,0,.7))}
+    drop-shadow(0 0 35px rgba(25,227,255,.45))
+    drop-shadow(0 0 80px rgba(25,227,255,.14))
+    drop-shadow(0 44px 80px rgba(0,0,0,.75))}
   50%{filter:
-    drop-shadow(0 0 70px rgba(25,227,255,.75))
-    drop-shadow(0 0 160px rgba(25,227,255,.28))
-    drop-shadow(0 40px 80px rgba(0,0,0,.7))}
+    drop-shadow(0 0 90px rgba(25,227,255,.95))
+    drop-shadow(0 0 200px rgba(25,227,255,.42))
+    drop-shadow(0 44px 80px rgba(0,0,0,.65))}
 }
 
 /* bottom fade */

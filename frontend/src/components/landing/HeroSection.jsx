@@ -100,13 +100,15 @@ export default function HeroSection({ sceneRef }) {
         {/* ─── Scene ─── */}
         <div className="scene" id="scene" ref={sceneRef}>
 
-          {/* Kit box photo — fades into page at edges */}
+          {/* Kit box photo — two-layer: outer=glow anim, inner=float anim */}
           <div className="hero-product-visual">
-            <img
-              src="/images/kit-box.png"
-              alt="VOLTRA Arduino STEM to'plami"
-              className="hero-kit-main"
-            />
+            <div className="hero-kit-glow-wrap">
+              <img
+                src="/images/kit-box.png"
+                alt="VOLTRA Arduino STEM to'plami"
+                className="hero-kit-main"
+              />
+            </div>
             {/* Edge fades: blends photo into dark page background */}
             <div className="hero-kit-fade" />
           </div>
@@ -127,10 +129,9 @@ export default function HeroSection({ sceneRef }) {
         </div>
       </div>
 
-      {/* Scroll hint */}
+      {/* Scroll hint — icon only, fixed right edge */}
       <div className="scroll-hint">
         <i />
-        Pastga aylantiring
       </div>
     </section>
   );
