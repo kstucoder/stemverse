@@ -103,12 +103,17 @@ export default function HeroSection({ sceneRef }) {
           {/* Kit box photo — fades into page at edges */}
           <div className="hero-product-visual">
             <img
-              src="/images/kit-box.jpeg"
+              src="/images/kit-box.png"
               alt="VOLTRA Arduino STEM to'plami"
               className="hero-kit-main"
             />
             {/* Edge fades: blends photo into dark page background */}
             <div className="hero-kit-fade" />
+          </div>
+
+          {/* Mascot — floating in front of kit box */}
+          <div className="hero-mascot" aria-hidden="true">
+            <img src="/images/mascot.png" alt="" />
           </div>
 
           {/* Label + CTA overlaid at bottom */}
