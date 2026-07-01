@@ -201,7 +201,31 @@ export default function LessonView() {
                     )
                   }
                   {gameStarted && showStory && (
-                    <StoryMission gameType={lesson?.gameConfig?.gameType} onStart={() => setShowStory(false)} />
+                    lesson?.gameConfig?.gameType === 'energy_city' ? (
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black">
+                        <video
+                          src="/cutscenes/1.mp4"
+                          autoPlay muted playsInline
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onEnded={() => setShowStory(false)}
+                        />
+                        <button
+                          onClick={() => setShowStory(false)}
+                          className="absolute bottom-6 right-6 z-30 px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all"
+                          style={{
+                            fontFamily: 'Chakra Petch, monospace',
+                            color: '#EAF3FF',
+                            background: 'rgba(0,0,0,0.6)',
+                            border: '1px solid rgba(0,238,255,0.3)',
+                            backdropFilter: 'blur(8px)',
+                          }}
+                        >
+                          ⏭ O'tkazish
+                        </button>
+                      </div>
+                    ) : (
+                      <StoryMission gameType={lesson?.gameConfig?.gameType} onStart={() => setShowStory(false)} />
+                    )
                   )}
                   {gameStarted && !showStory && showWinModal && !completing && (
                     <StoryVictory
