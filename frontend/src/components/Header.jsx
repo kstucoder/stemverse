@@ -27,7 +27,7 @@ export default function Header() {
         { to: '/lessons',     icon: BookOpen,         label: 'Missiyalar'   },
         { to: '/achievements',icon: Trophy,           label: 'Yutuqlar'     },
       ];
-  if (user.role === 'TEACHER' || user.role === 'ADMIN')
+  if (user.role === 'TEACHER')
     navItems.push({ to: '/teacher', icon: School, label: "O'qituvchi" });
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');

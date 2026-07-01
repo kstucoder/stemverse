@@ -68,4 +68,24 @@ router.get('/users', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
+router.get('/teachers', async (req, res) => {
+  try {
+    const teachers = await prisma.user.findMany({
+      where: { role: 'TEACHER' },
+      select: {
+        id: true, name: true, email: true, createdAt: true,
+        _count: { select: { classrooms: true } },
+        classrooms: {
+          select: {
+            id: true, name: true, inviteCode: true,
+            _count: { select: { students: true } },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+    res.json(teachers);
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
 export default router;
