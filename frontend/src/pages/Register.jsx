@@ -15,9 +15,9 @@ export default function Register() {
     if (form.password !== form.confirmPassword) { toast.error('Parollar mos kelmadi'); return; }
     if (form.password.length < 6) { toast.error("Parol kamida 6 belgidan iborat bo'lishi kerak"); return; }
     try {
-      await register(form.name, form.email, form.password);
-      toast.success('Hisob yaratildi!');
-      navigate('/dashboard');
+      const data = await register(form.name, form.email, form.password);
+      toast.success('Hisob yaratildi! 🚀');
+      navigate(data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
     } catch (err) {
       toast.error(err.message);
     }

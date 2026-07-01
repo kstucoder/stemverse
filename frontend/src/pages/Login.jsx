@@ -14,9 +14,9 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      const data = await login(email, password);
       toast.success('Xush kelibsiz!');
-      navigate('/dashboard');
+      navigate(data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
     } catch (err) {
       toast.error(err.message);
     }
