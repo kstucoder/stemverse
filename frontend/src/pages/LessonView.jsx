@@ -22,6 +22,8 @@ export default function LessonView() {
   const [winScore,     setWinScore]     = useState(0);
   const [xpEarned,     setXpEarned]    = useState(0);
   const [completing,   setCompleting]   = useState(false);
+  // Energy City maxsus flow
+  const [videoPhase,   setVideoPhase]   = useState('idle'); // idle | video | dialog | playing
   const { startGame, stopGame } = useGameStore();
 
   useEffect(() => {
@@ -51,8 +53,15 @@ export default function LessonView() {
     if (lesson?.gameConfig) useGameStore.getState().setWinConfig(lesson.winCondition, handleWin);
     startGame();
     setGameStarted(true);
-    setShowStory(true);
     setActiveTab('game');
+    // Energy City maxsus flow: video → dialog → o'yin
+    if (lesson?.gameConfig?.gameType === 'energy_city') {
+      setVideoPhase('video');
+      setShowStory(false);
+    } else {
+      setShowStory(true);
+      setVideoPhase('idle');
+    }
   };
 
   /* ── Loading ── */
@@ -181,59 +190,93 @@ export default function LessonView() {
               {/* GAME tab */}
               {activeTab === 'game' && (
                 <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 520 }}>
-                  {gameStarted
-                    ? <GameComponent />
-                    : (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 520, gap: 16, padding: 24 }}>
-                        <div style={{ width: 72, height: 72, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${lvColor}12`, border: `1px solid ${lvColor}30` }}>
-                          <Gamepad2 className="w-8 h-8" style={{ color: lvColor }} />
-                        </div>
-                        <h3 style={{ fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '1.2rem', color: 'white', textAlign: 'center' }}>
-                          Digital Twin Missiya
-                        </h3>
-                        <p style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem', textAlign: 'center', maxWidth: 380, lineHeight: 1.6 }}>
-                          Arduino'ni USB orqali ulab, o'yinni boshlang. Haqiqiy sensorlar ma'lumotlari o'yinni boshqaradi.
-                        </p>
-                        <button onClick={startLessonGame} className="btn-primary" style={{ marginTop: 8 }}>
-                          ▶ Missiyani boshlash
-                        </button>
+                  {!gameStarted ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 520, gap: 16, padding: 24 }}>
+                      <div style={{ width: 72, height: 72, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${lvColor}12`, border: `1px solid ${lvColor}30` }}>
+                        <Gamepad2 className="w-8 h-8" style={{ color: lvColor }} />
                       </div>
-                    )
-                  }
-                  {gameStarted && showStory && (
-                    lesson?.gameConfig?.gameType === 'energy_city' ? (
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black">
-                        <video
-                          src="/cutscenes/1.mp4"
-                          autoPlay muted playsInline
-                          className="absolute inset-0 w-full h-full object-cover"
-                          onEnded={() => setShowStory(false)}
+                      <h3 style={{ fontFamily: 'Orbitron, monospace', fontWeight: 700, fontSize: '1.2rem', color: 'white', textAlign: 'center' }}>
+                        Digital Twin Missiya
+                      </h3>
+                      <p style={{ color: 'var(--text-muted)', fontFamily: 'DM Sans, sans-serif', fontSize: '0.9rem', textAlign: 'center', maxWidth: 380, lineHeight: 1.6 }}>
+                        Arduino'ni USB orqali ulab, o'yinni boshlang. Haqiqiy sensorlar ma'lumotlari o'yinni boshqaradi.
+                      </p>
+                      <button onClick={startLessonGame} className="btn-primary" style={{ marginTop: 8 }}>
+                        ▶ Missiyani boshlash
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* O'yin (har doim fonda ishlaydi) */}
+                      <GameComponent />
+
+                      {/* === ENERGY CITY maxsus flow === */}
+                      {lesson?.gameConfig?.gameType === 'energy_city' && (
+                        <>
+                          {/* 1. Video intro */}
+                          {videoPhase === 'video' && (
+                            <div className="absolute inset-0 z-30 bg-black">
+                              <video
+                                src="/cutscenes/1.mp4"
+                                autoPlay muted playsInline
+                                className="absolute inset-0 w-full h-full object-cover"
+                                onEnded={() => setVideoPhase('dialog')}
+                              />
+                              <button
+                                onClick={() => setVideoPhase('dialog')}
+                                className="absolute bottom-6 right-6 z-40 px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider"
+                                style={{ fontFamily: 'Chakra Petch, monospace', color: '#EAF3FF', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,238,255,0.3)', backdropFilter: 'blur(8px)' }}
+                              >
+                                ⏭ O'tkazish
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 2. Dialog: missiya topshirig'i */}
+                          {videoPhase === 'dialog' && (
+                            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center" style={{ background: 'rgba(4,6,14,0.95)', backdropFilter: 'blur(8px)' }}>
+                              <div className="text-center max-w-md px-8 py-10" style={{ borderRadius: 20, border: '1px solid rgba(255,215,0,0.15)', background: 'rgba(11,17,32,0.8)' }}>
+                                <div className="text-5xl mb-4">⚡</div>
+                                <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: 'Oswald, sans-serif', color: '#EAF3FF', letterSpacing: 1 }}>
+                                  Energy City — Tinch kechada
+                                </h2>
+                                <p className="text-base mb-2" style={{ color: '#bcd0ea', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.6 }}>
+                                  Shahar chiroqlari o'chdi. LED'ni plataga ulab,
+                                  shaharga quvvat qaytaring.
+                                </p>
+                                <p className="text-sm font-bold mt-4" style={{ color: '#FFD700', fontFamily: 'Chakra Petch, monospace' }}>
+                                  "Electra — shaharni qutqar!"
+                                </p>
+                                <button
+                                  onClick={() => setVideoPhase('playing')}
+                                  className="mt-6 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider"
+                                  style={{ fontFamily: 'Chakra Petch, monospace', color: '#1a1300', background: 'linear-gradient(135deg, #FFD700, #FF9F1C)', boxShadow: '0 0 20px rgba(255,215,0,0.3)' }}
+                                >
+                                  ▶ Sxemani ulash
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 3. O'yin (videoPhase === 'playing') — GameComponent fonda ishlaydi, LED=1 bo'lganda chiroqlar yonadi */}
+                        </>
+                      )}
+
+                      {/* === Boshqa o'yinlar uchun eski cutscene === */}
+                      {lesson?.gameConfig?.gameType !== 'energy_city' && gameStarted && showStory && (
+                        <StoryMission gameType={lesson?.gameConfig?.gameType} onStart={() => setShowStory(false)} />
+                      )}
+
+                      {/* Win modal */}
+                      {gameStarted && !showStory && showWinModal && !completing && (
+                        <StoryVictory
+                          gameType={lesson?.gameConfig?.gameType}
+                          score={winScore}
+                          xpEarned={xpEarned}
+                          onContinue={() => setShowWinModal(false)}
                         />
-                        <button
-                          onClick={() => setShowStory(false)}
-                          className="absolute bottom-6 right-6 z-30 px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all"
-                          style={{
-                            fontFamily: 'Chakra Petch, monospace',
-                            color: '#EAF3FF',
-                            background: 'rgba(0,0,0,0.6)',
-                            border: '1px solid rgba(0,238,255,0.3)',
-                            backdropFilter: 'blur(8px)',
-                          }}
-                        >
-                          ⏭ O'tkazish
-                        </button>
-                      </div>
-                    ) : (
-                      <StoryMission gameType={lesson?.gameConfig?.gameType} onStart={() => setShowStory(false)} />
-                    )
-                  )}
-                  {gameStarted && !showStory && showWinModal && !completing && (
-                    <StoryVictory
-                      gameType={lesson?.gameConfig?.gameType}
-                      score={winScore}
-                      xpEarned={xpEarned}
-                      onContinue={() => setShowWinModal(false)}
-                    />
+                      )}
+                    </>
                   )}
                 </div>
               )}
