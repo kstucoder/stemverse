@@ -12,11 +12,11 @@ export default function ObstacleCourse() {
   const spawnTimer = useRef(0);
 
   const update = useCallback((dt) => {
-    const pot = serialData.potentiometer || 512;
+    const pot = serialData.pot || 512;
     speed.current = (pot / 1023) * 200 + 50;
 
-    // Button to jump
-    if (serialData.button === 1) {
+    // Button boosts the car forward
+    if (serialData.btn === 1) {
       carX.current += 200 * dt;
     }
 
@@ -46,15 +46,17 @@ export default function ObstacleCourse() {
       return o.x > -50;
     });
 
-    // Win: reach 2000m
-    if (carX.current > 2000 && !winRef.current && winConditions) {
+    // Win distance comes from the lesson's own declared win condition, so the
+    // sidebar shown to the player always matches what's actually required.
+    const targetDist = winConditions?.value ?? 500;
+    if (carX.current > targetDist && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(350);
       if (onWin) onWin(score + 350);
     }
 
     particles.current.update(dt);
-  }, [serialData.potentiometer, serialData.button, serialData.distance, score, winConditions, onWin, incrementScore]);
+  }, [serialData.pot, serialData.btn, score, winConditions, onWin, incrementScore]);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -127,7 +129,7 @@ export default function ObstacleCourse() {
     ctx.fillText('🏁 ' + dist + 'm', 20, 40);
     ctx.fillStyle = C.MUTED;
     ctx.font = '11px Chakra Petch, monospace';
-    ctx.fillText('Maqsad: 2000m', 20, 58);
+    ctx.fillText(`Maqsad: ${winConditions?.value ?? 500}m`, 20, 58);
 
     // Speed indicator
     drawProgressBar(ctx, w / 2 - 100, 15, 200, 8, speed.current / 250, speed.current > 150 ? C.GREEN : C.GOLD);

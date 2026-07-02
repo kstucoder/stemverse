@@ -12,7 +12,7 @@ export default function TempGarden() {
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    const temp = serialData.temperature || 25;
+    const temp = serialData.temp ?? 25;
     const isCold = temp < 20;
     const isHot = temp > 30;
     const isPerfect = temp >= 20 && temp <= 30;
@@ -143,7 +143,7 @@ export default function TempGarden() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.temperature, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.temp, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

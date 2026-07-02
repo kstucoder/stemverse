@@ -23,7 +23,11 @@ const useGameStore = create((set, get) => ({
     isNight: true,
   },
 
-  serialData: { led: 0, button: 0, potentiometer: 0, distance: 0, temperature: 0 },
+  // Canonical short keys — MUST match what the taught Arduino code actually
+  // prints over Serial (e.g. Serial.print("POT:") -> key "pot" after lowercasing
+  // in useSerial.js). Long-form names here would silently never populate from
+  // real hardware.
+  serialData: { led: 0, btn: 0, pot: 0, dist: 0, temp: 0, ldr: 0, pir: 0, moist: 0, r: 0, g: 0, b: 0 },
   progress: { ledBlinks: 0, buttonPresses: 0, maxPower: 0 },
   winConditions: null,
   onWin: null,
@@ -42,6 +46,7 @@ const useGameStore = create((set, get) => ({
       lastAction: 0,
       cityState: { power: 0, lightsOn: false, tramActive: false, buildingsLit: 0, totalBuildings: 8, energyLevel: 0, citizenHappiness: 50, isNight: true },
       progress: { ledBlinks: 0, buttonPresses: 0, maxPower: 0 },
+      serialData: { led: 0, btn: 0, pot: 0, dist: 0, temp: 0, ldr: 0, pir: 0, moist: 0, r: 0, g: 0, b: 0 },
     }),
 
   pauseGame: () => set({ gamePaused: true }),
@@ -66,13 +71,13 @@ const useGameStore = create((set, get) => ({
       }
     }
 
-    if (key === 'button' && value === 1) {
+    if (key === 'btn' && value === 1) {
       nc.tramActive = !state.cityState.tramActive;
       np.buttonPresses += 1;
       nc.citizenHappiness = Math.min(state.cityState.citizenHappiness + 2, 100);
     }
 
-    if (key === 'potentiometer') {
+    if (key === 'pot' && typeof value === 'number' && !isNaN(value)) {
       nc.energyLevel = Math.round((value / 1023) * 100);
       nc.power = value;
       np.maxPower = Math.max(state.progress.maxPower, value);

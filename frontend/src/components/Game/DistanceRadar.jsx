@@ -24,7 +24,7 @@ export default function DistanceRadar() {
 
     const cx = w / 2, cy = h / 2;
     const maxR = Math.min(w, h) * 0.35;
-    const dist = serialData.distance || 200;
+    const dist = serialData.dist ?? 200;
     const distNorm = Math.min(dist / 400, 1);
 
     // Radar circles
@@ -127,7 +127,7 @@ export default function DistanceRadar() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.distance, score, winConditions, onWin, incrementScore]);
+  }, [serialData.dist, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

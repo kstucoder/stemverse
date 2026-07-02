@@ -6,15 +6,16 @@ export default function IoTDashboard() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
   const winRef = useRef(false);
   const dataLog = useRef([]);
+  const targetTimer = useRef(0);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, ['#050510', '#0a0a2a', '#050510']);
 
-    const pot = serialData.potentiometer || 0;
-    const btn = serialData.button || 0;
-    const dist = serialData.distance || 0;
-    const temp = serialData.temperature || 0;
+    const pot = serialData.pot || 0;
+    const btn = serialData.btn || 0;
+    const dist = serialData.dist || 0;
+    const temp = serialData.temp || 0;
 
     dataLog.current.push({ pot, btn, dist, temp, time: t });
     if (dataLog.current.length > 100) dataLog.current.shift();
@@ -100,8 +101,17 @@ export default function IoTDashboard() {
     ctx.textAlign = 'center';
     ctx.fillText('🔥 Firebase Sinx: FAOLLASHTIRILDI', w - 90, 48);
 
-    // Win: get values above threshold
-    if (pot > 800 && dist > 200 && temp > 25 && !winRef.current && winConditions) {
+    // Win: the demo Arduino code only actually transmits POT over serial, so
+    // the win condition is driven by what's real — hold the potentiometer
+    // above 800 for ~5 seconds (5 "targets", one per second held).
+    if (pot > 800) targetTimer.current += 0.016;
+    else targetTimer.current = Math.max(0, targetTimer.current - 0.02);
+    const targetsHit = Math.min(5, Math.floor(targetTimer.current));
+    ctx.fillStyle = C.CYAN;
+    ctx.font = '11px Chakra Petch, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🎯 POT'ni 800+ da ${5}s ushlab turing: ${targetsHit}/5`, w / 2, 300);
+    if (targetsHit >= 5 && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(400);
       if (onWin) onWin(score + 400);
@@ -110,7 +120,7 @@ export default function IoTDashboard() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.potentiometer, serialData.button, serialData.distance, serialData.temperature, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.pot, serialData.btn, serialData.dist, serialData.temp, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

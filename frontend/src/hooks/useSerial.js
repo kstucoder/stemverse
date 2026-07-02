@@ -15,12 +15,18 @@ export function useSerial() {
     const result = await connect();
     if (result.success) {
       startReading((line) => {
-        const match = line.match(/^(\w+):(.+)$/);
-        if (match) {
-          const key = match[1].toLowerCase();
-          const val = match[2];
+        // Some lessons print several sensor readings on a single line without
+        // newlines in between (e.g. "TEMP:23 LDR:512" or "POT:512 BTN:0 TEMP:23").
+        // A single ^(\w+):(.+)$ match would swallow everything after the first
+        // colon as one garbage value, so tokenize the line and parse every
+        // key:value pair it contains.
+        const tokens = line.match(/(\w+):(-?\d+(?:\.\d+)?|\S+)/g) || [];
+        tokens.forEach((token) => {
+          const idx = token.indexOf(':');
+          const key = token.slice(0, idx).toLowerCase();
+          const val = token.slice(idx + 1);
           gameStore.updateSerialData(key, isNaN(Number(val)) ? val : Number(val));
-        }
+        });
         if (onDataRef.current) onDataRef.current(line);
       });
     }

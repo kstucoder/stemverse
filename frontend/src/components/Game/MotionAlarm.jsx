@@ -5,14 +5,16 @@ import useGameStore from '../../stores/gameStore';
 export default function MotionAlarm() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
   const particles = useRef(new ParticleSystem());
-  const intruders = useRef(0);
-  const alarmOn = useRef(false);
+  const intruders = useRef(0); // counts discrete PIR trigger EVENTS, not frames
+  const motionPrevRef = useRef(0);
   const winRef = useRef(false);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
-    const motion = serialData.button || 0;
-    const isAlarm = motion === 1 || alarmOn.current;
+    const motion = serialData.pir || 0;
+    const isAlarm = motion === 1;
+    if (motion === 1 && motionPrevRef.current === 0) intruders.current++;
+    motionPrevRef.current = motion;
 
     drawGradientBackground(ctx, w, h, isAlarm ? ['#2a0000', '#1a0000', '#0a0000'] : ['#0a0a1a', '#1a1a2a', '#0a0a1a']);
 
@@ -60,15 +62,12 @@ export default function MotionAlarm() {
       particles.current.emit(Math.random() * w, Math.random() * h, '#ef4444', 3, 100);
     }
 
-    // Intruder counter
-    if (isAlarm) {
-      intruders.current++;
-      if (intruders.current >= 100 && !winRef.current && winConditions) {
-        winRef.current = true;
-        alarmOn.current = false;
-        incrementScore(300);
-        if (onWin) onWin(score + 300);
-      }
+    // Win: detect 10 separate intrusion events (matches the lesson's real
+    // requirement and the hint text below).
+    if (intruders.current >= 10 && !winRef.current && winConditions) {
+      winRef.current = true;
+      incrementScore(300);
+      if (onWin) onWin(score + 300);
     }
 
     // Status bar
@@ -79,14 +78,14 @@ export default function MotionAlarm() {
     ctx.fillText(isAlarm ? '🚨 SIGNAL!' : '🟢 XAVFSIZ', 20, h - 32);
     ctx.fillStyle = C.MUTED;
     ctx.font = '11px Chakra Petch, monospace';
-    ctx.fillText('Aniqlangan: ' + Math.floor(intruders.current / 10), 20, h - 15);
+    ctx.fillText('Aniqlangan: ' + Math.min(intruders.current, 10) + '/10', 20, h - 15);
 
     // Progress
-    drawProgressBar(ctx, w - 210, h - 45, 200, 15, Math.min(intruders.current / 100, 1), '#ef4444');
+    drawProgressBar(ctx, w - 210, h - 45, 200, 15, Math.min(intruders.current / 10, 1), '#ef4444');
     ctx.fillStyle = C.WHITE;
     ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(Math.min(100, Math.floor(intruders.current)) + '%', w - 110, h - 34);
+    ctx.fillText(Math.min(intruders.current, 10) + '/10', w - 110, h - 34);
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
@@ -94,7 +93,7 @@ export default function MotionAlarm() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.button, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.pir, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

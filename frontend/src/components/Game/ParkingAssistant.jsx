@@ -12,7 +12,7 @@ export default function ParkingAssistant() {
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
 
-    const dist = serialData.distance || 200;
+    const dist = serialData.dist ?? 200;
     const isParked = dist < 5 && dist > 0;
 
     // Parking spot
@@ -108,7 +108,7 @@ export default function ParkingAssistant() {
       ctx.arc(carX, carY, ringR, 0, Math.PI * 2);
       ctx.stroke();
     }
-  }, [serialData.distance, score, winConditions, onWin, incrementScore]);
+  }, [serialData.dist, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

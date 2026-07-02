@@ -1,83 +1,51 @@
 // Secret Code Door — Spy-themed canvas game with code-breaking
 import { useState, useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas';
-import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar, ParticleSystem } from './gameHelpers';
+import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
-import { playClick, playError, playWin } from './gameAudio';
+import { playClick, playWin } from './gameAudio';
 
 const CODE_LENGTH = 5;
-const MAX_ATTEMPTS = 3;
 
 export default function SecretCodeDoor() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
   const particles = useRef(new ParticleSystem());
-  const secretCode = useRef(Array.from({ length: CODE_LENGTH }, () => Math.round(Math.random())));
-  const [enteredCode, setEnteredCode] = useState([]);
-  const [attempts, setAttempts] = useState(MAX_ATTEMPTS);
+  // The real circuit has exactly ONE push button, so it can only report
+  // discrete press events — not a chosen 0/1 digit. The "secret code" is
+  // therefore: press the button CODE_LENGTH times in a row to unlock the door.
+  const [pressCount, setPressCount] = useState(0);
   const [doorOpen, setDoorOpen] = useState(false);
-  const [feedback, setFeedback] = useState('');
+  const [feedback, setFeedback] = useState('Tugmani ' + CODE_LENGTH + ' marta bosing...');
   const winRef = useRef(false);
   const lastBtnState = useRef(0);
 
-  const digitPositions = Array.from({ length: CODE_LENGTH }, (_, i) => ({
-    x: 30 + i * 60,
-    y: 55,
-    entered: false,
-  }));
-
-  // Handle button press
+  // Handle button press — edge-triggered so a held button only counts once.
   useEffect(() => {
     if (doorOpen) return;
-    const btn = serialData.button || 0;
+    const btn = serialData.btn || 0;
     if (btn === 1 && lastBtnState.current === 0) {
       playClick();
-      const newCode = [...enteredCode, Math.round(Math.random())];
-      setEnteredCode(newCode);
       incrementScore(5);
+      const next = pressCount + 1;
+      setPressCount(next);
+      particles.current.emit(50, 50, '#00ff88', 5, 50);
 
-      // Check if digit matches
-      const pos = enteredCode.length;
-      if (pos < CODE_LENGTH) {
-        if (newCode[pos] !== secretCode.current[pos]) {
-          setFeedback('❌ Xato raqam!');
-          playError();
-          particles.current.emit(50, 50, '#ef4444', 10, 80);
-        } else {
-          setFeedback(`✅ ${pos + 1}-raqam to'g'ri!`);
-          particles.current.emit(50, 50, '#00ff88', 5, 50);
+      if (next >= CODE_LENGTH) {
+        setDoorOpen(true);
+        setFeedback('🔓 ESHIK OCHILDI!');
+        playWin();
+        particles.current.emit(50, 70, '#ffdd00', 50, 200);
+        if (!winRef.current && winConditions) {
+          winRef.current = true;
+          incrementScore(100);
+          if (onWin) onWin(score + 100);
         }
-      }
-
-      if (newCode.length >= CODE_LENGTH) {
-        // Check full code
-        const correct = newCode.every((d, i) => d === secretCode.current[i]);
-        if (correct) {
-          setDoorOpen(true);
-          setFeedback('🔓 ESHIK OCHILDI!');
-          playWin();
-          particles.current.emit(50, 70, '#ffdd00', 50, 200);
-          if (!winRef.current && winConditions) {
-            winRef.current = true;
-            incrementScore(100);
-            if (onWin) onWin(score + 100);
-          }
-        } else {
-          setAttempts(a => a - 1);
-          if (attempts <= 1) {
-            setFeedback('🔒 TIZIM BLOKLANDI!');
-            setEnteredCode([]);
-            setAttempts(MAX_ATTEMPTS);
-            secretCode.current = Array.from({ length: CODE_LENGTH }, () => Math.round(Math.random()));
-          } else {
-            setFeedback(`❌ Xato kod! ${attempts - 1} urinish qoldi`);
-            playError();
-            setEnteredCode([]);
-          }
-        }
+      } else {
+        setFeedback(`✅ ${next}/${CODE_LENGTH} bosish qabul qilindi!`);
       }
     }
     lastBtnState.current = btn;
-  }, [serialData.button, doorOpen, enteredCode]);
+  }, [serialData.btn, doorOpen, pressCount, winConditions, onWin, incrementScore, score]);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -102,15 +70,15 @@ export default function SecretCodeDoor() {
       ctx.strokeRect(dX + 10, dY + 70, dW - 20, 50);
       ctx.strokeRect(dX + 10, dY + 130, dW - 20, 50);
 
-      // Code display
-      ctx.fillStyle = enteredCode.length > 0 ? C.CYAN : '#475569';
+      // Press counter display
+      ctx.fillStyle = pressCount > 0 ? C.CYAN : '#475569';
       ctx.font = 'bold 24px Chakra Petch, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(enteredCode.map(() => '●').join(' ') || '— — — — —', w / 2, dY + 38);
+      ctx.fillText('●'.repeat(pressCount).split('').join(' ') || '— — — — —', w / 2, dY + 38);
 
       // Progress dots
       for (let i = 0; i < CODE_LENGTH; i++) {
-        ctx.fillStyle = i < enteredCode.length ? C.GREEN : C.PANEL;
+        ctx.fillStyle = i < pressCount ? C.GREEN : C.PANEL;
         ctx.beginPath();
         ctx.arc(w / 2 - 40 + i * 20, dY + 95, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -130,47 +98,36 @@ export default function SecretCodeDoor() {
       drawGlow(ctx, w / 2, dY + dH / 2, 60, 'rgba(0,255,136,0.15)');
     }
 
-    // KEYPAD
-    const keys = [
-      [1, 0], [1, 0], [1, 0], [1, 0], [1, 0], // Visual representation of binary
-    ];
+    // Button-press indicators — one lamp per required press
     const ky = h * 0.65;
-    keys.forEach((row, ri) => {
-      row.forEach((key, ci) => {
-        const kx = w / 2 - 80 + ci * 40;
-        ctx.fillStyle = enteredCode.length > ri ? C.CYAN : C.PANEL;
-        ctx.shadowColor = enteredCode.length > ri ? C.CYAN : 'transparent';
-        ctx.shadowBlur = enteredCode.length > ri ? 8 : 0;
-        ctx.beginPath();
-        ctx.roundRect(kx, ky + ri * 30, 30, 22, 4);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = enteredCode.length > ri ? C.WHITE : '#475569';
-        ctx.font = '10px Chakra Petch, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(secretCode.current[ri] || 0, kx + 15, ky + ri * 30 + 15);
-      });
-    });
+    for (let i = 0; i < CODE_LENGTH; i++) {
+      const kx = w / 2 - 80 + i * 40;
+      ctx.fillStyle = i < pressCount ? C.CYAN : C.PANEL;
+      ctx.shadowColor = i < pressCount ? C.CYAN : 'transparent';
+      ctx.shadowBlur = i < pressCount ? 8 : 0;
+      ctx.beginPath();
+      ctx.roundRect(kx, ky, 30, 22, 4);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = i < pressCount ? C.WHITE : '#475569';
+      ctx.font = '10px Chakra Petch, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(i + 1), kx + 15, ky + 15);
+    }
 
     // Feedback text
     if (feedback) {
-      ctx.fillStyle = doorOpen ? C.GREEN : feedback.includes('Wrong') || feedback.includes('LOCKED') ? '#ef4444' : C.GOLD;
+      ctx.fillStyle = doorOpen ? C.GREEN : C.GOLD;
       ctx.font = 'bold 14px Chakra Petch, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(feedback, w / 2, h - 40);
     }
 
-    // Attempts
+    // Instructions
     ctx.fillStyle = C.MUTED;
     ctx.font = '12px Chakra Petch, monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(`Urinishlar: ${'❤️'.repeat(attempts)}${'🖤'.repeat(MAX_ATTEMPTS - attempts)}`, 15, 25);
-
-    // Secret code hint (small, for debugging/show)
-    ctx.fillStyle = '#334155';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(`Target: ${secretCode.current.join('')}`, w - 15, h - 15);
+    ctx.fillText(`🔘 Tugmani bosing: ${pressCount}/${CODE_LENGTH}`, 15, 25);
 
     // Score
     ctx.fillStyle = C.WHITE;
@@ -184,7 +141,7 @@ export default function SecretCodeDoor() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [enteredCode, doorOpen, feedback, attempts, score, serialData.button]);
+  }, [pressCount, doorOpen, feedback, score]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl" />

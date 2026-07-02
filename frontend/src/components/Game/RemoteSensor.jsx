@@ -7,6 +7,7 @@ export default function RemoteSensor() {
   const particles = useRef(new ParticleSystem());
   const winRef = useRef(false);
   const dataPoints = useRef([]);
+  const aliveTimer = useRef(0);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -34,15 +35,15 @@ export default function RemoteSensor() {
     ctx.ellipse(w * 0.7, h * 0.32, 45, 25, 0.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Data pins on map
-    const temp = serialData.temperature || 22;
-    const pot = serialData.potentiometer || 512;
-    const dist = serialData.distance || 100;
+    // Data pins on map — driven by the two sensors this lesson's Arduino code
+    // actually transmits (LM35 temperature + LDR light level).
+    const temp = serialData.temp ?? 22;
+    const ldr = serialData.ldr ?? 512;
+    const lightPct = ldr / 10.23;
 
     const pins = [
       { x: w * 0.3, y: h * 0.3, label: '🌡️ ' + Math.round(temp) + '°C', color: '#ef4444', val: temp },
-      { x: w * 0.6, y: h * 0.24, label: '📡 ' + Math.round(dist) + 'cm', color: '#00f5ff', val: dist },
-      { x: w * 0.75, y: h * 0.35, label: '⚡ ' + Math.round(pot / 10.23) + '%', color: '#ffdd00', val: pot / 10.23 },
+      { x: w * 0.6, y: h * 0.24, label: '☀️ ' + Math.round(lightPct) + '%', color: '#ffdd00', val: lightPct },
     ];
 
     pins.forEach((pin, i) => {
@@ -110,13 +111,18 @@ export default function RemoteSensor() {
     ctx.font = '10px Chakra Petch, monospace';
     ctx.textAlign = 'left';
     const ts = new Date().toLocaleTimeString();
-    ctx.fillText(`[${ts}] 🔥 Firebase: { temp: ${Math.round(temp)}°C, dist: ${Math.round(dist)}cm, power: ${Math.round(pot / 10.23)}% }`, 25, h - 65);
+    ctx.fillText(`[${ts}] 🔥 Firebase: { temp: ${Math.round(temp)}°C, light: ${Math.round(lightPct)}% }`, 25, h - 65);
     ctx.fillStyle = C.MUTED;
     ctx.font = '9px Chakra Petch, monospace';
     ctx.fillText('📶 ESP32 Ulangan | 📡 1s sinxronlash | 🌍 Masofaviy kuzatuv faol', 25, h - 42);
 
-    // Win: collect all data types
-    if (temp > 20 && dist > 50 && pot > 300 && !winRef.current && winConditions) {
+    // Win: keep both real sensors reporting healthy values for the lesson's
+    // declared duration (time_alive, in ms) — matches the sidebar shown to
+    // the player instead of an instant, disconnected threshold check.
+    if (temp > 20 && lightPct > 30) aliveTimer.current += 0.016;
+    else aliveTimer.current = Math.max(0, aliveTimer.current - 0.02);
+    const neededSec = (winConditions?.value ?? 60000) / 1000;
+    if (aliveTimer.current > neededSec && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(450);
       if (onWin) onWin(score + 450);
@@ -125,7 +131,7 @@ export default function RemoteSensor() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.temperature, serialData.potentiometer, serialData.distance, serialData.button, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.temp, serialData.ldr, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

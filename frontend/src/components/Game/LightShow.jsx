@@ -22,12 +22,13 @@ export default function LightShow() {
   const [currentPattern, setCurrentPattern] = useState(0);
   const [patternPos, setPatternPos] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [recordedPattern, setRecordedPattern] = useState([]);
-  const [targetPattern, setTargetPattern] = useState(null);
+  const [stepsInDance, setStepsInDance] = useState(0);
   const [stage, setStage] = useState('setup'); // setup, play, win
   const [completedDances, setCompletedDances] = useState(0);
   const winRef = useRef(false);
   const playRef = useRef(null);
+  const prevBtnRef = useRef(0);
+  const STEPS_PER_DANCE = 8;
 
   // Check win
   useEffect(() => {
@@ -56,37 +57,35 @@ export default function LightShow() {
     return () => clearInterval(playRef.current);
   }, [isPlaying, currentPattern]);
 
-  // Handle button press - record pattern
+  // Handle button press — the physical circuit only has ONE button, so it can
+  // only report discrete press events (edge-triggered), not which LED is lit.
+  // Each real press advances the dance by one beat instead of trying to
+  // "record" an LED bit value that the hardware never actually transmits.
   useEffect(() => {
-    if (serialData.button === 1 && stage === 'play') {
-      setRecordedPattern((prev) => {
-        const newPattern = [...prev, serialData.led];
-        if (newPattern.length >= 8) {
-          // Check against target
-          const target = TARGET_PATTERNS[completedDances];
-          let matches = 0;
-          for (let i = 0; i < 8; i++) {
-            if (newPattern[i] === target.pattern[i]) matches++;
-          }
-          if (matches >= 6) {
-            incrementScore(target.points);
-            setCompletedDances((c) => c + 1);
-            if (completedDances + 1 >= 3) {
-              setStage('win');
-            } else {
-              setTargetPattern(TARGET_PATTERNS[completedDances + 1]);
-            }
-          }
-          return [];
+    const btn = serialData.btn || 0;
+    if (btn === 1 && prevBtnRef.current === 0 && stage === 'play') {
+      setStepsInDance((prev) => {
+        const next = prev + 1;
+        if (next >= STEPS_PER_DANCE) {
+          const target = TARGET_PATTERNS[Math.min(completedDances, TARGET_PATTERNS.length - 1)];
+          incrementScore(target.points);
+          setCompletedDances((c) => {
+            const nc = c + 1;
+            if (nc >= 3) setStage('win');
+            return nc;
+          });
+          return 0;
         }
-        return newPattern;
+        return next;
       });
     }
-  }, [serialData.button, stage, completedDances]);
+    prevBtnRef.current = btn;
+  }, [serialData.btn, stage, completedDances, incrementScore]);
 
-  // LED pattern output
+  // LED pattern output — purely a visual preview of the pattern the physical
+  // LEDs would blink through; it does not drive scoring (the button does).
   const currentLED = () => {
-    if (!isPlaying) return serialData.led;
+    if (!isPlaying) return serialData.led || 0;
     const pattern = PATTERNS[currentPattern];
     const idx = Math.floor(patternPos / 4) % pattern.sequence.length;
     return pattern.sequence[idx];
@@ -98,10 +97,11 @@ export default function LightShow() {
   };
 
   const startDance = () => {
-    setTargetPattern(TARGET_PATTERNS[0]);
-    setRecordedPattern([]);
+    setStepsInDance(0);
     setStage('play');
   };
+
+  const activeTarget = TARGET_PATTERNS[Math.min(completedDances, TARGET_PATTERNS.length - 1)];
 
   const cyclePattern = () => {
     setCurrentPattern((p) => (p + 1) % PATTERNS.length);
@@ -162,18 +162,18 @@ export default function LightShow() {
             </div>
           )}
 
-          {/* Target Pattern */}
-          {stage === 'play' && targetPattern && (
+          {/* Dance progress — driven by real, edge-triggered button presses */}
+          {stage === 'play' && (
             <div className="mb-3">
-              <p className="text-xs mb-1" style={{ color: C.MUTED }}>Maqsad: {targetPattern.name}</p>
+              <p className="text-xs mb-1" style={{ color: C.MUTED }}>Raqs: {activeTarget.name} · Tugmani {STEPS_PER_DANCE} marta bosing</p>
               <div className="flex gap-1">
-                {targetPattern.pattern.map((val, i) => (
-                  <div key={i} className={`flex-1 h-6 rounded ${val ? 'bg-neon-yellow' : ''}`}
-                    style={{ background: val ? C.GOLD : C.PANEL }} />
+                {Array.from({ length: STEPS_PER_DANCE }).map((_, i) => (
+                  <div key={i} className="flex-1 h-6 rounded"
+                    style={{ background: i < stepsInDance ? C.GOLD : C.PANEL }} />
                 ))}
               </div>
               <p className="text-xs mt-1" style={{ color: C.MUTED }}>
-                Yozilgan: {recordedPattern.length}/8 bosish
+                Bosilgan: {stepsInDance}/{STEPS_PER_DANCE} · Raqslar: {completedDances}/3
               </p>
             </div>
           )}

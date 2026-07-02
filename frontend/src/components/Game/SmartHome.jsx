@@ -14,10 +14,13 @@ export default function SmartHome() {
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
 
-    const btn = serialData.button || 0;
-    const pot = serialData.potentiometer || 512;
-    const temp = serialData.temperature || 22;
-    const dist = serialData.distance || 100;
+    // The taught Arduino code for this lesson reports pot/btn/temp on one
+    // combined line — there is no ultrasonic reading in the example, so the
+    // "door" status uses the real button instead of a sensor that's never
+    // actually transmitted.
+    const btn = serialData.btn || 0;
+    const pot = serialData.pot || 512;
+    const temp = serialData.temp || 22;
 
     // House floor plan
     ctx.strokeStyle = '#334155';
@@ -66,14 +69,14 @@ export default function SmartHome() {
 
     devices.current.lights = toggleLight;
     devices.current.ac = temp > 25;
-    devices.current.door = dist < 20;
+    devices.current.door = toggleLight;
 
     // Status indicators
     const status = [
       { label: '💡 Chiroqlar', active: devices.current.lights, x: w * 0.12, y: h * 0.65 },
       { label: '❄️ Konditsioner ' + acTemp + '°C', active: devices.current.ac, x: w * 0.35, y: h * 0.65 },
       { label: '🚪 Eshik', active: devices.current.door, x: w * 0.58, y: h * 0.65 },
-      { label: '🔔 Signal', active: temp > 28 || dist < 10, x: w * 0.78, y: h * 0.65 },
+      { label: '🔔 Signal', active: temp > 28, x: w * 0.78, y: h * 0.65 },
     ];
 
     status.forEach((s, i) => {
@@ -124,7 +127,7 @@ export default function SmartHome() {
       incrementScore(500);
       if (onWin) onWin(score + 500);
     }
-  }, [serialData.button, serialData.potentiometer, serialData.temperature, serialData.distance, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.btn, serialData.pot, serialData.temp, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

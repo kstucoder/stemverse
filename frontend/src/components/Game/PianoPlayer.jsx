@@ -3,18 +3,17 @@ import GameCanvas from './GameCanvas';
 import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
+// The real circuit only wires 4 push buttons (pins 2-5), so the keyboard and
+// the tune to play must both stay within 4 notes — anything requiring a 5th+
+// note would be impossible to complete with the actual hardware.
 const NOTES = [
   { name: 'C4', freq: 262, color: '#ef4444', x: 0 },
   { name: 'D4', freq: 294, color: '#f97316', x: 1 },
   { name: 'E4', freq: 330, color: '#eab308', x: 2 },
   { name: 'F4', freq: 349, color: '#22c55e', x: 3 },
-  { name: 'G4', freq: 392, color: '#06b6d4', x: 4 },
-  { name: 'A4', freq: 440, color: '#3b82f6', x: 5 },
-  { name: 'B4', freq: 494, color: '#8b5cf6', x: 6 },
-  { name: 'C5', freq: 523, color: '#ec4899', x: 7 },
 ];
 
-const TUNE = [0, 2, 4, 0, 0, 2, 4, 0, 4, 5, 7, 4, 5, 7]; // Twinkle Twinkle
+const TUNE = [0, 1, 2, 3, 3, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0]; // Do-Re-Mi-Fa scale, up & down twice
 
 export default function PianoPlayer() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -24,10 +23,10 @@ export default function PianoPlayer() {
   const [mistakes, setMistakes] = useState(0);
   const winRef = useRef(false);
 
-  const noteKeys = serialData.button || 0;
+  const noteKeys = serialData.btn || 0;
 
   useEffect(() => {
-    if (noteKeys > 0 && noteKeys <= 8) {
+    if (noteKeys > 0 && noteKeys <= NOTES.length) {
       const idx = noteKeys - 1;
       setActiveNote(idx);
       particles.current.emit(200 + idx * 60, 300, NOTES[idx].color, 5, 80);
@@ -41,7 +40,7 @@ export default function PianoPlayer() {
       }
       setTimeout(() => setActiveNote(-1), 300);
     }
-  }, [noteKeys]);
+  }, [noteKeys, tunePos, incrementScore]);
 
   useEffect(() => {
     if (tunePos >= TUNE.length && !winRef.current && winConditions) {
@@ -56,7 +55,7 @@ export default function PianoPlayer() {
     drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL]);
 
     // Piano keys
-    const keyW = w / 8;
+    const keyW = w / NOTES.length;
     const keyH = h * 0.6;
     const keyY = h * 0.3;
 
@@ -97,7 +96,7 @@ export default function PianoPlayer() {
     ctx.textAlign = 'center';
     ctx.fillStyle = C.MUTED;
     ctx.font = '12px Chakra Petch, monospace';
-    ctx.fillText('🎵 "Twinkle Twinkle" ni ijro eting — notalarni tartib bilan bosing!', w / 2, 85);
+    ctx.fillText("🎵 Do-Re-Mi-Fa gammasini ijro eting — 4 tugmani tartib bilan bosing!", w / 2, 85);
     ctx.fillStyle = '#ef4444';
     ctx.font = '11px Chakra Petch, monospace';
     ctx.fillText('❌ Xatolar: ' + mistakes, w / 2, 105);

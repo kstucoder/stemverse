@@ -13,7 +13,7 @@ export default function MusicVisualizer() {
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, ['#050510', '#0a0a2a', '#050510']);
 
-    const pot = serialData.potentiometer || 512;
+    const pot = serialData.pot ?? 512;
     const freq = (pot / 1023) * 2000 + 50;
     const bars = 32;
 
@@ -92,7 +92,7 @@ export default function MusicVisualizer() {
       incrementScore(300);
       if (onWin) onWin(score + 300);
     }
-  }, [serialData.potentiometer, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.pot, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

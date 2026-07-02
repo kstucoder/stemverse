@@ -62,7 +62,7 @@ export default function LightTheremin() {
     ctx.font = 'bold 24px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = C.CYAN;
-    ctx.fillText(note + Math.floor(freqVal) + 'Hz', w / 2, 50);
+    ctx.fillText('🎵 ' + Math.floor(freqVal) + 'Hz', w / 2, 50);
     ctx.fillStyle = C.MUTED;
     ctx.font = '14px Chakra Petch, monospace';
     ctx.fillText("☀️ Qo'lingizni LDR sensor ustida harakatlantiring", w / 2, 80);

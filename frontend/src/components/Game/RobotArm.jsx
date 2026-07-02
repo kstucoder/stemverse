@@ -38,17 +38,16 @@ export default function RobotArm() {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Read servo angles from potentiometers
+  // Read servo angles from the real potentiometer + ultrasonic sensor
   useEffect(() => {
-    const newBase = Math.round((serialData.potentiometer / 1023) * 180);
+    const newBase = Math.round(((serialData.pot || 0) / 1023) * 180);
     setBaseAngle(Math.max(0, Math.min(180, newBase)));
 
-    // Use distance sensor or second POT for arm angle
-    const distAngle = serialData.distance 
-      ? Math.round((serialData.distance / 400) * 180)
+    const distAngle = serialData.dist
+      ? Math.round((serialData.dist / 400) * 180)
       : 90;
     setArmAngle(Math.max(0, Math.min(180, distAngle)));
-  }, [serialData.potentiometer, serialData.distance]);
+  }, [serialData.pot, serialData.dist]);
 
   // Collision check with target
   useEffect(() => {
@@ -64,14 +63,14 @@ export default function RobotArm() {
     const dy = armY - target.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist < target.size + 5 && serialData.button === 1) {
+    if (dist < target.size + 5 && serialData.btn === 1) {
       // Gathered!
       setCollected((prev) => new Set([...prev, currentTarget]));
       setTargetsCollected((t) => t + 1);
       setCurrentTarget((t) => (t + 1) % TARGETS.length);
       incrementScore(100);
     }
-  }, [baseAngle, armAngle, serialData.button, currentTarget]);
+  }, [baseAngle, armAngle, serialData.btn, currentTarget]);
 
   const target = TARGETS[currentTarget];
 

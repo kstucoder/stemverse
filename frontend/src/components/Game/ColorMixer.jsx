@@ -17,10 +17,11 @@ export default function ColorMixer() {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Current color from serial (simulate with potentiometer if no RGB POTs)
-    const r = Math.round((serialData.potentiometer || 512) / 1023 * 255);
-    const g = Math.round(((serialData.distance || 200) / 400) * 255);
-    const b = 128;
+    // Real R/G/B from the three potentiometers (A0/A1/A2), sent by the
+    // Arduino as "R:.. G:.. B:.." on one line and parsed into separate keys.
+    const r = Math.max(0, Math.min(255, Math.round(serialData.r ?? 128)));
+    const g = Math.max(0, Math.min(255, Math.round(serialData.g ?? 128)));
+    const b = Math.max(0, Math.min(255, Math.round(serialData.b ?? 128)));
 
     const currentColor = `rgb(${r},${g},${b})`;
 
@@ -83,8 +84,9 @@ export default function ColorMixer() {
       });
       if (roundRef.current >= 3 && onWin) {
         onWin(score + 100);
+      } else {
+        winRef.current = false; // Allow the next round to trigger again
       }
-      winRef.current = false; // Allow multiple rounds
     }
 
     // Score panel
@@ -97,7 +99,7 @@ export default function ColorMixer() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.potentiometer, serialData.distance, serialData.led, target, score, winConditions, onWin, incrementScore]);
+  }, [serialData.r, serialData.g, serialData.b, target, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl" />

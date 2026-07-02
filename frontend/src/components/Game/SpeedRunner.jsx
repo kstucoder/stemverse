@@ -3,16 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 import useGameStore from '../../stores/gameStore';
 import { C } from './gameHelpers';
 
+const PLAYER_X = 50;       // fixed horizontal position (%), world scrolls instead
+const GRAVITY = 260;       // % per second^2 — real parabolic fall, not a teleport
+const JUMP_VELOCITY = 130; // initial upward speed (% per second)
+
 export default function SpeedRunner() {
   const { serialData, score, incrementScore } = useGameStore();
   const [playerY, setPlayerY] = useState(0);
-  const [playerX, setPlayerX] = useState(50);
   const [isJumping, setIsJumping] = useState(false);
   const [distance, setDistance] = useState(0);
   const [obstacles, setObstacles] = useState([]);
   const [gameOver, setGameOver] = useState(false);
-  const frameRef = useRef(null);
-  const jumpRef = useRef(null);
+  const playerYRef = useRef(0);
+  const jumpingRef = useRef(false);
+  const vyRef = useRef(0);
+  const prevBtnRef = useRef(0);
   const obstacleCounter = useRef(0);
   const winRef = useRef(false);
 
@@ -24,48 +29,90 @@ export default function SpeedRunner() {
     }
   }, [distance, score, gameOver]);
 
-  const speed = Math.max(1, Math.round((serialData.potentiometer / 1023) * 10));
+  // Speed is driven by the real potentiometer (0-1023) -> always a safe,
+  // finite integer even before hardware is connected.
+  const pot = serialData.pot || 0;
+  const speed = Math.max(1, Math.round((pot / 1023) * 10));
   const progress = Math.min(distance / 1000, 1);
 
+  // Jump trigger — edge-triggered on the real button so a held press doesn't
+  // re-fire every frame, and blocked while already airborne.
+  useEffect(() => {
+    const btn = serialData.btn || 0;
+    if (btn === 1 && prevBtnRef.current === 0 && !jumpingRef.current && !gameOver) {
+      jumpingRef.current = true;
+      setIsJumping(true);
+      vyRef.current = JUMP_VELOCITY;
+    }
+    prevBtnRef.current = btn;
+  }, [serialData.btn, gameOver]);
+
+  // Real jump physics: velocity decays under gravity, giving an actual
+  // parabolic arc instead of an instant up/down teleport.
+  useEffect(() => {
+    if (gameOver) return;
+    let raf;
+    let last = performance.now();
+    const step = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      if (jumpingRef.current) {
+        vyRef.current -= GRAVITY * dt;
+        let ny = playerYRef.current + vyRef.current * dt;
+        if (ny <= 0) {
+          ny = 0;
+          jumpingRef.current = false;
+          vyRef.current = 0;
+          setIsJumping(false);
+        }
+        playerYRef.current = ny;
+        setPlayerY(ny);
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [gameOver]);
+
+  // World scroll + obstacle spawn/collision — a single stable interval (not
+  // torn down and rebuilt every tick), checking collisions against the
+  // freshly-moved obstacle positions and the current jump height via refs.
   useEffect(() => {
     const gameLoop = setInterval(() => {
       if (gameOver) return;
-      setDistance((d) => { const nd = d + speed * 0.5; incrementScore(Math.round(speed * 0.1)); return nd; });
+      setDistance((d) => d + speed * 0.5);
+      incrementScore(Math.round(speed * 0.1));
       obstacleCounter.current += speed;
-      if (obstacleCounter.current > 30) {
-        obstacleCounter.current = 0;
-        setObstacles((prev) => [...prev, { id: Date.now(), x: 100, height: 10 + Math.random() * 20, width: 8 }]);
-      }
-      setObstacles((prev) => prev.map((o) => ({ ...o, x: o.x - speed * 0.5 })).filter((o) => o.x > -15));
-      // Collision
-      if (obstacles.some((o) => Math.abs(o.x - playerX) < 8 && playerY < o.height)) {
-        setGameOver(true);
-      }
+
+      setObstacles((prev) => {
+        let next = prev.map((o) => ({ ...o, x: o.x - speed * 0.5 })).filter((o) => o.x > -15);
+        if (obstacleCounter.current > 30) {
+          obstacleCounter.current = 0;
+          next = [...next, { id: Date.now(), x: 100, height: 10 + Math.random() * 20, width: 8 }];
+        }
+        const hit = next.some((o) => Math.abs(o.x - PLAYER_X) < 8 && playerYRef.current < o.height);
+        if (hit) setGameOver(true);
+        return next;
+      });
     }, 33);
     return () => clearInterval(gameLoop);
-  }, [gameOver, speed, obstacles, playerX, playerY]);
-
-  // Jump
-  useEffect(() => {
-    if (serialData.button === 1 && !isJumping && !gameOver) {
-      setIsJumping(true);
-      setPlayerY(40);
-      jumpRef.current = setTimeout(() => { setPlayerY(0); setIsJumping(false); }, 400);
-    }
-    return () => clearTimeout(jumpRef.current);
-  }, [serialData.button]);
+  }, [gameOver, speed, incrementScore]);
 
   const reset = () => {
     setGameOver(false);
     setDistance(0);
     setObstacles([]);
     setPlayerY(0);
+    playerYRef.current = 0;
+    jumpingRef.current = false;
+    vyRef.current = 0;
+    setIsJumping(false);
     winRef.current = false;
   };
 
   return (
     <div className="relative h-full min-h-[500px] overflow-hidden select-none" style={{ background: 'linear-gradient(180deg, #020617 0%, #0B1120 100%)', borderRadius: 14 }}>
-      
+
       {/* Animated ground grid */}
       <div className="absolute inset-x-0 bottom-0 h-1/3" style={{
         background: `repeating-linear-gradient(90deg, transparent 0px, transparent 39px, rgba(0,238,255,0.03) 39px, rgba(0,238,255,0.03) 40px)`,
@@ -83,13 +130,13 @@ export default function SpeedRunner() {
       ) : (
         <>
           {/* Player */}
-          <div className="absolute bottom-0 transition-all duration-75 ease-linear" style={{
-            left: `${playerX}%`,
+          <div className="absolute bottom-0" style={{
+            left: `${PLAYER_X}%`,
             bottom: `${playerY + 20}%`,
             transform: 'translateX(-50%)',
           }}>
             <div className="w-8 h-10 relative" style={{
-              background: isJumping ? C.CYAN : C.CYAN,
+              background: C.CYAN,
               borderRadius: '4px 4px 8px 8px',
               boxShadow: `0 0 15px ${C.CYAN}99`,
             }}>

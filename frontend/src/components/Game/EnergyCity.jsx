@@ -252,7 +252,7 @@ export default function EnergyCity() {
     // === SERIAL INDICATORS ===
     const inds = [
       { active: serialData.led === 1, color: C.CYAN, label: 'LED', x: 20 },
-      { active: serialData.button === 1, color: C.PINK, label: 'BTN', x: 70 },
+      { active: serialData.btn === 1, color: C.PINK, label: 'BTN', x: 70 },
     ];
     inds.forEach(ind => {
       ctx.fillStyle = ind.active ? ind.color : 'rgba(255,255,255,0.06)';
@@ -269,7 +269,7 @@ export default function EnergyCity() {
     });
 
     // POT meter
-    const potVal = serialData.potentiometer || 0;
+    const potVal = serialData.pot || 0;
     const potPct = potVal / 1023;
     ctx.fillStyle = C.MUTED;
     ctx.font = '9px Chakra Petch, sans-serif';
