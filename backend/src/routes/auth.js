@@ -1,9 +1,14 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../services/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { sendPasswordResetEmail } from '../services/mailer.js';
 const router = Router();
+
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 router.post('/register', async (req, res) => {
   try {
@@ -54,9 +59,39 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
+
+    // Always respond with the same generic success message whether or not the
+    // account exists, so this endpoint can't be used to enumerate registered emails.
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ success: true, message: "Password reset link sent to " + email });
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetToken: hashToken(rawToken), resetTokenExpiry: new Date(Date.now() + RESET_TOKEN_TTL_MS) },
+      });
+      await sendPasswordResetEmail(user.email, rawToken);
+    }
+    res.json({ success: true, message: "Agar bu email ro'yxatdan o'tgan bo'lsa, tiklash havolasi yuborildi." });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: "Token and password required" });
+    if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const user = await prisma.user.findUnique({ where: { resetToken: hashToken(token) } });
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return res.status(400).json({ error: "Havola yaroqsiz yoki muddati o'tgan" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },
+    });
+    res.json({ success: true, message: "Parol muvaffaqiyatli yangilandi" });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 

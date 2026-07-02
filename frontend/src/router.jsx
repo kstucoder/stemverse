@@ -5,6 +5,7 @@ import VoltraLanding from './pages/VoltraLanding';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LessonView from './pages/LessonView';
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { path: 'auth/login', element: <Login /> },
       { path: 'auth/register', element: <Register /> },
       { path: 'auth/forgot-password', element: <ForgotPassword /> },
+      { path: 'auth/reset-password/:token', element: <ResetPassword /> },
       { path: 'dashboard', element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
       { path: 'lessons', element: <ProtectedRoute><Lessons /></ProtectedRoute> },
       { path: 'lessons/:id', element: <ProtectedRoute><LessonView /></ProtectedRoute> },

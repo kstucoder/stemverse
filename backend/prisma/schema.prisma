@@ -16,6 +16,8 @@ model User {
   xp        Int      @default(0)
   level     Int      @default(1)
   avatar    String?
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   kits         Kit[]

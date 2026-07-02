@@ -19,8 +19,7 @@ app.use(cors({
       process.env.FRONTEND_URL,
     ].filter(Boolean);
     if (!origin || allowed.includes(origin)) return cb(null, true);
-    cb(null, { origin: true });
-    cb(null, { origin: true });
+    cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));

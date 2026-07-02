@@ -14,7 +14,7 @@ export function useSerial() {
   const handleConnect = useCallback(async () => {
     const result = await connect();
     if (result.success) {
-      gameStore.setState({ arduinoConnected: true });
+      useGameStore.setState({ arduinoConnected: true });
       startReading((line) => {
         const tokens = line.match(/(\w+):(-?\d+(?:\.\d+)?|\S+)/g) || [];
         tokens.forEach((token) => {
@@ -30,9 +30,9 @@ export function useSerial() {
   }, [connect, startReading, gameStore]);
 
   const handleDisconnect = useCallback(async () => {
-    gameStore.setState({ arduinoConnected: false });
+    useGameStore.setState({ arduinoConnected: false });
     await disconnect();
-  }, [disconnect, gameStore]);
+  }, [disconnect]);
 
   return { connected, connect: handleConnect, disconnect: handleDisconnect, setOnDataCallback };
 }

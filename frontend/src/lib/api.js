@@ -26,7 +26,7 @@ api.interceptors.response.use(
 );
 
 export default api;
-export const authAPI = { register: (d) => api.post('/auth/register', d), login: (d) => api.post('/auth/login', d), me: () => api.get('/auth/me'), updateProfile: (d) => api.put('/auth/profile', d) };
+export const authAPI = { register: (d) => api.post('/auth/register', d), login: (d) => api.post('/auth/login', d), me: () => api.get('/auth/me'), updateProfile: (d) => api.put('/auth/profile', d), forgotPassword: (email) => api.post('/auth/forgot-password', { email }), resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }) };
 export const kitAPI = { activate: (code) => api.post('/kit/activate', { code }), myKit: () => api.get('/kit/my-kit') };
 export const lessonsAPI = { list: () => api.get('/lessons'), get: (id) => api.get(`/lessons/${id}`) };
 export const progressAPI = { complete: (lid, s) => api.post('/progress/complete', { lessonId: lid, score: s }), overview: () => api.get('/progress/overview') };
