@@ -4,6 +4,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function MusicVisualizer() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const samples = useRef(new Float32Array(128));
   const winRef = useRef(false);
@@ -87,7 +88,7 @@ export default function MusicVisualizer() {
     drawScanlines(ctx, w, h);
 
     // Win: get frequency high enough
-    if (freq > 1800 && !winRef.current && winConditions) {
+    if (arduinoConnected && freq > 1800 && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(300);
       if (onWin) onWin(score + 300);
@@ -96,13 +97,18 @@ export default function MusicVisualizer() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>
       </div>
       <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">LED</p>
-        <div className={`w-5 h-5 rounded-full ${serialData.led ? 'bg-neon-green shadow-lg animate-pulse' : 'bg-dark-600'}`} />
+        <div className={`w-5 h-5 rounded-full ${arduinoConnected && serialData.led ? 'bg-neon-green shadow-lg animate-pulse' : 'bg-dark-600'}`} />
       </div>
     </GameCanvas>
   );

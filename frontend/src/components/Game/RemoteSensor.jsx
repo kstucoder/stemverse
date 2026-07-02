@@ -3,7 +3,7 @@ import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawV
 import useGameStore from '../../stores/gameStore';
 
 export default function RemoteSensor() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const { serialData, score, incrementScore, winConditions, onWin, arduinoConnected } = useGameStore();
   const particles = useRef(new ParticleSystem());
   const winRef = useRef(false);
   const dataPoints = useRef([]);
@@ -119,19 +119,22 @@ export default function RemoteSensor() {
     // Win: keep both real sensors reporting healthy values for the lesson's
     // declared duration (time_alive, in ms) — matches the sidebar shown to
     // the player instead of an instant, disconnected threshold check.
-    if (temp > 20 && lightPct > 30) aliveTimer.current += 0.016;
-    else aliveTimer.current = Math.max(0, aliveTimer.current - 0.02);
-    const neededSec = (winConditions?.value ?? 60000) / 1000;
-    if (aliveTimer.current > neededSec && !winRef.current && winConditions) {
-      winRef.current = true;
-      incrementScore(450);
-      if (onWin) onWin(score + 450);
+    // Only active when a real Arduino sensor is connected.
+    if (arduinoConnected) {
+      if (temp > 20 && lightPct > 30) aliveTimer.current += 0.016;
+      else aliveTimer.current = Math.max(0, aliveTimer.current - 0.02);
+      const neededSec = (winConditions?.value ?? 60000) / 1000;
+      if (aliveTimer.current > neededSec && !winRef.current && winConditions) {
+        winRef.current = true;
+        incrementScore(450);
+        if (onWin) onWin(score + 450);
+      }
     }
 
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.temp, serialData.ldr, score, winConditions, onWin, incrementScore]);
+  }, [serialData.temp, serialData.ldr, score, winConditions, onWin, incrementScore, arduinoConnected]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

@@ -17,6 +17,7 @@ const TUNE = [0, 1, 2, 3, 3, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0]; // Do-Re-Mi-Fa sc
 
 export default function PianoPlayer() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const [activeNote, setActiveNote] = useState(-1);
   const [tunePos, setTunePos] = useState(0);
@@ -43,7 +44,7 @@ export default function PianoPlayer() {
   }, [noteKeys, tunePos, incrementScore]);
 
   useEffect(() => {
-    if (tunePos >= TUNE.length && !winRef.current && winConditions) {
+    if (arduinoConnected && tunePos >= TUNE.length && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(100);
       if (onWin) onWin(score + 100);
@@ -111,6 +112,11 @@ export default function PianoPlayer() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

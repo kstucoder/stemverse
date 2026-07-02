@@ -8,7 +8,7 @@ const GRAVITY = 260;       // % per second^2 — real parabolic fall, not a tele
 const JUMP_VELOCITY = 130; // initial upward speed (% per second)
 
 export default function SpeedRunner() {
-  const { serialData, score, incrementScore } = useGameStore();
+  const { serialData, score, incrementScore, arduinoConnected } = useGameStore();
   const [playerY, setPlayerY] = useState(0);
   const [isJumping, setIsJumping] = useState(false);
   const [distance, setDistance] = useState(0);
@@ -29,10 +29,10 @@ export default function SpeedRunner() {
     }
   }, [distance, score, gameOver]);
 
-  // Speed is driven by the real potentiometer (0-1023) -> always a safe,
-  // finite integer even before hardware is connected.
+  // Speed is driven by the real potentiometer (0-1023). When Arduino is not
+  // connected, speed stays at 0 — no auto-run, no auto-scoring.
   const pot = serialData.pot || 0;
-  const speed = Math.max(1, Math.round((pot / 1023) * 10));
+  const speed = arduinoConnected ? Math.max(1, Math.round((pot / 1023) * 10)) : 0;
   const progress = Math.min(distance / 1000, 1);
 
   // Jump trigger — edge-triggered on the real button so a held press doesn't
@@ -79,7 +79,7 @@ export default function SpeedRunner() {
   // freshly-moved obstacle positions and the current jump height via refs.
   useEffect(() => {
     const gameLoop = setInterval(() => {
-      if (gameOver) return;
+      if (gameOver || speed <= 0) return;
       setDistance((d) => d + speed * 0.5);
       incrementScore(Math.round(speed * 0.1));
       obstacleCounter.current += speed;

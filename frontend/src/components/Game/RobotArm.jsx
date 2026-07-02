@@ -13,6 +13,7 @@ const TARGETS = [
 
 export default function RobotArm() {
   const { serialData, score, incrementScore } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const [baseAngle, setBaseAngle] = useState(90);
   const [armAngle, setArmAngle] = useState(90);
   const [gripperOpen, setGripperOpen] = useState(false);
@@ -24,7 +25,7 @@ export default function RobotArm() {
 
   // Win condition
   useEffect(() => {
-    if (targetsCollected >= 3 && !winRef.current) {
+    if (arduinoConnected && targetsCollected >= 3 && !winRef.current) {
       winRef.current = true;
       const store = useGameStore.getState();
       if (store.onWin) store.onWin(score);
@@ -33,10 +34,10 @@ export default function RobotArm() {
 
   // Timer
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    if (!arduinoConnected || timeLeft <= 0) return;
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, arduinoConnected]);
 
   // Read servo angles from the real potentiometer + ultrasonic sensor
   useEffect(() => {
@@ -81,6 +82,12 @@ export default function RobotArm() {
   return (
     <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
       style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
+      {/* Arduino disconnected overlay */}
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       {/* Grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="w-full h-full" style={{

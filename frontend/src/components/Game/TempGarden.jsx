@@ -4,7 +4,7 @@ import { C, drawGradientBackground, drawGlassPanel, drawNeonStat, drawProgressBa
 import useGameStore from '../../stores/gameStore';
 
 export default function TempGarden() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const { serialData, score, incrementScore, winConditions, onWin, arduinoConnected } = useGameStore();
   const particles = useRef(new ParticleSystem());
   const [gardenState, setGardenState] = useState('growing');
   const winRef = useRef(false);
@@ -115,16 +115,18 @@ export default function TempGarden() {
     particles.current.update(0.016);
     particles.current.draw(ctx);
 
-    // Grow timer for win
-    growTimer.current += 0.016;
-    if (isPerfect) {
-      if (growTimer.current > 30 && !winRef.current && winConditions) {
-        winRef.current = true;
-        incrementScore(175);
-        if (onWin) onWin(score + 175);
+    // Grow timer for win — only active when real Arduino sensor is connected
+    if (arduinoConnected && temp > 0) {
+      growTimer.current += 0.016;
+      if (isPerfect) {
+        if (growTimer.current > 30 && !winRef.current && winConditions) {
+          winRef.current = true;
+          incrementScore(175);
+          if (onWin) onWin(score + 175);
+        }
+      } else {
+        growTimer.current = Math.max(0, growTimer.current - 0.01);
       }
-    } else {
-      growTimer.current = Math.max(0, growTimer.current - 0.01);
     }
 
     // HUD
@@ -143,7 +145,7 @@ export default function TempGarden() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.temp, score, winConditions, onWin, incrementScore]);
+  }, [serialData.temp, score, winConditions, onWin, incrementScore, arduinoConnected]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">

@@ -4,6 +4,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function MotionAlarm() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const intruders = useRef(0); // counts discrete PIR trigger EVENTS, not frames
   const motionPrevRef = useRef(0);
@@ -64,7 +65,7 @@ export default function MotionAlarm() {
 
     // Win: detect 10 separate intrusion events (matches the lesson's real
     // requirement and the hint text below).
-    if (intruders.current >= 10 && !winRef.current && winConditions) {
+    if (arduinoConnected && intruders.current >= 10 && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(300);
       if (onWin) onWin(score + 300);
@@ -97,6 +98,11 @@ export default function MotionAlarm() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

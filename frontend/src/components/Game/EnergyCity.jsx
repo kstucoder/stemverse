@@ -13,18 +13,25 @@ import useGameStore from '../../stores/gameStore';
 import { playTram } from './gameAudio';
 
 export default function EnergyCity() {
-  const { serialData, cityState, score, incrementScore, addPopup } = useGameStore();
+  const { serialData, cityState, score, incrementScore, addPopup, arduinoConnected } = useGameStore();
   const particles = useRef(new ParticleSystem());
   const starsRef = useRef(generateStars(80));
   const buildingsRef = useRef(generateBuildings());
   const tramPos = useRef(0);
-  const lastScoreTime = useRef(0);
+  const prevLed = useRef(serialData.led);
+  const prevBtn = useRef(serialData.btn);
 
-  // Auto-score
+  // Score ONLY on Arduino signal changes (edge-triggered)
   useEffect(() => {
-    const timer = setInterval(() => incrementScore(1), 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (serialData.led !== prevLed.current) {
+      prevLed.current = serialData.led;
+      if (serialData.led === 1) incrementScore(10);
+    }
+    if (serialData.btn !== prevBtn.current) {
+      prevBtn.current = serialData.btn;
+      if (serialData.btn === 1) incrementScore(5);
+    }
+  }, [serialData.led, serialData.btn]);
 
   function generateBuildings() {
     return Array.from({ length: cityState.totalBuildings || 8 }, (_, i) => ({
@@ -43,7 +50,13 @@ export default function EnergyCity() {
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
 
-    const isNight = cityState.isNight;
+    // Only reflect Arduino-driven state when actually connected
+    const isNight = arduinoConnected ? cityState.isNight : true;
+    const buildingsLit = arduinoConnected ? cityState.buildingsLit : 0;
+    const tramActive = arduinoConnected ? cityState.tramActive : false;
+    const energyLevel = arduinoConnected ? cityState.energyLevel : 0;
+    const citizenHappiness = arduinoConnected ? cityState.citizenHappiness : 50;
+
     const buildings = buildingsRef.current;
     const totalW = buildings.reduce((s, b) => s + b.width + 10, 0);
     const startX = (w - totalW) / 2;
@@ -96,7 +109,7 @@ export default function EnergyCity() {
     buildings.forEach((b, i) => {
       const bx = startX + buildings.slice(0, i).reduce((s, bb) => s + bb.width + 10, 0);
       const bh = b.height;
-      const lit = i < Math.floor(cityState.buildingsLit);
+      const lit = i < Math.floor(buildingsLit);
 
       // Building body with gradient
       const bgrad = ctx.createLinearGradient(0, groundY + 15 - bh, 0, groundY + 15);
@@ -185,9 +198,9 @@ export default function EnergyCity() {
     });
 
     // === TRAM ===
-    tramPos.current = (tramPos.current + (cityState.tramActive ? 2.5 : 0.3)) % (w + 100);
+    tramPos.current = (tramPos.current + (tramActive ? 2.5 : 0.3)) % (w + 100);
     const tx = tramPos.current - 50;
-    const tramLit = cityState.tramActive;
+    const tramLit = tramActive;
     
     // Tram body
     ctx.fillStyle = tramLit ? C.CYAN : '#334155';
@@ -208,8 +221,8 @@ export default function EnergyCity() {
     }
 
     // === PARTICLES (sparks from active buildings) ===
-    if (cityState.buildingsLit > 2 && Math.random() < 0.04) {
-      const bi = Math.floor(Math.random() * Math.floor(cityState.buildingsLit));
+    if (buildingsLit > 2 && Math.random() < 0.04) {
+      const bi = Math.floor(Math.random() * Math.floor(buildingsLit));
       const bx2 = startX + buildings.slice(0, bi).reduce((s, b) => s + b.width + 10, 0) + buildings[bi].width / 2;
       particles.current.emit(bx2, groundY - buildings[bi].height + 10, '#FFD700', 3, 30);
     }
@@ -221,8 +234,8 @@ export default function EnergyCity() {
 
     // === HUD: Stats ===
     drawNeonStat(ctx, '🏙️', score, 'Ball', 16, 16, C.CYAN);
-    drawNeonStat(ctx, '⚡', `${cityState.energyLevel}%`, 'Quvvat', 120, 16, C.CYAN);
-    drawNeonStat(ctx, '😊', `${Math.round(cityState.citizenHappiness)}%`, 'Baxt', 224, 16, C.PINK);
+    drawNeonStat(ctx, '⚡', `${energyLevel}%`, 'Quvvat', 120, 16, C.CYAN);
+    drawNeonStat(ctx, '😊', `${Math.round(citizenHappiness)}%`, 'Baxt', 224, 16, C.PINK);
 
     // === HUD: Building count indicator ===
     const bx = w - 130;
@@ -232,14 +245,14 @@ export default function EnergyCity() {
     ctx.fillStyle = C.WHITE;
     ctx.shadowColor = C.CYAN;
     ctx.shadowBlur = 4;
-    ctx.fillText(`${cityState.buildingsLit}/${cityState.totalBuildings}`, bx + 58, 30);
+    ctx.fillText(`${buildingsLit}/${cityState.totalBuildings}`, bx + 58, 30);
     ctx.shadowBlur = 0;
     ctx.font = '8px Chakra Petch, sans-serif';
     ctx.fillStyle = C.MUTED;
     ctx.fillText('BINOLAR', bx + 58, 42);
 
     // === PROGRESS BAR ===
-    const progress = Math.min(cityState.buildingsLit / cityState.totalBuildings, 1);
+    const progress = Math.min(buildingsLit / cityState.totalBuildings, 1);
     drawProgressBar(ctx, w / 2 - 100, h - 38, 200, 10, progress, C.GOLD);
     ctx.font = 'bold 10px Chakra Petch, sans-serif';
     ctx.textAlign = 'center';
@@ -280,7 +293,7 @@ export default function EnergyCity() {
     // === VIGNETTE ===
     drawVignette(ctx, w, h);
 
-  }, [cityState, serialData, score]);
+  }, [cityState, serialData, score, arduinoConnected]);
 
   return <GameCanvas draw={draw} className="rounded-xl overflow-hidden" />;
 }

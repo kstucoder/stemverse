@@ -4,6 +4,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function ObstacleCourse() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const carX = useRef(80);
   const obstacles = useRef([]);
@@ -49,7 +50,7 @@ export default function ObstacleCourse() {
     // Win distance comes from the lesson's own declared win condition, so the
     // sidebar shown to the player always matches what's actually required.
     const targetDist = winConditions?.value ?? 500;
-    if (carX.current > targetDist && !winRef.current && winConditions) {
+    if (arduinoConnected && carX.current > targetDist && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(350);
       if (onWin) onWin(score + 350);
@@ -149,6 +150,11 @@ export default function ObstacleCourse() {
 
   return (
     <GameCanvas draw={draw} update={update} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

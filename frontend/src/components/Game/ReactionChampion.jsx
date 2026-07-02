@@ -4,6 +4,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function ReactionChampion() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const [state, setState] = useState('waiting'); // waiting, ready, go, result
   const [winner, setWinner] = useState(0);
@@ -23,9 +24,10 @@ export default function ReactionChampion() {
   }, []);
 
   useEffect(() => {
+    if (!arduinoConnected) return;
     startRound();
     return () => clearTimeout(timerRef.current);
-  }, [p1Score, p2Score]);
+  }, [p1Score, p2Score, arduinoConnected]);
 
   // The Arduino sends the WINNER NUMBER itself in "BTN:" (0 = no one yet,
   // 1 = pin 2 pressed first, 2 = pin 3 pressed first) — not a plain boolean —
@@ -44,7 +46,7 @@ export default function ReactionChampion() {
   }, [serialData.btn, state, incrementScore]);
 
   useEffect(() => {
-    if ((p1Score >= 5 || p2Score >= 5) && !winRef.current && winConditions) {
+    if (arduinoConnected && (p1Score >= 5 || p2Score >= 5) && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(100);
       if (onWin) onWin(score + 100);
@@ -112,6 +114,11 @@ state === 'waiting' ? "⏳ Tayyorlaning..." :
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

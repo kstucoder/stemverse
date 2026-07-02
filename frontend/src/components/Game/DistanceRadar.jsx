@@ -5,6 +5,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function DistanceRadar() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   const angle = useRef(0);
   const detected = useRef(new Set());
@@ -106,7 +107,7 @@ export default function DistanceRadar() {
     particles.current.draw(ctx);
 
     // Win
-    if (detected.current.size >= 5 && !winRef.current && winConditions) {
+    if (arduinoConnected && detected.current.size >= 5 && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(50);
       if (onWin) onWin(score + 50);
@@ -131,6 +132,11 @@ export default function DistanceRadar() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

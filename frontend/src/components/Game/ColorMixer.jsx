@@ -5,6 +5,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function ColorMixer() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const [target, setTarget] = useState({ r: 128, g: 128, b: 128 });
   const winRef = useRef(false);
   const roundRef = useRef(0);
@@ -72,7 +73,7 @@ export default function ColorMixer() {
       similarity > 80 ? C.GREEN : similarity > 50 ? C.GOLD : '#ef4444');
 
     // Win condition
-    if (similarity > 90 && !winRef.current && winConditions) {
+    if (arduinoConnected && similarity > 90 && !winRef.current && winConditions) {
       winRef.current = true;
       roundRef.current++;
       incrementScore(100);
@@ -102,6 +103,12 @@ export default function ColorMixer() {
   }, [serialData.r, serialData.g, serialData.b, target, score, winConditions, onWin, incrementScore]);
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl" />
+    <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
+    </GameCanvas>
   );
 }

@@ -19,6 +19,7 @@ const TARGET_PATTERNS = [
 
 export default function LightShow() {
   const { serialData, score, incrementScore } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const [currentPattern, setCurrentPattern] = useState(0);
   const [patternPos, setPatternPos] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -32,7 +33,7 @@ export default function LightShow() {
 
   // Check win
   useEffect(() => {
-    if (completedDances >= 3 && !winRef.current) {
+    if (arduinoConnected && completedDances >= 3 && !winRef.current) {
       winRef.current = true;
       const store = useGameStore.getState();
       if (store.onWin) store.onWin(score);
@@ -97,6 +98,7 @@ export default function LightShow() {
   };
 
   const startDance = () => {
+    if (!arduinoConnected) return;
     setStepsInDance(0);
     setStage('play');
   };
@@ -111,6 +113,12 @@ export default function LightShow() {
   return (
     <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
       style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
+      {/* Arduino disconnected overlay */}
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       {/* Stage Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-purple-900/20 to-dark-900" />
       <div className="absolute inset-0">

@@ -14,12 +14,8 @@ export function useSerial() {
   const handleConnect = useCallback(async () => {
     const result = await connect();
     if (result.success) {
+      gameStore.setState({ arduinoConnected: true });
       startReading((line) => {
-        // Some lessons print several sensor readings on a single line without
-        // newlines in between (e.g. "TEMP:23 LDR:512" or "POT:512 BTN:0 TEMP:23").
-        // A single ^(\w+):(.+)$ match would swallow everything after the first
-        // colon as one garbage value, so tokenize the line and parse every
-        // key:value pair it contains.
         const tokens = line.match(/(\w+):(-?\d+(?:\.\d+)?|\S+)/g) || [];
         tokens.forEach((token) => {
           const idx = token.indexOf(':');
@@ -33,7 +29,12 @@ export function useSerial() {
     return result;
   }, [connect, startReading, gameStore]);
 
-  return { connected, connect: handleConnect, disconnect, setOnDataCallback };
+  const handleDisconnect = useCallback(async () => {
+    gameStore.setState({ arduinoConnected: false });
+    await disconnect();
+  }, [disconnect, gameStore]);
+
+  return { connected, connect: handleConnect, disconnect: handleDisconnect, setOnDataCallback };
 }
 
 export default useSerial;

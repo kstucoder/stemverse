@@ -4,6 +4,7 @@ import { playCombo, playWin } from '../components/Game/gameAudio';
 const useGameStore = create((set, get) => ({
   gameActive: false,
   gamePaused: false,
+  arduinoConnected: false,
   score: 0,
   level: 1,
   combo: 0,

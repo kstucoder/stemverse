@@ -4,6 +4,7 @@ import useGameStore from '../../stores/gameStore';
 
 export default function IoTDashboard() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const winRef = useRef(false);
   const dataLog = useRef([]);
   const targetTimer = useRef(0);
@@ -79,8 +80,8 @@ export default function IoTDashboard() {
     });
 
     // WiFi indicator
-    ctx.fillStyle = C.GREEN;
-    ctx.shadowColor = C.GREEN;
+    ctx.fillStyle = arduinoConnected ? C.GREEN : '#ef4444';
+    ctx.shadowColor = arduinoConnected ? C.GREEN : '#ef4444';
     ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.arc(w - 40, 20, 6, 0, Math.PI * 2);
@@ -89,7 +90,7 @@ export default function IoTDashboard() {
     ctx.fillStyle = C.WHITE;
     ctx.font = '9px Chakra Petch, monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('📶 ESP8266 Ulangan', w - 55, 23);
+    ctx.fillText(arduinoConnected ? '📶 ESP8266 Ulangan' : '⚠️ Arduino ulanmagan', w - 55, 23);
 
     // Firebase indicator
     ctx.fillStyle = 'rgba(255,193,7,0.2)';
@@ -111,7 +112,7 @@ export default function IoTDashboard() {
     ctx.font = '11px Chakra Petch, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`🎯 POT'ni 800+ da ${5}s ushlab turing: ${targetsHit}/5`, w / 2, 300);
-    if (targetsHit >= 5 && !winRef.current && winConditions) {
+    if (arduinoConnected && targetsHit >= 5 && !winRef.current && winConditions) {
       winRef.current = true;
       incrementScore(400);
       if (onWin) onWin(score + 400);
@@ -124,6 +125,11 @@ export default function IoTDashboard() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
       <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

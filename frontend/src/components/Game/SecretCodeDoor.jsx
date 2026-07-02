@@ -9,6 +9,7 @@ const CODE_LENGTH = 5;
 
 export default function SecretCodeDoor() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
+  const arduinoConnected = useGameStore(s => s.arduinoConnected);
   const particles = useRef(new ParticleSystem());
   // The real circuit has exactly ONE push button, so it can only report
   // discrete press events — not a chosen 0/1 digit. The "secret code" is
@@ -35,7 +36,7 @@ export default function SecretCodeDoor() {
         setFeedback('🔓 ESHIK OCHILDI!');
         playWin();
         particles.current.emit(50, 70, '#ffdd00', 50, 200);
-        if (!winRef.current && winConditions) {
+        if (arduinoConnected && !winRef.current && winConditions) {
           winRef.current = true;
           incrementScore(100);
           if (onWin) onWin(score + 100);
@@ -144,6 +145,12 @@ export default function SecretCodeDoor() {
   }, [pressCount, doorOpen, feedback, score]);
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl" />
+    <GameCanvas draw={draw} className="rounded-2xl">
+      {!arduinoConnected && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
+          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+        </div>
+      )}
+    </GameCanvas>
   );
 }
