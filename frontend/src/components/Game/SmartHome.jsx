@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playButton, playError } from './gameAudio';
 
 export default function SmartHome() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -10,6 +11,8 @@ export default function SmartHome() {
   const devices = useRef({
     lights: false, ac: false, door: false, alarm: false
   });
+  const prevBtn = useRef(0);
+  const prevOverheat = useRef(false);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -72,6 +75,12 @@ export default function SmartHome() {
     devices.current.ac = temp > 25;
     devices.current.door = toggleLight;
 
+    if (btn === 1 && prevBtn.current === 0) playButton();
+    prevBtn.current = btn;
+    const overheat = temp > 28;
+    if (overheat && !prevOverheat.current) playError();
+    prevOverheat.current = overheat;
+
     // Status indicators
     const status = [
       { label: '💡 Chiroqlar', active: devices.current.lights, x: w * 0.12, y: h * 0.65 },
@@ -132,11 +141,6 @@ export default function SmartHome() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

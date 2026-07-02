@@ -238,6 +238,29 @@ export function drawWinProgress(ctx, x, y, current, target, label = 'Progress') 
   ctx.fillText(`${Math.round(progress * 100)}%`, x + 125, y + 8);
 }
 
+// ========= COMBO INDICATOR =========
+export function drawComboIndicator(ctx, w, combo) {
+  if (combo < 2) return;
+  const label = `🔥 x${combo}`;
+  const color = combo > 10 ? C.PINK : combo > 5 ? C.GOLD : C.GREEN;
+  ctx.font = 'bold 16px Chakra Petch, sans-serif';
+  ctx.textAlign = 'center';
+  const textWidth = ctx.measureText(label).width;
+  const bx = w / 2 - textWidth / 2 - 14, bw = textWidth + 28;
+  ctx.fillStyle = C.GLASS;
+  roundRect(ctx, bx, 8, bw, 28, 14);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  roundRect(ctx, bx, 8, bw, 28, 14);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+  ctx.fillText(label, w / 2, 27);
+  ctx.shadowBlur = 0;
+}
+
 // ========= ROUNDED RECT =========
 export function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();

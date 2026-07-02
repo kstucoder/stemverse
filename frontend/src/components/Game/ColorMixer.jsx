@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas';
-import { C, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar } from './gameHelpers';
+import { C, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
 
 export default function ColorMixer() {
@@ -9,6 +9,7 @@ export default function ColorMixer() {
   const [target, setTarget] = useState({ r: 128, g: 128, b: 128 });
   const winRef = useRef(false);
   const roundRef = useRef(0);
+  const particles = useRef(new ParticleSystem());
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -77,6 +78,7 @@ export default function ColorMixer() {
       winRef.current = true;
       roundRef.current++;
       incrementScore(100);
+      particles.current.burst(w / 2, h / 2, currentColor, 60, 220);
       // New target
       setTarget({
         r: Math.round(Math.random() * 255),
@@ -89,6 +91,9 @@ export default function ColorMixer() {
         winRef.current = false; // Allow the next round to trigger again
       }
     }
+
+    particles.current.update(0.016);
+    particles.current.draw(ctx);
 
     // Score panel
     drawGlassPanel(ctx, 10, 10, 120, 35, 10);
@@ -103,12 +108,6 @@ export default function ColorMixer() {
   }, [serialData.r, serialData.g, serialData.b, target, score, winConditions, onWin, incrementScore]);
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
-    </GameCanvas>
+    <GameCanvas draw={draw} className="rounded-2xl" />
   );
 }

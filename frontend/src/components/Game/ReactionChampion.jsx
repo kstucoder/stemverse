@@ -13,6 +13,7 @@ export default function ReactionChampion() {
   const timerRef = useRef(null);
   const startTime = useRef(0);
   const winRef = useRef(false);
+  const dims = useRef({ w: 500, h: 500 });
 
   const startRound = useCallback(() => {
     setState('ready');
@@ -40,7 +41,7 @@ export default function ReactionChampion() {
       if (btn === 1) setP1Score(s => s + 1); else setP2Score(s => s + 1);
       setState('result');
       incrementScore(20);
-      particles.current.emit(200, 200, btn === 1 ? '#00f5ff' : '#ff2d78', 30, 200);
+      particles.current.emit(dims.current.w / 2, dims.current.h / 2, btn === 1 ? '#00f5ff' : '#ff2d78', 30, 200);
       setTimeout(() => setState('waiting'), 1500);
     }
   }, [serialData.btn, state, incrementScore]);
@@ -54,6 +55,7 @@ export default function ReactionChampion() {
   }, [p1Score, p2Score, score, winConditions, onWin, incrementScore]);
 
   const draw = useCallback((ctx, w, h, t) => {
+    dims.current = { w, h };
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, ['#0a0015', '#1a002a', '#0a0015']);
 
@@ -114,11 +116,6 @@ state === 'waiting' ? "⏳ Tayyorlaning..." :
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

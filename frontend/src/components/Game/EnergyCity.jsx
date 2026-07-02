@@ -295,5 +295,5 @@ export default function EnergyCity() {
 
   }, [cityState, serialData, score, arduinoConnected]);
 
-  return <GameCanvas draw={draw} className="rounded-xl overflow-hidden" />;
+  return <GameCanvas draw={draw} className="rounded-xl overflow-hidden" arduinoGate={false} />;
 }

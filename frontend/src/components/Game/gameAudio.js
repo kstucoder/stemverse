@@ -86,6 +86,11 @@ export function playButton() {
   playTone(440, 0.05, 'square', 0.05);
 }
 
+export function playTrafficState(state) {
+  const freq = { RED: 220, YELLOW: 330, GREEN: 440 }[state] || 300;
+  playTone(freq, 0.15, 'triangle', 0.08);
+}
+
 export function playTram() {
   playTone(220, 0.5, 'triangle', 0.08);
   setTimeout(() => playTone(330, 0.3, 'triangle', 0.06), 200);
@@ -93,4 +98,50 @@ export function playTram() {
 
 export function playNote(freq) {
   playTone(freq, 0.3, 'triangle', 0.1);
+}
+
+export function playConnect() {
+  playTone(440, 0.08, 'sine', 0.1);
+  setTimeout(() => playTone(880, 0.12, 'sine', 0.1), 90);
+}
+
+export function playDisconnect() {
+  playTone(440, 0.1, 'sine', 0.08);
+  setTimeout(() => playTone(220, 0.15, 'sine', 0.08), 90);
+}
+
+// ===== LIVE CONTINUOUS TONE (theremin-style — frequency updates every frame
+// instead of a discrete triggered note) =====
+let liveOsc = null, liveGain = null;
+
+export function startLiveTone() {
+  try {
+    const ctx = getContext();
+    liveOsc = ctx.createOscillator();
+    liveGain = ctx.createGain();
+    liveOsc.type = 'sine';
+    liveGain.gain.setValueAtTime(0, ctx.currentTime);
+    liveOsc.connect(liveGain);
+    liveGain.connect(ctx.destination);
+    liveOsc.start();
+  } catch (e) { /* silent fail */ }
+}
+
+export function updateLiveTone(freq, volume = 0.08) {
+  if (!liveOsc || !liveGain) return;
+  try {
+    const ctx = getContext();
+    liveOsc.frequency.setTargetAtTime(freq, ctx.currentTime, 0.05);
+    liveGain.gain.setTargetAtTime(volume, ctx.currentTime, 0.05);
+  } catch (e) { /* silent fail */ }
+}
+
+export function stopLiveTone() {
+  if (!liveOsc) return;
+  try {
+    const ctx = getContext();
+    liveGain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+    liveOsc.stop(ctx.currentTime + 0.2);
+  } catch (e) { /* silent fail */ }
+  liveOsc = null; liveGain = null;
 }

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Car, Footprints, Radio } from 'lucide-react';
 import useGameStore from '../../stores/gameStore';
 import { C } from './gameHelpers';
+import { playTrafficState } from './gameAudio';
 
 const STATES = {
   RED:    { label: "TO'XT",  color: '#FF2D30' },
@@ -32,6 +33,7 @@ export default function TrafficLight() {
   // counts a completed cycle once the light returns to RED after GREEN/YELLOW.
   useEffect(() => {
     if (!rawState || !STATES[rawState] || rawState === prevStateRef.current) return;
+    playTrafficState(rawState);
     if (rawState === 'GREEN') setTrafficFlow((f) => f + 50);
     if (rawState === 'RED' && prevStateRef.current) setTrafficFlow((f) => Math.max(0, f - 15));
     if (rawState === 'RED' && (prevStateRef.current === 'GREEN' || prevStateRef.current === 'YELLOW')) {

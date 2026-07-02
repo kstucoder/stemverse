@@ -145,12 +145,6 @@ export default function SecretCodeDoor() {
   }, [pressCount, doorOpen, feedback, score]);
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
-    </GameCanvas>
+    <GameCanvas draw={draw} className="rounded-2xl" />
   );
 }

@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react';
-import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
+import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playAlarm } from './gameAudio';
 
 export default function MotionAlarm() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -14,7 +15,10 @@ export default function MotionAlarm() {
     ctx.clearRect(0, 0, w, h);
     const motion = serialData.pir || 0;
     const isAlarm = motion === 1;
-    if (motion === 1 && motionPrevRef.current === 0) intruders.current++;
+    if (motion === 1 && motionPrevRef.current === 0) {
+      intruders.current++;
+      playAlarm();
+    }
     motionPrevRef.current = motion;
 
     drawGradientBackground(ctx, w, h, isAlarm ? ['#2a0000', '#1a0000', '#0a0000'] : ['#0a0a1a', '#1a1a2a', '#0a0a1a']);
@@ -98,11 +102,6 @@ export default function MotionAlarm() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

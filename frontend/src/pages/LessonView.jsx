@@ -6,6 +6,7 @@ import SerialConnector from '../components/SerialConnector';
 import { getGameComponent } from '../components/Game/GameEngine';
 import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
 import useGameStore from '../stores/gameStore';
+import { playWin } from '../components/Game/gameAudio';
 import toast from 'react-hot-toast';
 
 const LEVEL_COLOR = { 1: 'var(--cyan)', 2: '#A855F7', 3: '#FF6920', 4: '#EC4899' };
@@ -37,6 +38,8 @@ export default function LessonView() {
   const handleWin = useCallback(async (score) => {
     setWinScore(score);
     setCompleting(true);
+    playWin();
+    useGameStore.getState().triggerShake(8);
     try {
       const { data } = await progressAPI.complete(id, score);
       setXpEarned(data.xpEarned);

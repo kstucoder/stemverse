@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import useSerialStore from '../stores/serialStore';
 import useGameStore from '../stores/gameStore';
+import { playConnect, playDisconnect } from '../components/Game/gameAudio';
 
 export function useSerial() {
   const { connected, connect, disconnect, startReading } = useSerialStore();
@@ -15,6 +16,7 @@ export function useSerial() {
     const result = await connect();
     if (result.success) {
       useGameStore.setState({ arduinoConnected: true });
+      playConnect();
       startReading((line) => {
         const tokens = line.match(/(\w+):(-?\d+(?:\.\d+)?|\S+)/g) || [];
         tokens.forEach((token) => {
@@ -31,6 +33,7 @@ export function useSerial() {
 
   const handleDisconnect = useCallback(async () => {
     useGameStore.setState({ arduinoConnected: false });
+    playDisconnect();
     await disconnect();
   }, [disconnect]);
 

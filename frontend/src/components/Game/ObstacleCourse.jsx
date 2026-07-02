@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playCrash } from './gameAudio';
 
 export default function ObstacleCourse() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -40,6 +41,7 @@ export default function ObstacleCourse() {
       const dist = Math.hypot(carX.current - o.x, 300 - o.y);
       if (dist < 25) {
         particles.current.emit(carX.current, 300, '#ef4444', 20, 200);
+        playCrash();
         carX.current = 80;
         obstacles.current = [];
         return false;
@@ -150,11 +152,6 @@ export default function ObstacleCourse() {
 
   return (
     <GameCanvas draw={draw} update={update} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playButton } from './gameAudio';
 
 export default function ParkingAssistant() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -8,6 +9,7 @@ export default function ParkingAssistant() {
   const particles = useRef(new ParticleSystem());
   const parkTimer = useRef(0);
   const winRef = useRef(false);
+  const lastBeep = useRef(0);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -100,24 +102,25 @@ export default function ParkingAssistant() {
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
 
-    // Proximity beep visualization
-    if (dist < 30 && dist > 0) {
+    // Proximity beep — real parking sensors beep faster the closer you get
+    if (arduinoConnected && dist < 30 && dist > 0 && !isParked) {
       const ringR = 5 + (30 - dist) * 2;
       ctx.strokeStyle = `rgba(239,68,68,${0.3 + 0.3 * Math.sin(t * (30 - dist) * 2)})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(carX, carY, ringR, 0, Math.PI * 2);
       ctx.stroke();
+
+      const beepInterval = Math.max(0.1, dist / 100);
+      if (t - lastBeep.current > beepInterval) {
+        lastBeep.current = t;
+        playButton();
+      }
     }
   }, [serialData.dist, score, winConditions, onWin, incrementScore]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

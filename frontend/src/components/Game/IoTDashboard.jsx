@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playButton } from './gameAudio';
 
 export default function IoTDashboard() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -8,6 +9,7 @@ export default function IoTDashboard() {
   const winRef = useRef(false);
   const dataLog = useRef([]);
   const targetTimer = useRef(0);
+  const prevTargetsHit = useRef(0);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -108,6 +110,8 @@ export default function IoTDashboard() {
     if (pot > 800) targetTimer.current += 0.016;
     else targetTimer.current = Math.max(0, targetTimer.current - 0.02);
     const targetsHit = Math.min(5, Math.floor(targetTimer.current));
+    if (targetsHit > prevTargetsHit.current) playButton();
+    prevTargetsHit.current = targetsHit;
     ctx.fillStyle = C.CYAN;
     ctx.font = '11px Chakra Petch, monospace';
     ctx.textAlign = 'center';
@@ -125,11 +129,6 @@ export default function IoTDashboard() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

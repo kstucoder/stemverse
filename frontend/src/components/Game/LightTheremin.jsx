@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { startLiveTone, updateLiveTone, stopLiveTone } from './gameAudio';
 
 export default function LightTheremin() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -11,6 +12,13 @@ export default function LightTheremin() {
   const [volume, setVolume] = useState(0.5);
   const winRef = useRef(false);
 
+  // The real theremin instrument sweeps pitch continuously with hand position —
+  // so this uses a live oscillator (updated every frame) instead of one-shot notes.
+  useEffect(() => {
+    startLiveTone();
+    return () => stopLiveTone();
+  }, []);
+
   const draw = useCallback((ctx, w, h, t) => {
     time.current = t;
     ctx.clearRect(0, 0, w, h);
@@ -20,6 +28,8 @@ export default function LightTheremin() {
     const freqVal = serialData.ldr ? Math.max(100, (serialData.ldr / 1023) * 2000) : 500;
     const amp = (serialData.ldr ? serialData.ldr / 1023 : 0.5) * 80;
     setFreq(freqVal);
+    if (arduinoConnected) updateLiveTone(freqVal, 0.1);
+    else updateLiveTone(freqVal, 0);
 
     // Draw sound waves
     ctx.strokeStyle = `rgba(0, 245, 255, ${0.3 + amp / 160})`;
@@ -72,15 +82,10 @@ export default function LightTheremin() {
     // Vignette + scanlines
     drawVignette(ctx, w, h);
     drawScanlines(ctx, w, h);
-  }, [serialData.ldr, serialData.led, score, winConditions, onWin, incrementScore]);
+  }, [serialData.ldr, serialData.led, score, winConditions, onWin, incrementScore, arduinoConnected]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas';
 import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playNote, playError } from './gameAudio';
 
 // The real circuit only wires 4 push buttons (pins 2-5), so the keyboard and
 // the tune to play must both stay within 4 notes — anything requiring a 5th+
@@ -31,6 +32,7 @@ export default function PianoPlayer() {
       const idx = noteKeys - 1;
       setActiveNote(idx);
       particles.current.emit(200 + idx * 60, 300, NOTES[idx].color, 5, 80);
+      playNote(NOTES[idx].freq);
 
       if (idx === TUNE[tunePos % TUNE.length]) {
         setTunePos(p => p + 1);
@@ -38,6 +40,7 @@ export default function PianoPlayer() {
       } else {
         setMistakes(m => m + 1);
         setTunePos(0);
+        playError();
       }
       setTimeout(() => setActiveNote(-1), 300);
     }
@@ -112,11 +115,6 @@ export default function PianoPlayer() {
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

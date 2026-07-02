@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { playCombo, playWin } from '../components/Game/gameAudio';
+import { playCombo, playWin, playScore, playCollect } from '../components/Game/gameAudio';
 
 const useGameStore = create((set, get) => ({
   gameActive: false,
@@ -113,6 +113,8 @@ const useGameStore = create((set, get) => ({
     const comboBonus = Math.floor(newCombo / 5) * points * 0.5;
     const totalPoints = points + comboBonus;
     const newScore = state.score + totalPoints;
+
+    if (totalPoints >= 50) playCollect(); else playScore();
 
     const popup = {
       id: Date.now() + Math.random(),

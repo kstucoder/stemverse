@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useGameStore from '../../stores/gameStore';
 import { C } from './gameHelpers';
+import { playJump, playCrash } from './gameAudio';
 
 const PLAYER_X = 50;       // fixed horizontal position (%), world scrolls instead
 const GRAVITY = 260;       // % per second^2 — real parabolic fall, not a teleport
@@ -43,6 +44,7 @@ export default function SpeedRunner() {
       jumpingRef.current = true;
       setIsJumping(true);
       vyRef.current = JUMP_VELOCITY;
+      playJump();
     }
     prevBtnRef.current = btn;
   }, [serialData.btn, gameOver]);
@@ -91,7 +93,7 @@ export default function SpeedRunner() {
           next = [...next, { id: Date.now(), x: 100, height: 10 + Math.random() * 20, width: 8 }];
         }
         const hit = next.some((o) => Math.abs(o.x - PLAYER_X) < 8 && playerYRef.current < o.height);
-        if (hit) setGameOver(true);
+        if (hit) { setGameOver(true); playCrash(); }
         return next;
       });
     }, 33);

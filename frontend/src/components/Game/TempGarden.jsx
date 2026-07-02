@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import GameCanvas from './GameCanvas';
 import { C, drawGradientBackground, drawGlassPanel, drawNeonStat, drawProgressBar, drawVignette, drawScanlines, ParticleSystem, drawGlow } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { playLevelUp, playError } from './gameAudio';
 
 export default function TempGarden() {
   const { serialData, score, incrementScore, winConditions, onWin, arduinoConnected } = useGameStore();
@@ -9,6 +10,7 @@ export default function TempGarden() {
   const [gardenState, setGardenState] = useState('growing');
   const winRef = useRef(false);
   const growTimer = useRef(0);
+  const prevZone = useRef(null);
 
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
@@ -114,6 +116,16 @@ export default function TempGarden() {
 
     particles.current.update(0.016);
     particles.current.draw(ctx);
+
+    // Zone-transition cues — only when entering/leaving a state, not every frame
+    if (arduinoConnected && temp > 0) {
+      const zone = isPerfect ? 'perfect' : isHot ? 'hot' : 'cold';
+      if (prevZone.current !== null && zone !== prevZone.current) {
+        if (zone === 'perfect') playLevelUp();
+        else if (prevZone.current === 'perfect') playError();
+      }
+      prevZone.current = zone;
+    }
 
     // Grow timer for win — only active when real Arduino sensor is connected
     if (arduinoConnected && temp > 0) {

@@ -1,6 +1,7 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
 import useGameStore from '../../stores/gameStore';
+import { startLiveTone, updateLiveTone, stopLiveTone } from './gameAudio';
 
 export default function MusicVisualizer() {
   const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
@@ -10,6 +11,13 @@ export default function MusicVisualizer() {
   const winRef = useRef(false);
   const noteHistory = useRef([]);
 
+  // Shows a live pitch/note reading, so it should actually be audible —
+  // continuous oscillator instead of a discrete one-shot note.
+  useEffect(() => {
+    startLiveTone();
+    return () => stopLiveTone();
+  }, []);
+
   const draw = useCallback((ctx, w, h, t) => {
     ctx.clearRect(0, 0, w, h);
     drawGradientBackground(ctx, w, h, ['#050510', '#0a0a2a', '#050510']);
@@ -17,6 +25,7 @@ export default function MusicVisualizer() {
     const pot = serialData.pot ?? 512;
     const freq = (pot / 1023) * 2000 + 50;
     const bars = 32;
+    updateLiveTone(freq, arduinoConnected ? 0.08 : 0);
 
     // Frequency samples
     for (let i = 0; i < bars; i++) {
@@ -93,15 +102,10 @@ export default function MusicVisualizer() {
       incrementScore(300);
       if (onWin) onWin(score + 300);
     }
-  }, [serialData.pot, score, winConditions, onWin, incrementScore]);
+  }, [serialData.pot, score, winConditions, onWin, incrementScore, arduinoConnected]);
 
   return (
     <GameCanvas draw={draw} className="rounded-2xl">
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
-        </div>
-      )}
       <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
         <p className="text-xs text-dark-400">Score</p>
         <p className="font-game text-white text-lg">{score}</p>

@@ -21,6 +21,7 @@ export default function RobotArm() {
   const [collected, setCollected] = useState(new Set());
   const [currentTarget, setCurrentTarget] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [burst, setBurst] = useState(null);
   const winRef = useRef(false);
 
   // Win condition
@@ -68,6 +69,8 @@ export default function RobotArm() {
       // Gathered!
       setCollected((prev) => new Set([...prev, currentTarget]));
       setTargetsCollected((t) => t + 1);
+      setBurst({ id: Date.now(), x: target.x, y: target.y, color: target.color });
+      setTimeout(() => setBurst(null), 600);
       setCurrentTarget((t) => (t + 1) % TARGETS.length);
       incrementScore(100);
     }
@@ -147,6 +150,17 @@ export default function RobotArm() {
           </div>
         )
       ))}
+
+      {/* Collection burst */}
+      {burst && (
+        <div
+          key={burst.id}
+          className="absolute pointer-events-none"
+          style={{ left: `${burst.x}%`, top: `${burst.y}%`, transform: 'translate(-50%, -50%)' }}
+        >
+          <div className="w-12 h-12 rounded-full animate-ping" style={{ background: burst.color, opacity: 0.6 }} />
+        </div>
+      )}
 
       {/* Arm Position Indicator */}
       <div className="absolute transition-all duration-200 w-3 h-3 rounded-full"
