@@ -120,10 +120,12 @@ export function makeBuilding(spec, tweens, particles) {
   const roofY = -spec.h - (spec.setback ? 14 : 0);
 
   const body = new Graphics();
-  body.rect(-spec.w / 2, -spec.h, spec.w, spec.h).fill(0x0c1424);
-  if (spec.setback) body.rect(-spec.w * 0.3, -spec.h - 14, spec.w * 0.6, 14).fill(0x0a101d);
+  body.rect(-spec.w / 2, -spec.h, spec.w, spec.h).fill(0x070b16);
+  if (spec.setback) body.rect(-spec.w * 0.3, -spec.h - 14, spec.w * 0.6, 14).fill(0x060912);
   body.rect(-spec.w / 2, -spec.h, 4, spec.h).fill({ color: 0x1b2e4e, alpha: 0.65 });
-  body.rect(spec.w / 2 - 3, -spec.h, 3, spec.h).fill({ color: 0x050810, alpha: 0.8 });
+  body.rect(spec.w / 2 - 3, -spec.h, 3, spec.h).fill({ color: 0x030509, alpha: 0.8 });
+  // Silhouette konturi — qorong'ida ham bino shakli ko'rinib turadi
+  body.rect(-spec.w / 2, -spec.h, spec.w, spec.h).stroke({ width: 1, color: 0x3a5088, alpha: 0.4 });
   c.addChild(body);
 
   const trim = new Graphics();
@@ -143,7 +145,10 @@ export function makeBuilding(spec, tweens, particles) {
       wg.x = -spec.w / 2 + 8 + col * 13;
       wg.y = -spec.h + 10 + r * 17;
       wg.alpha = 0;
-      wins.push({ g: wg, row: r, on: 0, base: 0.5 + Math.random() * 0.5, phase: Math.random() * 6.28, spd: 0.6 + Math.random() * 2 });
+      // ~7% oynada "avariya generatori" — shahar o'chganda ham xira miltillaydi,
+      // sahna hech qachon butunlay qop-qora bo'lib qolmaydi
+      const amb = Math.random() < 0.07 ? 0.12 : 0;
+      wins.push({ g: wg, row: r, on: 0, amb, base: 0.5 + Math.random() * 0.5, phase: Math.random() * 6.28, spd: 0.6 + Math.random() * 2 });
       winC.addChild(wg);
     }
   }
@@ -192,9 +197,14 @@ export function makeBuilding(spec, tweens, particles) {
     },
     tick(t, i) {
       wins.forEach((wn) => {
-        wn.g.alpha = wn.on * wn.base * (0.85 + 0.15 * Math.sin(t * wn.spd + wn.phase));
+        const active = wn.on * wn.base * (0.85 + 0.15 * Math.sin(t * wn.spd + wn.phase));
+        const ambient = wn.amb * (0.6 + 0.4 * Math.sin(t * 0.8 + wn.phase));
+        wn.g.alpha = Math.max(active, ambient);
       });
-      if (beacon) beacon.alpha = lit ? 0.35 + 0.65 * Math.abs(Math.sin(t * 2.2 + i)) : 0.12;
+      // Antenna mayoqlari o'chgan shaharda ham miltillaydi (avariya signali)
+      if (beacon) beacon.alpha = lit
+        ? 0.35 + 0.65 * Math.abs(Math.sin(t * 2.2 + i))
+        : 0.15 + 0.3 * Math.abs(Math.sin(t * 1.5 + i));
     },
   };
 }
@@ -288,7 +298,8 @@ export function assembleCity(app, { startLit = false } = {}) {
   // Osmon (ekran bo'yicha)
   const skyC = new Container();
   app.stage.addChild(skyC);
-  const skyNight = new Sprite(gradTexture(['#03040c', '#070c1a', '#0c1226']));
+  // Gorizont sal ochroq — o'chgan binolar silueti osmonga nisbatan o'qiladi
+  const skyNight = new Sprite(gradTexture(['#050a18', '#0a1430', '#182450']));
   const skyDay = new Sprite(gradTexture(['#1a1040', '#3a1e63', '#7a3e6e', '#c96b52']));
   skyDay.alpha = 0;
   skyC.addChild(skyNight, skyDay);
@@ -297,12 +308,17 @@ export function assembleCity(app, { startLit = false } = {}) {
   const starC = new Container();
   skyC.addChild(starC);
   for (let i = 0; i < 110; i++) {
-    const g = new Graphics().circle(0, 0, 0.6 + Math.random() * 1.3).fill(0xeaf3ff);
+    const g = new Graphics().circle(0, 0, 0.8 + Math.random() * 1.6).fill(0xeaf3ff);
     starC.addChild(g);
-    stars.push({ g, fx: Math.random(), fy: Math.random(), b: 0.35 + Math.random() * 0.65, sp: 0.6 + Math.random() * 2.4, ph: Math.random() * 6.28 });
+    stars.push({ g, fx: Math.random(), fy: Math.random(), b: 0.5 + Math.random() * 0.5, sp: 0.6 + Math.random() * 2.4, ph: Math.random() * 6.28 });
   }
 
   const moon = new Container();
+  // Oy nuri — qorong'i sahnada ham atrofga yorug'lik beradi
+  const moonGlow = new Sprite(radialTexture('rgba(190,215,255,0.16)', 512));
+  moonGlow.anchor.set(0.5);
+  moonGlow.width = moonGlow.height = 300;
+  moon.addChild(moonGlow);
   moon.addChild(new Graphics().circle(0, 0, 24).fill(0xeaf3ff));
   moon.addChild(new Graphics()
     .circle(-7, -4, 4.5).fill({ color: 0xc3d3e8, alpha: 0.7 })
@@ -325,15 +341,25 @@ export function assembleCity(app, { startLit = false } = {}) {
   const root = new Container();
   app.stage.addChild(root);
 
-  root.addChild(makeSkyline(120, 0x080d18, 17));
-  root.addChild(makeSkyline(180, 0x0a1120, 29));
+  // Gorizont shu'lasi — shahar orqasidan ko'tarilgan xira ko'k nur,
+  // qorong'ida ham siluetlarni ajratib turadi
+  const horizonGlow = new Sprite(radialTexture('rgba(80,120,220,0.14)', 512));
+  horizonGlow.anchor.set(0.5);
+  horizonGlow.width = LW * 1.3;
+  horizonGlow.height = 300;
+  horizonGlow.x = LW / 2;
+  horizonGlow.y = GROUND_Y + 10;
+  root.addChild(horizonGlow);
+
+  root.addChild(makeSkyline(120, 0x0a1226, 17));
+  root.addChild(makeSkyline(180, 0x0d1730, 29));
 
   const particles = makeParticles(root);
 
   const road = new Graphics();
   road.rect(0, GROUND_Y, LW, LH - GROUND_Y).fill(0x060a12);
   road.rect(0, GROUND_Y + 1, LW, 9).fill({ color: 0x00eeff, alpha: 0.035 });
-  road.moveTo(0, GROUND_Y).lineTo(LW, GROUND_Y).stroke({ width: 2, color: 0x00eeff, alpha: 0.3 });
+  road.moveTo(0, GROUND_Y).lineTo(LW, GROUND_Y).stroke({ width: 2, color: 0x00eeff, alpha: 0.5 });
   for (let x = 0; x < LW; x += 46) road.rect(x, GROUND_Y + 28, 22, 2).fill({ color: 0xffd700, alpha: 0.12 });
   root.addChild(road);
 
@@ -391,8 +417,9 @@ export function cityTick(city, dt, t, ctl) {
   root.scale.set(sc);
   root.x = (w - LW * sc) / 2;
   root.y = h - LH * sc;
-  moon.x = w - 110; moon.y = 88;
-  sun.x = w - 110; sun.y = 88;
+  // HUD paneli (yuqori-o'ng) ostida qolmasligi uchun chapga-pastga surilgan
+  moon.x = w - 185; moon.y = 125;
+  sun.x = w - 185; sun.y = 125;
 
   // kun/tun
   city.dayAlpha += ((ctl.night ? 0 : 1) - city.dayAlpha) * Math.min(dt * 1.1, 1);
