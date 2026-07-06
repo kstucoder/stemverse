@@ -22,11 +22,15 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   const city = assembleCity(app, { startLit: true });
   const rain = makeRain(city.root);
 
-  // Yashin nayzasi (olam koordinatasida) + to'liq ekran flash
+  // Yashin nayzasi (olam koordinatasida) + to'liq ekran flash.
+  // DIQQAT: flash 1x1 birlik to'rtburchak — har kadrda ekran o'lchamiga
+  // cho'ziladi. Katta statik rect (4000x3000) stage chegarasini portlatib,
+  // bloom filtri GPU tekstura limitidan oshadigan framebuffer so'raydi va
+  // ba'zi mashinalarda "setResource ... null" crash beradi.
   const bolt = new Graphics();
   bolt.alpha = 0;
   city.root.addChild(bolt);
-  const flash = new Graphics().rect(0, 0, 4000, 3000).fill(0xeaf3ff);
+  const flash = new Graphics().rect(0, 0, 1, 1).fill(0xeaf3ff);
   flash.alpha = 0;
   app.stage.addChild(flash);
 
@@ -89,6 +93,10 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     city.tweens.tick(dt);
     city.particles.tick(dt);
     rain.tick(dt);
+
+    // flash har doim ekran o'lchamida (stage chegarasini oshirmasdan)
+    flash.width = app.screen.width;
+    flash.height = app.screen.height;
 
     // ssenariy
     if (phase === 'calm') {

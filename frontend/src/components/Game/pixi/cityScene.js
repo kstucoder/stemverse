@@ -294,6 +294,10 @@ export function assembleCity(app, { startLit = false } = {}) {
   const tweens = createTweens();
 
   app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.35, bloomScale: 1.1, brightness: 1.0, blur: 5, quality: 4 })];
+  // Filtr framebuffer'ini har doim ko'rinadigan ekran bilan cheklaymiz —
+  // aks holda stage chegarasi (masalan, katta ob'ekt tufayli) GPU tekstura
+  // limitidan oshsa, zaif grafikali mashinalarda render crash bo'ladi.
+  app.stage.filterArea = app.renderer.screen;
 
   // Osmon (ekran bo'yicha)
   const skyC = new Container();
