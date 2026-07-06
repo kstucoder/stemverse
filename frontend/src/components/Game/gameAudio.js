@@ -110,6 +110,30 @@ export function playDisconnect() {
   setTimeout(() => playTone(220, 0.15, 'sine', 0.08), 90);
 }
 
+export function playThunder() {
+  try {
+    const ctx = getContext();
+    const dur = 1.8;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.4);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(420, ctx.currentTime);
+    filt.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + dur);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    src.connect(filt);
+    filt.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+  } catch (e) { /* silent fail */ }
+}
+
 // ===== LIVE CONTINUOUS TONE (theremin-style — frequency updates every frame
 // instead of a discrete triggered note) =====
 let liveOsc = null, liveGain = null;

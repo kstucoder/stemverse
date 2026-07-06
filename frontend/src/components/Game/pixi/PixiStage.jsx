@@ -32,6 +32,8 @@ export default function PixiStage({ build, className = '', children }) {
       a.canvas.style.position = 'absolute';
       a.canvas.style.inset = '0';
       hostRef.current.appendChild(a.canvas);
+      // Dev: headless testda ticker'ni qo'lda haydash uchun
+      if (import.meta.env?.DEV) (window.__pixiApps ||= new Set()).add(a);
 
       teardown = buildRef.current(a) || null;
 
@@ -53,7 +55,10 @@ export default function PixiStage({ build, className = '', children }) {
     return () => {
       dead = true;
       if (teardown) teardown();
-      if (app) app.destroy(true, { children: true, texture: true });
+      if (app) {
+        window.__pixiApps?.delete(app);
+        app.destroy(true, { children: true, texture: true });
+      }
     };
   }, []);
 

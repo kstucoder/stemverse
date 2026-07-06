@@ -5,6 +5,7 @@ import { lessonsAPI, progressAPI } from '../lib/api';
 import SerialConnector from '../components/SerialConnector';
 import { getGameComponent } from '../components/Game/GameEngine';
 import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
+import EnergyCityIntro from '../components/Game/EnergyCityIntro';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
 import toast from 'react-hot-toast';
@@ -213,42 +214,9 @@ export default function LessonView() {
                       {/* O'yin (har doim fonda ishlaydi) */}
                       <GameComponent />
 
-                      {/* === ENERGY CITY maxsus flow === */}
-                      {lesson?.gameConfig?.gameType === 'energy_city' && (
-                        <>
-                          {/* 1. Canvas cutscene */}
-                          {videoPhase === 'video' && (
-                            <StoryMission gameType="energy_city" onStart={() => setVideoPhase('dialog')} />
-                          )}
-
-                          {/* 2. Dialog: missiya topshirig'i */}
-                          {videoPhase === 'dialog' && (
-                            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center" style={{ background: 'rgba(4,6,14,0.95)', backdropFilter: 'blur(8px)' }}>
-                              <div className="text-center max-w-md px-8 py-10" style={{ borderRadius: 20, border: '1px solid rgba(255,215,0,0.15)', background: 'rgba(11,17,32,0.8)' }}>
-                                <div className="text-5xl mb-4">⚡</div>
-                                <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: 'Oswald, sans-serif', color: '#EAF3FF', letterSpacing: 1 }}>
-                                  Energy City — Tinch kechada
-                                </h2>
-                                <p className="text-base mb-2" style={{ color: '#bcd0ea', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.6 }}>
-                                  Shahar chiroqlari o'chdi. LED'ni plataga ulab,
-                                  shaharga quvvat qaytaring.
-                                </p>
-                                <p className="text-sm font-bold mt-4" style={{ color: '#FFD700', fontFamily: 'Chakra Petch, monospace' }}>
-                                  "Electra — shaharni qutqar!"
-                                </p>
-                                <button
-                                  onClick={() => setVideoPhase('playing')}
-                                  className="mt-6 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider"
-                                  style={{ fontFamily: 'Chakra Petch, monospace', color: '#1a1300', background: 'linear-gradient(135deg, #FFD700, #FF9F1C)', boxShadow: '0 0 20px rgba(255,215,0,0.3)' }}
-                                >
-                                  ▶ Sxemani ulash
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* 3. O'yin (videoPhase === 'playing') — GameComponent fonda ishlaydi, LED=1 bo'lganda chiroqlar yonadi */}
-                        </>
+                      {/* === ENERGY CITY: PixiJS bo'ron cutscene + Electra dialogi === */}
+                      {lesson?.gameConfig?.gameType === 'energy_city' && videoPhase !== 'playing' && (
+                        <EnergyCityIntro onStart={() => setVideoPhase('playing')} />
                       )}
 
                       {/* === Boshqa o'yinlar uchun eski cutscene === */}
