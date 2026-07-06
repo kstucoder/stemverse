@@ -77,8 +77,8 @@ function ArduinoGate() {
   );
 }
 
-// Floating score popups
-function ScorePopups() {
+// Floating score popups (PixiStage ham qayta ishlatadi)
+export function ScorePopups() {
   const popups = useGameStore((s) => s.popups);
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">

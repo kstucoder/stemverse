@@ -181,4 +181,7 @@ const useGameStore = create((set, get) => ({
   },
 }));
 
+// Dev rejimida konsoldan sinash uchun: window.__gameStore.getState().updateSerialData('led', 1)
+if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__gameStore = useGameStore;
+
 export default useGameStore;
