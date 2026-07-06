@@ -23,12 +23,33 @@ export default function PixiStage({ build, className = '', children }) {
       await a.init({
         backgroundAlpha: 0,
         antialias: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2),
+        // MUHIM: faqat butun son — Windows 125%/150% masshtabida dpr kasr
+        // (1.25/1.5) bo'ladi va Pixi v8 filtrlari kasr resolution bilan
+        // framebuffer yaratolmay "setResource null" crash beradi.
+        resolution: Math.max(1, Math.min(2, Math.floor(window.devicePixelRatio || 1))),
         autoDensity: true,
         resizeTo: hostRef.current,
       });
       if (dead || !hostRef.current) { a.destroy(true, { children: true, texture: true }); return; }
       app = a;
+
+      // Himoya to'ri: ba'zi GPU/drayverlarda bloom filtri render paytida
+      // yiqilishi mumkin ("setResource ... null"). Bunday holda butun sahna
+      // qop-qora bo'lib qolmasin — filtrlarni o'chirib, sahnani bloom'siz
+      // ko'rsatishda davom etamiz.
+      const origRender = a.renderer.render.bind(a.renderer);
+      a.renderer.render = (...args) => {
+        try {
+          origRender(...args);
+        } catch (err) {
+          if (a.stage.filters?.length) {
+            console.warn('VOLTRA: GPU filtr xatosi — bloom o\'chirildi, sahna filtrsizda davom etadi.', err?.message);
+            a.stage.filters = null;
+            try { origRender(...args); } catch (e2) { /* bitta kadr tashlab yuboriladi */ }
+          }
+        }
+      };
+
       a.canvas.style.position = 'absolute';
       a.canvas.style.inset = '0';
       hostRef.current.appendChild(a.canvas);
