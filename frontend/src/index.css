@@ -271,6 +271,89 @@
                 #04060E;
   }
 
+  /* Mission control — the shared game HUD that keeps every lesson readable. */
+  .mission-control {
+    --mission-accent: var(--cyan);
+    position: relative;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(150px, 0.8fr) auto;
+    align-items: center;
+    gap: 1rem;
+    min-height: 78px;
+    padding: 0.85rem 1rem;
+    overflow: hidden;
+    background:
+      linear-gradient(105deg, color-mix(in srgb, var(--mission-accent) 12%, #080e1c) 0%, rgba(8,14,28,0.96) 48%, rgba(8,14,28,0.88) 100%);
+    border-bottom: 1px solid color-mix(in srgb, var(--mission-accent) 28%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 14px 30px rgba(0,0,0,0.18);
+  }
+  .mission-control::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--mission-accent);
+    box-shadow: 0 0 18px var(--mission-accent);
+  }
+  .mission-control__goal,
+  .mission-control__stats,
+  .mission-control__score,
+  .mission-control__signal,
+  .mission-control__progress-copy { display: flex; align-items: center; }
+  .mission-control__goal { gap: 0.75rem; min-width: 0; }
+  .mission-control__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    color: var(--mission-accent);
+    background: color-mix(in srgb, var(--mission-accent) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mission-accent) 35%, transparent);
+    border-radius: 10px;
+  }
+  .mission-control__eyebrow {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--mission-accent);
+    font-family: 'Chakra Petch', monospace;
+    font-size: 0.61rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .mission-control__goal p {
+    overflow: hidden;
+    color: var(--text-primary);
+    font-family: 'Chakra Petch', monospace;
+    font-size: clamp(0.75rem, 1.4vw, 0.88rem);
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mission-control__progress { min-width: 0; }
+  .mission-control__progress-copy { justify-content: space-between; margin-bottom: 0.45rem; color: var(--text-muted); font-family: 'Chakra Petch', monospace; font-size: 0.65rem; letter-spacing: 0.06em; }
+  .mission-control__progress-copy strong { color: var(--text-primary); font-size: 0.72rem; }
+  .mission-control__track { height: 6px; overflow: hidden; background: rgba(255,255,255,0.08); border-radius: 999px; }
+  .mission-control__track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mission-accent), #00ff88); box-shadow: 0 0 14px color-mix(in srgb, var(--mission-accent) 70%, transparent); transition: width 420ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .mission-control__stats { justify-content: flex-end; gap: 0.5rem; font-family: 'Chakra Petch', monospace; font-size: 0.66rem; white-space: nowrap; }
+  .mission-control__signal, .mission-control__score { gap: 0.38rem; min-height: 30px; padding: 0.4rem 0.55rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(2,4,8,0.36); }
+  .mission-control__signal { color: var(--text-muted); }
+  .mission-control__signal.is-live { color: #00ff88; border-color: rgba(0,255,136,0.28); background: rgba(0,255,136,0.07); }
+  .mission-control__signal.is-live svg { animation: signal-pulse 1.6s ease-in-out infinite; }
+  .mission-control__score { color: var(--mission-accent); }
+  .mission-control__score strong { color: var(--text-primary); font-size: 0.79rem; }
+  .mission-control__score span { color: var(--text-muted); }
+  .mission-control__pulse { position: absolute; top: -7px; right: -7px; color: var(--mission-accent); opacity: 0.13; }
+  @keyframes signal-pulse { 50% { filter: drop-shadow(0 0 4px #00ff88); transform: scale(1.13); } }
+  @media (max-width: 720px) {
+    .mission-control { grid-template-columns: 1fr auto; gap: 0.7rem; padding: 0.75rem 0.8rem; }
+    .mission-control__progress { grid-column: 1 / -1; }
+    .mission-control__signal span, .mission-control__score span { display: none; }
+  }
+
   /* ── Inputs ── */
   .input-field {
     width: 100%;

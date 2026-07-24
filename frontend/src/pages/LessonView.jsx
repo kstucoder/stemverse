@@ -6,6 +6,7 @@ import SerialConnector from '../components/SerialConnector';
 import { getGameComponent } from '../components/Game/GameEngine';
 import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
 import EnergyCityIntro from '../components/Game/EnergyCityIntro';
+import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
 import toast from 'react-hot-toast';
@@ -211,6 +212,7 @@ export default function LessonView() {
                     </div>
                   ) : (
                     <>
+                      <MissionControl lesson={lesson} accentColor={lvColor} />
                       {/* O'yin (har doim fonda ishlaydi) */}
                       <GameComponent />
 

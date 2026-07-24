@@ -30,10 +30,15 @@ const useGameStore = create((set, get) => ({
   // real hardware.
   serialData: { led: 0, btn: 0, pot: 0, dist: 0, temp: 0, ldr: 0, pir: 0, moist: 0, r: 0, g: 0, b: 0 },
   progress: { ledBlinks: 0, buttonPresses: 0, maxPower: 0 },
+  missionProgress: { type: null, value: 0 },
   winConditions: null,
   onWin: null,
 
-  setWinConfig: (conditions, cb) => set({ winConditions: conditions, onWin: cb }),
+  setWinConfig: (conditions, cb) => set({
+    winConditions: conditions,
+    onWin: cb,
+    missionProgress: { type: conditions?.type || null, value: 0 },
+  }),
 
   startGame: () =>
     set({
@@ -47,6 +52,7 @@ const useGameStore = create((set, get) => ({
       lastAction: 0,
       cityState: { power: 0, lightsOn: false, tramActive: false, buildingsLit: 0, totalBuildings: 8, energyLevel: 0, citizenHappiness: 50, isNight: true },
       progress: { ledBlinks: 0, buttonPresses: 0, maxPower: 0 },
+      missionProgress: { type: get().winConditions?.type || null, value: 0 },
       serialData: { led: 0, btn: 0, pot: 0, dist: 0, temp: 0, ldr: 0, pir: 0, moist: 0, r: 0, g: 0, b: 0 },
     }),
 
@@ -94,7 +100,18 @@ const useGameStore = create((set, get) => ({
       if (won) onWin(state.score);
     }
 
-    set({ serialData: nd, cityState: nc, progress: np });
+    const missionValue =
+      winConditions?.type === 'led_blink_count' ? np.ledBlinks :
+      winConditions?.type === 'button_presses' ? np.buttonPresses :
+      winConditions?.type === 'power_reached' ? np.maxPower :
+      state.missionProgress.value;
+
+    set({
+      serialData: nd,
+      cityState: nc,
+      progress: np,
+      missionProgress: { type: winConditions?.type || null, value: missionValue },
+    });
   },
 
   incrementScore: (points) => {
@@ -168,6 +185,8 @@ const useGameStore = create((set, get) => ({
     const { winConditions, onWin, gameActive } = state;
     if (!winConditions || !onWin || !gameActive) return;
     if (winConditions.type !== type) return;
+
+    set({ missionProgress: { type, value } });
 
     let won = false;
     const needed = winConditions.count ?? winConditions.value ?? 1;
