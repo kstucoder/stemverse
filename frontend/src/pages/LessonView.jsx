@@ -192,6 +192,7 @@ export default function LessonView() {
             <div
               style={{
                 borderRadius: 16, overflow: 'hidden', minHeight: 520,
+                flex: 1,   // chap panelni o'ng sidebar balandligiga cho'zadi — pastki qirralar tekislanadi
                 background: 'linear-gradient(135deg, #080E1C, #0B1120)',
                 border: '1px solid rgba(0,238,255,0.08)',
                 position: 'relative',
