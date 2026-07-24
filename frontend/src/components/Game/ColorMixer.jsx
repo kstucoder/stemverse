@@ -12,6 +12,16 @@ import { playBloom, playScore } from './gameAudio';
 
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
 const randColor = () => ({ r: Math.round(Math.random() * 255), g: Math.round(Math.random() * 255), b: Math.round(Math.random() * 255) });
+// Joriy rangdan yetarlicha UZOQ yangi maqsad — o'yinchi potni burmasdan
+// tasodifan ketma-ket "match" bo'lib qolmasligi uchun (diff > 240).
+const farTarget = (r, g, b) => {
+  let t;
+  for (let i = 0; i < 12; i++) {
+    t = randColor();
+    if (Math.abs(t.r - r) + Math.abs(t.g - g) + Math.abs(t.b - b) > 240) break;
+  }
+  return t;
+};
 const hex = (r, g, b) => `rgb(${r},${g},${b})`;
 
 const MILESTONES = {
@@ -61,11 +71,17 @@ export default function ColorMixer() {
         const store = useGameStore.getState();
         if (store.onWin) store.onWin(score + 100);
       } else {
-        setTarget(randColor());
-        setTimeout(() => { winRef.current = false; }, 500);
+        setTarget(farTarget(r, g, b));
+        // winRef qayta faollashishi similarity < 80 ga tushganda (quyidagi effekt)
       }
     }
   }, [similarity, arduinoConnected, round, score, incrementScore]);
+
+  // Keyingi mos kelish faqat o'yinchi maqsaddan uzoqlashgach hisoblanadi —
+  // bir marta match bir marta sanaladi (ketma-ket tasodifiy sanashning oldini oladi).
+  useEffect(() => {
+    if (winRef.current && round < 3 && similarity < 80) winRef.current = false;
+  }, [similarity, round]);
 
   const near80 = useRef(false);
   useEffect(() => {
