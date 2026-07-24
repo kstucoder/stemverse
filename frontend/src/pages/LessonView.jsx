@@ -7,6 +7,7 @@ import { getGameComponent } from '../components/Game/GameEngine';
 import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
 import EnergyCityIntro from '../components/Game/EnergyCityIntro';
 import TrafficIntro from '../components/Game/TrafficIntro';
+import ColorMixerIntro from '../components/Game/ColorMixerIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -19,6 +20,7 @@ const LEVEL_COLOR = { 1: 'var(--cyan)', 2: '#A855F7', 3: '#FF6920', 4: '#EC4899'
 const PREMIUM_INTRO = {
   energy_city: EnergyCityIntro,
   traffic_light: TrafficIntro,
+  color_mixer: ColorMixerIntro,
 };
 
 export default function LessonView() {
