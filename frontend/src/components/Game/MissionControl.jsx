@@ -22,11 +22,12 @@ function getGoal(condition) {
 }
 
 export default function MissionControl({ lesson, accentColor }) {
-  const { arduinoConnected, missionProgress, score } = useGameStore((state) => ({
-    arduinoConnected: state.arduinoConnected,
-    missionProgress: state.missionProgress,
-    score: state.score,
-  }));
+  // MUHIM: har bir qiymatni ALOHIDA selektor bilan olamiz. Bitta selektordan
+  // yangi obyekt {..} qaytarish zustand v5 + useSyncExternalStore'da har renderda
+  // yangi referens beradi va cheksiz re-render (React #185) keltiradi.
+  const arduinoConnected = useGameStore((state) => state.arduinoConnected);
+  const missionProgress = useGameStore((state) => state.missionProgress);
+  const score = useGameStore((state) => state.score);
   const condition = lesson?.winCondition;
   const target = getTarget(condition);
   const progress = Math.min((missionProgress.value || 0) / target, 1);
