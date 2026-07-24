@@ -96,6 +96,14 @@ export function playTram() {
   setTimeout(() => playTone(330, 0.3, 'triangle', 0.06), 200);
 }
 
+export function playZap() {
+  // Elektr short-circuit — o'tkir treska + tez pasayuvchi shovqin
+  playTone(1400, 0.07, 'sawtooth', 0.13);
+  setTimeout(() => playTone(280, 0.14, 'square', 0.11), 40);
+  setTimeout(() => playTone(2000, 0.05, 'sawtooth', 0.08), 95);
+  setTimeout(() => playTone(180, 0.2, 'sawtooth', 0.07), 150);
+}
+
 export function playHorn() {
   // Mashina signali — ikki ohangli "biib"
   playTone(420, 0.16, 'square', 0.07);
