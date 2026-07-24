@@ -1,20 +1,22 @@
-// 🎨 VOLTRA Kroma — Rang Forjasi (PixiJS Premium Edition)
-// Digital Twin: 3 ta potensiometr (A0/A1/A2) → R/G/B kanallari → RGB LED.
-// Arduino "R:.. G:.. B:.." yuboradi; markaziy kristall shu rangda porlaydi.
-// Maqsad-kristall rangiga moslashtir — 3 marta mos kelsa g'alaba.
+// 🎨 VOLTRA "Shaharga Rangni Qaytar" (PixiJS Premium Edition)
+// Digital Twin: 3 potensiometr (A0/A1/A2) → R/G/B → RGB LED. Qora tuynuk shahar
+// rangini yutgan (intro); endi rangni aralashtirib maqsad rangga moslashtir —
+// har mos kelganda shahar bir bosqich jonlanadi, 3 marta → shahar to'liq
+// tiklanadi va qora tuynuk yopiladi. 1 va 2-o'yin bilan bitta olam.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleForge, forgeTick } from './pixi/colorScene';
+import { assembleColorCity, colorCityTick } from './pixi/colorCityScene';
 import GuideCharacter from './GuideCharacter';
 import useGameStore from '../../stores/gameStore';
 import { playBloom, playScore } from './gameAudio';
 
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
 const randColor = () => ({ r: Math.round(Math.random() * 255), g: Math.round(Math.random() * 255), b: Math.round(Math.random() * 255) });
+const hex = (r, g, b) => `rgb(${r},${g},${b})`;
 
 const MILESTONES = {
-  1: { text: 'Birinchi rang tiklandi! Kroma jonlanmoqda.', emotion: 'excited' },
-  2: { text: 'Yana bittasi qoldi — davom et!', emotion: 'normal' },
+  1: { text: 'Birinchi rang qaytdi! Shahar jonlanmoqda.', emotion: 'excited' },
+  2: { text: 'Yana bittasi — qora tuynuk zaiflashyapti!', emotion: 'normal' },
 };
 
 export default function ColorMixer() {
@@ -35,17 +37,15 @@ export default function ColorMixer() {
   const b = clamp255(serialData.b ?? 128);
 
   const diff = Math.abs(r - target.r) + Math.abs(g - target.g) + Math.abs(b - target.b);
-  const similarity = Math.max(0, 100 - diff / 7.65); // 0..100
+  const similarity = Math.max(0, 100 - diff / 7.65);
 
-  // Sahnaga uzatiladigan boshqaruv (ticker o'qiydi)
-  const ctlRef = useRef({ r, g, b, target, similarity: 0, connected: false, pulse: 0 });
+  const ctlRef = useRef({ r, g, b, similarity: 0, satProgress: 0, connected: false, pulse: 0 });
   ctlRef.current.r = r; ctlRef.current.g = g; ctlRef.current.b = b;
-  ctlRef.current.target = target;
   ctlRef.current.similarity = similarity / 100;
+  ctlRef.current.satProgress = Math.min(1, round / 3);
   ctlRef.current.connected = arduinoConnected;
   ctlRef.current.pulse = pulseRef.current;
 
-  // Moslik > 90% → rang tiklandi (edge-triggered, gate bilan)
   useEffect(() => {
     if (!arduinoConnected || winRef.current) return;
     if (similarity > 90) {
@@ -67,7 +67,6 @@ export default function ColorMixer() {
     }
   }, [similarity, arduinoConnected, round, score, incrementScore]);
 
-  // yaqinlashganda yengil signal (bir marta 80% chegarasida)
   const near80 = useRef(false);
   useEffect(() => {
     if (similarity > 80 && !near80.current) { near80.current = true; playScore(); }
@@ -77,16 +76,16 @@ export default function ColorMixer() {
   useEffect(() => () => clearTimeout(guideTimer.current), []);
 
   const build = useCallback((app) => {
-    const scene = assembleForge(app);
+    const scene = assembleColorCity(app);
     let t = 0;
     app.ticker.add((tk) => {
       const dt = Math.min(tk.deltaMS / 1000, 0.05);
       t += dt;
-      scene.tweens.tick(dt);
-      scene.particles.tick(dt);
-      forgeTick(scene, dt, t, ctlRef.current);
+      scene.city.tweens.tick(dt);
+      scene.city.particles.tick(dt);
+      colorCityTick(scene, dt, t, ctlRef.current);
     });
-    return () => scene.tweens.clear();
+    return () => { scene.city.tweens.clear(); scene.streams.forEach((s) => s.g.destroy()); };
   }, []);
 
   const panel = {
@@ -95,18 +94,25 @@ export default function ColorMixer() {
   };
   const simColor = similarity > 90 ? '#39e06a' : similarity > 60 ? '#ffc21a' : '#ff5a5a';
   const chan = [{ k: 'R', v: r, c: '#ff3b3b' }, { k: 'G', v: g, c: '#39e06a' }, { k: 'B', v: b, c: '#3b82ff' }];
+  const swatch = (color, label, sub) => (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ width: 74, height: 74, borderRadius: 14, background: color, boxShadow: `0 0 22px ${color}, inset 0 0 0 2px rgba(255,255,255,0.12)` }} />
+      <div style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94a3b8', marginTop: 5, fontFamily: 'Chakra Petch, monospace' }}>{label}</div>
+      <div style={{ fontSize: 9, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>{sub}</div>
+    </div>
+  );
 
   return (
     <PixiStage build={build} className="rounded-xl">
-      {/* Yuqori-chap: ball + tur */}
+      {/* Yuqori-chap: ball + bosqich */}
       <div className="absolute top-3 left-3 flex gap-2">
         <div style={panel}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF', textShadow: '0 0 8px rgba(199,125,255,0.5)' }}>⭐ {Math.round(score)}</div>
           <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
         </div>
         <div style={{ ...panel, textAlign: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>{round}/3</div>
-          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>RANG</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>{Math.min(round, 3)}/3</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>TIKLANDI</div>
         </div>
       </div>
 
@@ -116,12 +122,14 @@ export default function ColorMixer() {
         <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>MOSLIK</div>
       </div>
 
-      {/* Maqsad yorlig'i (kristall tepasida) */}
-      <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '4%' }}>
-        <span style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#94a3b8' }}>🎯 Maqsad rang</span>
+      {/* Markaz-yuqori: maqsad va joriy rang kvadratlari */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4" style={{ top: '10%', ...panel, padding: '12px 20px' }}>
+        {swatch(hex(target.r, target.g, target.b), 'Maqsad', `${target.r},${target.g},${target.b}`)}
+        <div style={{ fontSize: 20, color: simColor, fontWeight: 800 }}>≈</div>
+        {swatch(hex(r, g, b), 'Sizniki', `${r},${g},${b}`)}
       </div>
 
-      {/* Past-markaz: R/G/B kanal barlari */}
+      {/* Past-markaz: R/G/B barlar */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3" style={{ ...panel, padding: '9px 16px' }}>
         {chan.map((ch) => (
           <div key={ch.k} style={{ textAlign: 'center', width: 58 }}>
@@ -145,8 +153,8 @@ export default function ColorMixer() {
 
       {/* Ulanish chipi */}
       {!arduinoConnected && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(199,125,255,0.3)' }}>
-          <span style={{ fontSize: 11, color: '#c77dff' }}>🎨 Platani ulang — potensiometrlarni burab rang aralashtiring</span>
+        <div className="absolute left-1/2 -translate-x-1/2 animate-pulse" style={{ top: '32%', ...panel, border: '1px solid rgba(199,125,255,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#c77dff' }}>🎨 Platani ulang — potensiometrlarni burab rangni moslang</span>
         </div>
       )}
     </PixiStage>
