@@ -89,11 +89,13 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     playCrash();
     playHorn();
     useGameStore.getState().triggerShake(17);
-    const runner = scene.cars
-      .filter((c) => c.x < STOP_X)
-      .sort((a, b) => b.x - a.x)[0];
-    if (runner) { runner.x = STOP_X + 6; runner.v = 250; runner.c.x = runner.x; }
-    scene.particles.burst(MID_X, LANE_Y, 0xff5a3c, 20, 230);
+    // har qatordagi eng oldingi mashina o'lik chiroqdan otilib o'tadi
+    scene.lanes.forEach((laneCars, li) => {
+      if (li === 0) return; // uzoq qatorni tinch qoldiramiz
+      const runner = laneCars.filter((c) => c.x < STOP_X).sort((a, b) => b.x - a.x)[0];
+      if (runner) { runner.x = STOP_X + 6; runner.v = 250; runner.c.x = runner.x; }
+    });
+    scene.particles.burst(MID_X, LANE_Y, 0xff5a3c, 22, 240);
   }
 
   ctlRef.current.skip = () => {
@@ -151,7 +153,9 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     if (flashA > 0) { flashA = Math.max(0, flashA - dt * 2.2); flash.alpha = flashA; }
     else flash.alpha = 0;
 
-    intersectionTick(scene, dt, t, { state, connected: true, pedestrianCrossing: false });
+    // Mashinalar to'xtaganda odamlar zebradan oqib o'tadi (real tiqilinch manzarasi)
+    const crossCount = phase === 'calm' ? 0 : phase === 'short' ? 2 : phase === 'chaos' ? 5 : 4;
+    intersectionTick(scene, dt, t, { state, connected: true, crossCount });
 
     // svetafor short-circuit yoyi + chiroq glitch (intersectionTick'dan KEYIN,
     // aks holda bulb.alpha ustidan yoziladi)

@@ -20,6 +20,14 @@ export const SIGNAL_X = 748;   // svetafor ustuni
 const STATE_COLOR = { RED: 0xff2d30, YELLOW: 0xffc21a, GREEN: 0x21e065 };
 const MID_X = (CROSS_X0 + CROSS_X1) / 2;
 
+// Ko'p qatorli yo'l — perspektiva uchun har qator boshqa Y va masshtabda
+// (uzoq qator kichikroq/tepada, yaqin qator kattaroq/pastda).
+const LANES = [
+  { y: 434, sc: 0.82 },
+  { y: 476, sc: 0.97 },
+  { y: 522, sc: 1.12 },
+];
+
 /* ---------- rang yordamchilari ---------- */
 function rgba(hex, a = 1) {
   const r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
@@ -293,40 +301,55 @@ export function assembleIntersection(app) {
     return l;
   });
 
-  // ----- mashinalar (har xil turlar, zich navbat) -----
-  const palette = [0x3a86ff, 0xff6b6b, 0xffd166, 0x06d6a0, 0xef476f, 0x8d99ae, 0xbdb2ff, 0xff9f1c];
-  const types = ['sedan', 'sedan', 'suv', 'taxi', 'sedan', 'truck', 'suv', 'sedan'];
+  // ----- mashinalar: 3 qatorli yo'l (perspektiva), har qatorda zich navbat -----
+  const palette = [0x3a86ff, 0xff6b6b, 0xffd166, 0x06d6a0, 0xef476f, 0x8d99ae, 0xbdb2ff, 0xff9f1c, 0xe6e6e6, 0x9b5de5];
+  const types = ['sedan', 'suv', 'taxi', 'sedan', 'truck', 'suv', 'sedan', 'taxi'];
   const cars = [];
-  let startX = -40;
-  for (let i = 0; i < 8; i++) {
-    const type = types[i % types.length];
-    const car = makeCar(palette[i % palette.length], type);
-    car.x = startX; car.v = 0; car.c.x = startX; car.c.y = LANE_Y;
-    root.addChild(car.c);
-    cars.push(car);
-    startX -= 92 + Math.random() * 34;
-  }
+  const lanes = LANES.map((lane, li) => {
+    const laneCars = [];
+    let startX = 30 + Math.random() * 70;
+    for (let i = 0; i < 7; i++) {
+      const type = types[(i + li * 3) % types.length];
+      const car = makeCar(palette[(i * 3 + li) % palette.length], type);
+      car.lane = li; car.laneY = lane.y; car.sc = lane.sc; car.gap = 92 * lane.sc;
+      car.x = startX; car.v = 0;
+      car.c.x = startX; car.c.y = lane.y; car.c.scale.set(lane.sc);
+      root.addChild(car.c);
+      laneCars.push(car); cars.push(car);
+      startX -= (86 + Math.random() * 28) * lane.sc;
+    }
+    return laneCars;
+  });
 
   // ----- kutib turgan piyodalar (trotuarda) -----
   const waiters = [];
   const waitSpots = [
-    { x: CROSS_X0 - 26, y: LH - 6 }, { x: CROSS_X0 - 12, y: LH - 4 },
-    { x: CROSS_X1 + 14, y: LH - 5 }, { x: CROSS_X0 - 20, y: ROAD_TOP + 20 },
-    { x: CROSS_X1 + 20, y: ROAD_TOP + 18 }, { x: 180, y: LH - 5 }, { x: 300, y: LH - 4 },
+    { x: CROSS_X0 - 26, y: LH - 6 }, { x: CROSS_X0 - 12, y: LH - 3 },
+    { x: CROSS_X1 + 14, y: LH - 5 }, { x: CROSS_X0 - 20, y: ROAD_TOP + 22 },
+    { x: CROSS_X1 + 22, y: ROAD_TOP + 19 }, { x: 170, y: LH - 4 }, { x: 300, y: LH - 6 },
   ];
-  waitSpots.forEach((sp, i) => {
+  waitSpots.forEach((sp) => {
     const p = makePerson(rnd(COATS), rnd(SKINS), rnd(HAIRS));
     p.c.x = sp.x; p.c.y = sp.y;
-    p.c.scale.set(0.92 + Math.random() * 0.16);
+    p.c.scale.set(0.9 + Math.random() * 0.18 + (sp.y > LH - 20 ? 0.1 : 0));
     root.addChild(p.c);
     waiters.push({ p, baseY: sp.y, ph: Math.random() * 6.28, look: Math.random() * 6.28 });
   });
 
-  // ----- o'tuvchi piyoda (RED'da zebradan o'tadi) -----
-  const crosser = makePerson(0x00c8ff, rnd(SKINS), 0x1a1a1a);
-  crosser.c.x = MID_X;
-  crosser.c.y = LH - 8;
-  root.addChild(crosser.c);
+  // ----- zebradan o'tuvchi piyodalar (ko'p, ikki tomonlama oqim) -----
+  const crossers = [];
+  const CN = 6;
+  for (let i = 0; i < CN; i++) {
+    const p = makePerson(rnd(COATS), rnd(SKINS), rnd(HAIRS));
+    const dir = i % 2 === 0 ? 1 : -1;               // 1: yaqin→uzoq, -1: uzoq→yaqin
+    const startY = dir === 1 ? LH - 6 : ROAD_TOP + 16;
+    const endY = dir === 1 ? ROAD_TOP + 16 : LH - 6;
+    const cx = CROSS_X0 + 12 + (i / (CN - 1)) * (CROSS_X1 - CROSS_X0 - 24);
+    p.c.x = cx; p.c.y = startY; p.c.alpha = 0;
+    p.c.scale.set(0.9 + Math.random() * 0.14);
+    root.addChild(p.c);
+    crossers.push({ p, cx, startY, endY, t: 0, active: false, sp: 0.26 + Math.random() * 0.16, ph: Math.random() * 6.28 });
+  }
 
   const signal = makeSignal();
   root.addChild(signal.c);
@@ -334,8 +357,8 @@ export function assembleIntersection(app) {
   return {
     app, tweens, particles,
     skyC, sky, starC, stars, moon,
-    root, road, city, cars, signal, lamps, waiters, crosser,
-    energyS: 0, walkT: 0, prevState: null,
+    root, road, city, cars, lanes, signal, lamps, waiters, crossers,
+    energyS: 0, prevState: null,
   };
 }
 
@@ -343,7 +366,7 @@ const CRUISE = 210; // px/s
 
 // ctl = { state, connected, pedestrianCrossing, onGreen }
 export function intersectionTick(scene, dt, t, ctl) {
-  const { app, root, sky, starC, stars, moon, city, cars, signal, lamps, waiters, crosser, particles } = scene;
+  const { app, root, sky, starC, stars, moon, city, signal, lamps, waiters, particles } = scene;
   const w = app.screen.width, h = app.screen.height;
 
   // ----- layout -----
@@ -384,60 +407,66 @@ export function intersectionTick(scene, dt, t, ctl) {
     scene.prevState = state;
   }
 
-  // ----- mashinalar oqimi (car-following) + signal berish -----
-  const GAP = 92;
-  cars.sort((a, b) => a.x - b.x);
-  for (let i = cars.length - 1; i >= 0; i--) {
-    const car = cars[i];
-    const ahead = cars[i + 1];
-    let limit = Infinity;
-    if (!green && car.x < STOP_X) limit = STOP_X;
-    if (ahead) limit = Math.min(limit, ahead.x - GAP);
+  // ----- mashinalar oqimi (har qator alohida car-following) + signal berish -----
+  scene.lanes.forEach((laneCars) => {
+    laneCars.sort((a, b) => a.x - b.x);
+    for (let i = laneCars.length - 1; i >= 0; i--) {
+      const car = laneCars[i];
+      const ahead = laneCars[i + 1];
+      let limit = Infinity;
+      if (!green && car.x < STOP_X) limit = STOP_X;
+      if (ahead) limit = Math.min(limit, ahead.x - car.gap);
 
-    const gapToLimit = limit === Infinity ? 9999 : limit - car.x;
-    const desired = Math.max(0, Math.min(CRUISE, gapToLimit * 2.4));
-    car.v += (desired - car.v) * Math.min(dt * 4, 1);
-    if (car.v < 1.5) car.v = 0;
-    car.x += car.v * dt;
-    car.c.x = car.x;
+      const gapToLimit = limit === Infinity ? 9999 : limit - car.x;
+      const desired = Math.max(0, Math.min(CRUISE, gapToLimit * 2.4));
+      car.v += (desired - car.v) * Math.min(dt * 4, 1);
+      if (car.v < 1.5) car.v = 0;
+      car.x += car.v * dt;
+      car.c.x = car.x;
 
-    const stopped = car.v < 30 && !green;
-    car.tail.alpha = stopped ? 0.95 : 0.45;
-    car.beam.alpha = 0.5 + 0.4 * (car.v / CRUISE);
+      const stopped = car.v < 30 && !green;
+      car.tail.alpha = stopped ? 0.95 : 0.45;
+      car.beam.alpha = 0.5 + 0.4 * (car.v / CRUISE);
 
-    // tiqilib qolgan mashina signal beradi (honk to'lqini)
-    if (stopped && car.x < STOP_X) {
-      car.honkTimer -= dt;
-      if (car.honkTimer <= 0) { car.honkTimer = 1.1 + Math.random() * 2.4; car.honkT = 0.7; }
-    } else car.honkTimer = 0.6 + Math.random() * 1.5;
-    if (car.honkT > 0) { car.honkT -= dt; drawHonk(car.honk, car.honkT / 0.7); if (car.honkT <= 0) car.honk.clear(); }
+      // tiqilib qolgan mashina signal beradi (honk to'lqini)
+      if (stopped && car.x < STOP_X) {
+        car.honkTimer -= dt;
+        if (car.honkTimer <= 0) { car.honkTimer = 1.0 + Math.random() * 2.2; car.honkT = 0.7; }
+      } else car.honkTimer = 0.6 + Math.random() * 1.5;
+      if (car.honkT > 0) { car.honkT -= dt; drawHonk(car.honk, car.honkT / 0.7); if (car.honkT <= 0) car.honk.clear(); }
 
-    if (car.x > LW + 90) {
-      const minX = Math.min(...cars.map((cc) => cc.x));
-      car.x = minX - GAP - Math.random() * 46;
-      car.v = 0; car.c.x = car.x;
+      if (car.x > LW + 100) {
+        const minX = Math.min(...laneCars.map((cc) => cc.x));
+        car.x = minX - car.gap - Math.random() * 38;
+        car.v = 0; car.c.x = car.x;
+      }
     }
-  }
+  });
 
   // ----- kutuvchi piyodalar (idle) -----
-  waiters.forEach((wt, i) => {
-    const bob = Math.sin(t * 1.6 + wt.ph) * 1.1;
-    wt.p.c.y = wt.baseY + bob;
-    // vaqti-vaqti bilan boshini burish
+  waiters.forEach((wt) => {
+    wt.p.c.y = wt.baseY + Math.sin(t * 1.6 + wt.ph) * 1.1;
     wt.p.head.x = Math.sin(t * 0.5 + wt.look) * 1.2;
   });
 
-  // ----- o'tuvchi piyoda -----
-  const crossing = ctl.pedestrianCrossing && state === 'RED';
-  const targetT = crossing ? 1 : 0;
-  scene.walkT += (targetT - scene.walkT) * Math.min(dt * 1.6, 1);
-  crosser.c.y = (LH - 8) - scene.walkT * (LH - 8 - (ROAD_TOP + 20));
-  const step = crossing ? Math.sin(t * 8) : 0;
-  crosser.legR.rotation = step * 0.5;
-  crosser.legL.rotation = -step * 0.5;
-  crosser.armR.rotation = -step * 0.4;
-  crosser.armL.rotation = step * 0.4;
-  crosser.c.alpha = (crossing || scene.walkT > 0.02) ? 1 : 0;
+  // ----- zebradan o'tuvchi piyodalar -----
+  const crossN = ctl.crossCount ?? ((ctl.pedestrianCrossing && state === 'RED') ? 1 : 0);
+  scene.crossers.forEach((cr, i) => {
+    const activeNow = i < crossN;
+    if (activeNow && !cr.active) cr.t = 0;
+    cr.active = activeNow;
+    cr.p.c.alpha = activeNow ? 1 : 0;
+    if (!activeNow) return;
+    cr.t += cr.sp * dt;
+    if (cr.t > 1) cr.t -= 1;
+    cr.p.c.y = cr.startY + (cr.endY - cr.startY) * cr.t;
+    cr.p.c.x = cr.cx + Math.sin(t * 2 + cr.ph) * 1.4;
+    const step = Math.sin(t * 9 + cr.ph);
+    cr.p.legR.rotation = step * 0.5;
+    cr.p.legL.rotation = -step * 0.5;
+    cr.p.armR.rotation = -step * 0.35;
+    cr.p.armL.rotation = step * 0.35;
+  });
 
   // ----- ko'cha lampalari -----
   scene.energyS += ((ctl.connected ? 1 : 0.7) - scene.energyS) * Math.min(dt * 2, 1);
