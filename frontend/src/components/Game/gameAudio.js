@@ -204,6 +204,46 @@ export function playDrain() {
   } catch (e) { /* silent */ }
 }
 
+// ===== FESTIVAL (Light Show) ovozlari =====
+
+export function playBeat(i = 0) {
+  // kick baraban
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(155, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.12);
+    g.gain.setValueAtTime(0.2, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.17);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.18);
+  } catch (e) { /* silent */ }
+  // sintezator zarbi (nota o'zgaradi)
+  const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+  playTone(notes[i % notes.length], 0.14, 'sawtooth', 0.05);
+}
+
+export function playCheer() {
+  // olomon qichqirig'i — ko'tariluvchi filtrlangan shovqin
+  try {
+    const ctx = getContext();
+    const dur = 0.9;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(650, ctx.currentTime);
+    f.frequency.linearRampToValueAtTime(1500, ctx.currentTime + 0.4);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+  [523, 659, 784, 1047].forEach((fr, i) => setTimeout(() => playTone(fr, 0.4, 'sine', 0.08), i * 45));
+}
+
 export function playHollow() {
   // Jonsiz kulrang olam — bo'sh, g'amgin drone
   playTone(110, 1.3, 'sine', 0.05);

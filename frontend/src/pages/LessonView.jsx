@@ -8,6 +8,7 @@ import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
 import EnergyCityIntro from '../components/Game/EnergyCityIntro';
 import TrafficIntro from '../components/Game/TrafficIntro';
 import ColorMixerIntro from '../components/Game/ColorMixerIntro';
+import LightShowIntro from '../components/Game/LightShowIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -21,6 +22,7 @@ const PREMIUM_INTRO = {
   energy_city: EnergyCityIntro,
   traffic_light: TrafficIntro,
   color_mixer: ColorMixerIntro,
+  light_show: LightShowIntro,
 };
 
 export default function LessonView() {

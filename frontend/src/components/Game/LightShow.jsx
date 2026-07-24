@@ -1,234 +1,146 @@
-import { useEffect, useState, useRef } from 'react';
-import { Sparkles, Play, Pause } from 'lucide-react';
+// 🎆 VOLTRA "Festival Sahnasi" (PixiJS Premium Edition)
+// Digital Twin: bitta tugma (BTN) + LED. Har tugma bosilishi = BEAT — sahna
+// prожektorlari yonadi, lazerlar otiladi, ekvalayzer sakraydi, olomon qo'l
+// ko'taradi. 8 beat = 1 qo'shiq, 3 qo'shiq = shou. Win: dances_completed=3.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleStage, stageTick } from './pixi/stageScene';
+import GuideCharacter from './GuideCharacter';
 import useGameStore from '../../stores/gameStore';
+import { playBeat, playCheer } from './gameAudio';
 
-import { C } from './gameHelpers';
+const BEATS_PER_SONG = 8;
+const SONGS = 3;
+const SONG_NAME = ['Ochilish', 'Avj nuqta', 'Final'];
 
-const PATTERNS = [
-  { name: "To'lqin", sequence: [1,0,1,0], colors: ['#00f5ff', '#9900ff'] },
-  { name: 'Miltillash', sequence: [1,1,0,0], colors: ['#ff00e5', '#ffdd00'] },
-  { name: 'Suzish', sequence: [1,0,0,1], colors: ['#00ff88', '#6366f1'] },
-  { name: 'Tasodifiy', sequence: [], colors: ['#ff6600', '#ff00e5'] },
-];
-
-const TARGET_PATTERNS = [
-  { name: 'Raqs 1', pattern: [0,1,0,1,0,1,1,0], points: 50 },
-  { name: 'Raqs 2', pattern: [1,1,0,0,1,0,1,1], points: 100 },
-  { name: 'Raqs 3', pattern: [1,0,1,1,0,0,1,0], points: 150 },
-];
+const MILESTONES = {
+  1: { text: 'Birinchi qo\'shiq tugadi — olomon jo\'shdi!', emotion: 'excited' },
+  2: { text: 'Zo\'r ritm! Oxirgi qo\'shiq qoldi!', emotion: 'normal' },
+};
 
 export default function LightShow() {
-  const { serialData, score, incrementScore } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const [currentPattern, setCurrentPattern] = useState(0);
-  const [patternPos, setPatternPos] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [stepsInDance, setStepsInDance] = useState(0);
-  const [stage, setStage] = useState('setup'); // setup, play, win
-  const [completedDances, setCompletedDances] = useState(0);
+  const serialBtn = useGameStore((s) => s.serialData.btn);
+  const serialLed = useGameStore((s) => s.serialData.led);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
+  const [beats, setBeats] = useState(0);
+  const [dance, setDance] = useState(0);
+  const [guide, setGuide] = useState(null);
+  const prevBtn = useRef(0);
   const winRef = useRef(false);
-  const playRef = useRef(null);
-  const prevBtnRef = useRef(0);
-  const STEPS_PER_DANCE = 8;
+  const beatPulse = useRef(0);
+  const dancePulse = useRef(0);
+  const guideTimer = useRef(null);
 
-  // Check win
-  useEffect(() => {
-    if (arduinoConnected && completedDances >= 3 && !winRef.current) {
-      winRef.current = true;
-      const store = useGameStore.getState();
-      if (store.onWin) store.onWin(score);
-    }
-  }, [completedDances, score]);
+  const ctlRef = useRef({ beatPulse: 0, dancePulse: 0, intensity: 0, songIndex: 0, ledOn: 0, connected: false });
+  ctlRef.current.beatPulse = beatPulse.current;
+  ctlRef.current.dancePulse = dancePulse.current;
+  ctlRef.current.intensity = beats / BEATS_PER_SONG;
+  ctlRef.current.songIndex = Math.min(dance, SONGS - 1);
+  ctlRef.current.ledOn = serialLed;
+  ctlRef.current.connected = arduinoConnected;
 
-  // Pattern playback
+  // Tugma — edge-triggered: har bosish bitta beat
   useEffect(() => {
-    if (!isPlaying) return;
-    const pattern = PATTERNS[currentPattern];
-    let pos = 0;
-    playRef.current = setInterval(() => {
-      if (pos >= (pattern.sequence.length * 4)) {
-        clearInterval(playRef.current);
-        setIsPlaying(false);
-        setPatternPos(0);
-        return;
-      }
-      setPatternPos(pos);
-      pos++;
-    }, 200);
-    return () => clearInterval(playRef.current);
-  }, [isPlaying, currentPattern]);
-
-  // Handle button press — the physical circuit only has ONE button, so it can
-  // only report discrete press events (edge-triggered), not which LED is lit.
-  // Each real press advances the dance by one beat instead of trying to
-  // "record" an LED bit value that the hardware never actually transmits.
-  useEffect(() => {
-    const btn = serialData.btn || 0;
-    if (btn === 1 && prevBtnRef.current === 0 && stage === 'play') {
-      setStepsInDance((prev) => {
-        const next = prev + 1;
-        if (next >= STEPS_PER_DANCE) {
-          const target = TARGET_PATTERNS[Math.min(completedDances, TARGET_PATTERNS.length - 1)];
-          incrementScore(target.points);
-          setCompletedDances((c) => {
-            const nc = c + 1;
-            if (nc >= 3) setStage('win');
-            return nc;
-          });
-          return 0;
+    const btn = serialBtn || 0;
+    if (btn === 1 && prevBtn.current === 0 && arduinoConnected && !winRef.current) {
+      beatPulse.current += 1;
+      incrementScore(15);
+      playBeat(beats);
+      const nextBeats = beats + 1;
+      if (nextBeats >= BEATS_PER_SONG) {
+        dancePulse.current += 1;
+        playCheer();
+        const nextDance = dance + 1;
+        setBeats(0);
+        setDance(nextDance);
+        const m = MILESTONES[nextDance];
+        if (m) { setGuide(m); clearTimeout(guideTimer.current); guideTimer.current = setTimeout(() => setGuide(null), 3500); }
+        if (nextDance >= SONGS) {
+          winRef.current = true;
+          const store = useGameStore.getState();
+          if (store.onWin) store.onWin(score + 15);
         }
-        return next;
-      });
+      } else {
+        setBeats(nextBeats);
+      }
     }
-    prevBtnRef.current = btn;
-  }, [serialData.btn, stage, completedDances, incrementScore]);
+    prevBtn.current = btn;
+  }, [serialBtn, arduinoConnected, beats, dance, score, incrementScore]);
 
-  // LED pattern output — purely a visual preview of the pattern the physical
-  // LEDs would blink through; it does not drive scoring (the button does).
-  const currentLED = () => {
-    if (!isPlaying) return serialData.led || 0;
-    const pattern = PATTERNS[currentPattern];
-    const idx = Math.floor(patternPos / 4) % pattern.sequence.length;
-    return pattern.sequence[idx];
-  };
+  useEffect(() => () => clearTimeout(guideTimer.current), []);
 
-  const currentColor = () => {
-    const pattern = PATTERNS[currentPattern];
-    return pattern.colors[Math.floor(Math.random() * pattern.colors.length)];
-  };
+  const build = useCallback((app) => {
+    const scene = assembleStage(app);
+    let t = 0;
+    app.ticker.add((tk) => {
+      const dt = Math.min(tk.deltaMS / 1000, 0.05);
+      t += dt;
+      scene.particles.tick(dt);
+      stageTick(scene, dt, t, ctlRef.current);
+    });
+    return () => {};
+  }, []);
 
-  const startDance = () => {
-    if (!arduinoConnected) return;
-    setStepsInDance(0);
-    setStage('play');
-  };
-
-  const activeTarget = TARGET_PATTERNS[Math.min(completedDances, TARGET_PATTERNS.length - 1)];
-
-  const cyclePattern = () => {
-    setCurrentPattern((p) => (p + 1) % PATTERNS.length);
-    incrementScore(5);
+  const panel = {
+    background: 'rgba(11,17,32,0.82)', border: '1px solid rgba(155,93,229,0.2)',
+    borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace',
   };
 
   return (
-    <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
-      style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
-      {/* Arduino disconnected overlay */}
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+    <PixiStage build={build} className="rounded-xl">
+      {/* Yuqori-chap: ball + qo'shiq */}
+      <div className="absolute top-3 left-3 flex gap-2">
+        <div style={panel}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF', textShadow: '0 0 8px rgba(155,93,229,0.5)' }}>⭐ {Math.round(score)}</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
+        </div>
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>{Math.min(dance, SONGS)}/{SONGS}</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>QO'SHIQ</div>
+        </div>
+      </div>
+
+      {/* Yuqori-o'ng: joriy qo'shiq nomi */}
+      <div className="absolute top-3 right-3" style={{ ...panel, textAlign: 'center', minWidth: 96 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#c77dff', textShadow: '0 0 12px rgba(155,93,229,0.6)' }}>{SONG_NAME[Math.min(dance, SONGS - 1)]}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>SAHNA</div>
+      </div>
+
+      {/* Past-markaz: beat progress + prompt */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, padding: '9px 16px', minWidth: 240 }}>
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 6 }}>
+          {Array.from({ length: BEATS_PER_SONG }).map((_, i) => (
+            <span key={i} style={{
+              width: 20, height: 8, borderRadius: 3,
+              background: i < beats ? 'linear-gradient(90deg,#00eeff,#9b5de5)' : 'rgba(255,255,255,0.08)',
+              boxShadow: i < beats ? '0 0 8px rgba(0,238,255,0.6)' : 'none',
+            }} />
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#94a3b8' }}>
+          {arduinoConnected ? '🎵 Tugmani beat\'ga bosing!' : 'Platani ulang'} · {beats}/{BEATS_PER_SONG}
+        </div>
+      </div>
+
+      {/* Electra izohlari */}
+      {guide && (
+        <div className="absolute bottom-3 left-3 flex items-end gap-2 animate-slide-up">
+          <GuideCharacter emotion={guide.emotion} size={60} />
+          <div style={{ ...panel, border: '1px solid rgba(155,93,229,0.35)', maxWidth: 210, marginBottom: 8, fontSize: 11.5, color: '#EAF3FF', fontFamily: 'DM Sans, sans-serif' }}>
+            {guide.text}
+          </div>
         </div>
       )}
-      {/* Stage Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-purple-900/20 to-dark-900" />
-      <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <div key={i} className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.5, animationDelay: `${Math.random() * 3}s` }} />
-        ))}
-      </div>
 
-      {/* Stage Spotlight */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-        <div className="relative">
-          {/* LED Effect */}
-          <div className="w-32 h-32 rounded-full transition-all duration-200 flex items-center justify-center"
-            style={{
-              backgroundColor: currentLED() ? currentColor() : C.PANEL,
-              boxShadow: currentLED() ? `0 0 60px ${currentColor()}, 0 0 120px ${currentColor()}40` : 'none',
-            }}>
-            <span className="text-4xl">{currentLED() ? '💡' : '⚫'}</span>
-          </div>
-          {/* Stage platform */}
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-4 bg-gradient-to-r from-brand-500/50 to-neon-pink/50 rounded-full blur-sm" />
+      {/* Ulanish chipi */}
+      {!arduinoConnected && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(155,93,229,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#c77dff' }}>🎆 Platani ulang — tugma bilan shouni boshqaring</span>
         </div>
-      </div>
-
-      {/* Pattern Display */}
-      <div className="absolute top-4 left-4 right-4">
-        <div className="rounded-xl p-4" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>
-              {stage === 'setup' ? "🎵 Yorug'lik Shousi" : '🎯 Raqs Musobaqasi'}
-            </h3>
-            <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 rounded-lg"
-              style={{ background: C.PANEL, border: `1px solid ${C.LINE}` }}>
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            </button>
-          </div>
-
-          {/* Pattern Bars */}
-          {stage === 'setup' && (
-            <div className="flex gap-1 mb-3">
-              {PATTERNS[currentPattern].sequence.map((val, i) => (
-                <div key={i} className={`flex-1 h-8 rounded transition-all ${
-                  i === Math.floor(patternPos / 4) % PATTERNS[currentPattern].sequence.length ? 'ring-2 ring-white' : ''
-                }`}
-                  style={{ background: val ? C.CYAN : C.PANEL }} />
-              ))}
-            </div>
-          )}
-
-          {/* Dance progress — driven by real, edge-triggered button presses */}
-          {stage === 'play' && (
-            <div className="mb-3">
-              <p className="text-xs mb-1" style={{ color: C.MUTED }}>Raqs: {activeTarget.name} · Tugmani {STEPS_PER_DANCE} marta bosing</p>
-              <div className="flex gap-1">
-                {Array.from({ length: STEPS_PER_DANCE }).map((_, i) => (
-                  <div key={i} className="flex-1 h-6 rounded"
-                    style={{ background: i < stepsInDance ? C.GOLD : C.PANEL }} />
-                ))}
-              </div>
-              <p className="text-xs mt-1" style={{ color: C.MUTED }}>
-                Bosilgan: {stepsInDance}/{STEPS_PER_DANCE} · Raqslar: {completedDances}/3
-              </p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: C.MUTED }}>Pattern: {PATTERNS[currentPattern].name}</span>
-            <div className="flex gap-2">
-              <button onClick={cyclePattern} className="text-xs py-1 px-3 rounded-lg"
-                style={{ background: C.PANEL, color: C.MUTED, border: `1px solid ${C.LINE}`, fontFamily: 'Chakra Petch, monospace' }}>
-                Patternni aylantirish
-              </button>
-              {stage === 'setup' && (
-                <button onClick={startDance} className="text-xs py-1 px-3 rounded-lg"
-                  style={{ background: `linear-gradient(135deg, ${C.CYAN}, ${C.PURPLE})`, color: C.DARK, fontFamily: 'Chakra Petch, monospace', fontWeight: 'bold' }}>
-                  Raqsni boshlash!
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Score + Progress */}
-      <div className="absolute bottom-4 left-4 right-4 flex justify-between">
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>Ball</p>
-          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{score}</p>
-        </div>
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>Raqlar</p>
-          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{completedDances}/3</p>
-        </div>
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>LED</p>
-          <div className={`w-5 h-5 rounded-full mt-1 ${currentLED() ? 'animate-pulse' : ''}`}
-            style={{ background: currentLED() ? C.GREEN : C.PANEL, boxShadow: currentLED() ? `0 0 10px ${C.GREEN}` : 'none' }} />
-        </div>
-      </div>
-
-      {/* Stage indicator */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2">
-        <div className="rounded-xl px-4 py-2 text-center" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <Sparkles className={`w-5 h-5 mx-auto ${isPlaying ? 'animate-spin' : ''}`}
-            style={{ color: isPlaying ? C.GOLD : C.MUTED }} />
-          <p className="text-xs mt-1" style={{ color: C.MUTED, fontFamily: 'Chakra Petch, monospace' }}>{isPlaying ? 'Ijro etilmoqda' : 'Tayyor'}</p>
-        </div>
-      </div>
-    </div>
+      )}
+    </PixiStage>
   );
 }
