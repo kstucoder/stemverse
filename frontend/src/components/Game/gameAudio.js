@@ -96,6 +96,13 @@ export function playTram() {
   setTimeout(() => playTone(330, 0.3, 'triangle', 0.06), 200);
 }
 
+export function playHorn() {
+  // Mashina signali — ikki ohangli "biib"
+  playTone(420, 0.16, 'square', 0.07);
+  playTone(330, 0.16, 'square', 0.05);
+  setTimeout(() => { playTone(420, 0.12, 'square', 0.06); playTone(330, 0.12, 'square', 0.045); }, 180);
+}
+
 export function playNote(freq) {
   playTone(freq, 0.3, 'triangle', 0.1);
 }

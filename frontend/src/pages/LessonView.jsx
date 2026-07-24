@@ -6,12 +6,20 @@ import SerialConnector from '../components/SerialConnector';
 import { getGameComponent } from '../components/Game/GameEngine';
 import StoryMission, { StoryVictory } from '../components/Game/StoryMission';
 import EnergyCityIntro from '../components/Game/EnergyCityIntro';
+import TrafficIntro from '../components/Game/TrafficIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
 import toast from 'react-hot-toast';
 
 const LEVEL_COLOR = { 1: 'var(--cyan)', 2: '#A855F7', 3: '#FF6920', 4: '#EC4899' };
+
+// Premium o'yinlar: o'zining PixiJS kirish cutscene'i + ichki HUD'i bor.
+// Bular uchun umumiy MissionControl banneri ko'rsatilmaydi (o'yinni to'smasin).
+const PREMIUM_INTRO = {
+  energy_city: EnergyCityIntro,
+  traffic_light: TrafficIntro,
+};
 
 export default function LessonView() {
   const { id } = useParams();
@@ -59,8 +67,8 @@ export default function LessonView() {
     startGame();
     setGameStarted(true);
     setActiveTab('game');
-    // Energy City maxsus flow: video → dialog → o'yin
-    if (lesson?.gameConfig?.gameType === 'energy_city') {
+    // Premium o'yinlar maxsus flow: PixiJS cutscene → dialog → o'yin
+    if (PREMIUM_INTRO[lesson?.gameConfig?.gameType]) {
       setVideoPhase('video');
       setShowStory(false);
     } else {
@@ -212,17 +220,24 @@ export default function LessonView() {
                     </div>
                   ) : (
                     <>
-                      <MissionControl lesson={lesson} accentColor={lvColor} />
+                      {/* Premium o'yinlarning o'z ichki HUD'i bor — umumiy banner
+                          faqat oddiy o'yinlarda ko'rsatiladi (o'yinni to'smasin) */}
+                      {!PREMIUM_INTRO[lesson?.gameConfig?.gameType] && (
+                        <MissionControl lesson={lesson} accentColor={lvColor} />
+                      )}
                       {/* O'yin (har doim fonda ishlaydi) */}
                       <GameComponent />
 
-                      {/* === ENERGY CITY: PixiJS bo'ron cutscene + Electra dialogi === */}
-                      {lesson?.gameConfig?.gameType === 'energy_city' && videoPhase !== 'playing' && (
-                        <EnergyCityIntro onStart={() => setVideoPhase('playing')} />
-                      )}
+                      {/* === Premium PixiJS kirish cutscene (Energy City / Traffic Light) === */}
+                      {(() => {
+                        const IntroComp = PREMIUM_INTRO[lesson?.gameConfig?.gameType];
+                        return IntroComp && videoPhase !== 'playing'
+                          ? <IntroComp onStart={() => setVideoPhase('playing')} />
+                          : null;
+                      })()}
 
-                      {/* === Boshqa o'yinlar uchun eski cutscene === */}
-                      {lesson?.gameConfig?.gameType !== 'energy_city' && gameStarted && showStory && (
+                      {/* === Oddiy o'yinlar uchun eski cutscene === */}
+                      {!PREMIUM_INTRO[lesson?.gameConfig?.gameType] && gameStarted && showStory && (
                         <StoryMission gameType={lesson?.gameConfig?.gameType} onStart={() => setShowStory(false)} />
                       )}
 
