@@ -7,7 +7,7 @@ import PixiStage from './pixi/PixiStage';
 import { assembleForge, forgeTick } from './pixi/colorScene';
 import GuideCharacter from './GuideCharacter';
 import useGameStore from '../../stores/gameStore';
-import { playCollect, playScore } from './gameAudio';
+import { playBloom, playScore } from './gameAudio';
 
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
 const randColor = () => ({ r: Math.round(Math.random() * 255), g: Math.round(Math.random() * 255), b: Math.round(Math.random() * 255) });
@@ -52,7 +52,7 @@ export default function ColorMixer() {
       winRef.current = true;
       pulseRef.current += 1;
       incrementScore(100);
-      playCollect();
+      playBloom();
       const next = round + 1;
       setRound(next);
       const m = MILESTONES[next];
