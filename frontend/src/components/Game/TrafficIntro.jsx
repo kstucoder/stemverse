@@ -27,9 +27,32 @@ const LINES = [
 
 const MID_X = (CROSS_X0 + CROSS_X1) / 2;
 
+// Svetafor boshida elektr yoyi (short-circuit) — signal ichki koordinatasida.
+function drawSignalArc(g, k) {
+  g.clear();
+  if (k <= 0) return;
+  const lines = 1 + Math.floor(Math.random() * 2);
+  for (let s = 0; s < lines; s++) {
+    let x = (Math.random() - 0.5) * 30;
+    let y = -150 + Math.random() * 16;
+    g.moveTo(x, y);
+    const segs = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < segs; i++) {
+      x += (Math.random() - 0.5) * 24;
+      y += (156 / segs) * (0.5 + Math.random() * 0.9);
+      g.lineTo(x, y);
+    }
+    g.stroke({ width: 1.4 + Math.random() * 1.6, color: 0x9adfff, alpha: 0.45 + 0.55 * k });
+  }
+  g.circle((Math.random() - 0.5) * 22, -150 + Math.random() * 150, 2.5 + Math.random() * 3.5)
+    .fill({ color: 0xeaf3ff, alpha: 0.6 * k });
+}
+
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleIntersection(app);
+  const sig = scene.signal;
   const rain = makeRain(scene.root, 140);
+  let arcT = 0;
 
   // To'liq ekran oq flash — short-circuit va near-miss uchun.
   // 1x1 rect har kadrda ekran o'lchamiga cho'ziladi (katta statik rect stage
@@ -49,6 +72,7 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   function shortCircuit() {
     phase = 'short';
     flashA = 0.95;
+    arcT = 0.8;
     playZap();
     playThunder();
     useGameStore.getState().triggerShake(13);
@@ -119,6 +143,7 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
         sparkTimer = 1.6 + Math.random() * 2.2;
         scene.particles.burst(SIGNAL_X, ROAD_TOP - 100, 0x9adfff, 4, 120);
         flashA = Math.max(flashA, 0.1);
+        arcT = 0.25;
       }
     }
 
@@ -127,6 +152,19 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     else flash.alpha = 0;
 
     intersectionTick(scene, dt, t, { state, connected: true, pedestrianCrossing: false });
+
+    // svetafor short-circuit yoyi + chiroq glitch (intersectionTick'dan KEYIN,
+    // aks holda bulb.alpha ustidan yoziladi)
+    if (arcT > 0) {
+      arcT -= dt;
+      drawSignalArc(sig.arc, arcT / 0.8);
+      for (let n = 0; n < 2; n++) {
+        const b = sig.bulbs[Math.floor(Math.random() * sig.bulbs.length)];
+        b.lit.alpha = Math.random() * 0.9;
+        b.glow.alpha = b.lit.alpha * 0.8;
+      }
+      if (arcT <= 0) sig.arc.clear();
+    }
   });
 
   return () => scene.tweens.clear();
