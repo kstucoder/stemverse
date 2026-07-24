@@ -1,132 +1,112 @@
-// ColorMixerIntro — "Kroma'ning So'nishi" kinematik cutscene.
-// Xronika (ovoz bilan sinxron):
-//   GULLASH  — kristall hayot taratadi, gullar ochilgan, kamalak porlaydi,
-//              rang zarralari ko'tariladi (playShimmer)
-//   YORIQ    — qorong'i yoriq ochiladi, silkinish (playRift)
-//   SO'RILISH— ranglar oqim bo'lib yoriqqa so'riladi, gullar so'liydi, kamalak
-//              o'chadi, dunyo kulrangga aylanadi (playDrain + playColorPop)
-//   SUKUNAT  — jonsiz kulrang olam (playHollow) → Electra dialogi
+// ColorMixerIntro — "Rang Anomaliyasi" kinematik cutscene.
+// 1 va 2-o'yin bilan BITTA olam: tungi Energy City shahri. Osmonda ilmiy
+// hodisa — RANG YUTUVCHI QORA TUYNUK paydo bo'ladi va binolar, gullar,
+// mashinalar ranglarini spiral bo'lib o'ziga tortib yutadi; shahar kulrangga
+// aylanadi. So'ng Electra RGB bilan ranglarni qayta yaratishni so'raydi.
+// Ovozlar har bosqichga sinxron.
 import { useMemo, useRef, useState } from 'react';
-import { Container, Graphics, ColorMatrixFilter } from 'pixi.js';
+import { Container, Graphics, Sprite, ColorMatrixFilter } from 'pixi.js';
 import PixiStage from './pixi/PixiStage';
-import { assembleForge, forgeTick } from './pixi/colorScene';
+import { assembleCity, cityTick, radialTexture, GROUND_Y } from './pixi/cityScene';
 import DialogueBox from './DialogueBox';
 import useGameStore from '../../stores/gameStore';
-import { playShimmer, playRift, playDrain, playColorPop, playHollow } from './gameAudio';
+import { playRift, playDrain, playColorPop, playHollow } from './gameAudio';
 
-const RX = 500, RY = 64;           // yoriq (olam koordinatasi)
-const RAINBOW = [0xff3b3b, 0xff7b1c, 0xffd166, 0x39e06a, 0x3b82ff, 0x9b5de5];
+const BHX = 540, BHY = 116;                       // qora tuynuk (olam koordinatasi)
+const FLOWER_COLORS = [0xff3b3b, 0xff7b1c, 0xffd166, 0x39e06a, 0x3b82ff, 0x9b5de5, 0xf15bb5];
+const lerp = (a, b, k) => a + (b - a) * k;
 
 const LINES = [
-  { text: "Ko'rdingmi?! Kroma olamini qorong'i yoriq yutib, barcha rangni o'ziga tortib ketdi...", emotion: 'worried' },
-  { text: "Gullar so'ldi, kamalak o'chdi — endi hammayoq jonsiz, kulrang. Bu dahshat!", emotion: 'worried' },
-  { text: "Rang yorug'likdan tug'iladi: qizil, yashil va ko'k. Platangga RGB LED va 3 potensiometrni ula.", emotion: 'normal' },
-  { text: "Har potensiometr bitta kanalni boshqaradi — ularni aralashtirib olamga rangni qaytaramiz. Tayyormisan?", emotion: 'excited' },
+  { text: "Osmonga qara! Shahar uzra g'alati anomaliya — rang yutuvchi qora tuynuk paydo bo'ldi!", emotion: 'worried' },
+  { text: "U binolar, gullar, mashinalar — butun shaharning rangini o'ziga tortib yutmoqda. Hammayoq kulrang bo'lyapti!", emotion: 'worried' },
+  { text: "Ranglar yo'qolmasin! Rang — bu yorug'lik: qizil, yashil, ko'k. Platangga RGB LED va 3 potensiometrni ula.", emotion: 'normal' },
+  { text: "Kanallarni aralashtirib yo'qolgan ranglarni qayta yaratamiz va shaharga qaytaramiz. Tayyormisan?", emotion: 'excited' },
 ];
-
-const lerp = (a, b, k) => a + (b - a) * k;
-const hueRGB = (h) => {
-  const x = 1 - Math.abs(((h / 60) % 2) - 1);
-  let r = 0, g = 0, b = 0;
-  if (h < 60) { r = 1; g = x; } else if (h < 120) { r = x; g = 1; }
-  else if (h < 180) { g = 1; b = x; } else if (h < 240) { g = x; b = 1; }
-  else if (h < 300) { r = x; b = 1; } else { r = 1; b = x; }
-  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-};
 
 /* gul — so'lish qobiliyati bilan */
 function makeFlower(color) {
   const c = new Container();
-  const stem = new Graphics().moveTo(0, 0).quadraticCurveTo(4, -18, 0, -34).stroke({ width: 3, color: 0x2f8f4f });
-  const leaf = new Graphics().ellipse(7, -15, 6, 3).fill(0x3fae5f);
-  const head = new Container(); head.y = -38;
+  const stem = new Graphics().moveTo(0, 0).quadraticCurveTo(4, -16, 0, -30).stroke({ width: 3, color: 0x2f8f4f });
+  const leaf = new Graphics().ellipse(6, -13, 5, 2.6).fill(0x3fae5f);
+  const head = new Container(); head.y = -34;
   for (let i = 0; i < 6; i++) {
-    const p = new Graphics().ellipse(0, -9, 5, 9).fill(color);
+    const p = new Graphics().ellipse(0, -8, 4.5, 8).fill(color);
     p.rotation = (i / 6) * Math.PI * 2;
     head.addChild(p);
   }
-  head.addChild(new Graphics().circle(0, 0, 5).fill(0xffd54a));
+  head.addChild(new Graphics().circle(0, 0, 4.5).fill(0xffd54a));
   c.addChild(stem, leaf, head);
   return { c, head };
 }
 
-/* kamalak (yuqori yoy) */
-function makeRainbow() {
-  const g = new Graphics();
-  RAINBOW.forEach((col, i) => {
-    g.arc(500, 500, 250 + i * 15, Math.PI * 1.1, Math.PI * 1.9).stroke({ width: 13, color: col, alpha: 0.5 });
+/* qora tuynuk — akkretsiya diski + fotonli halqa + tortish gale'osi */
+function makeBlackHole() {
+  const c = new Container();
+  const halo = new Sprite(radialTexture('rgba(150,90,255,0.45)', 256));
+  halo.anchor.set(0.5); halo.width = halo.height = 300;
+  const disk = new Container();
+  [[74, 0xffb03a, 9], [58, 0xff5a3c, 7], [44, 0x7fd0ff, 5]].forEach(([rr, col, wdt]) => {
+    disk.addChild(new Graphics().ellipse(0, 0, rr, rr * 0.34).stroke({ width: wdt, color: col, alpha: 0.75 }));
   });
-  return g;
-}
-
-function drawRift(g, open) {
-  g.clear();
-  if (open <= 0.01) return;
-  const cx = RX, top = 16, len = 150 * open;
-  g.ellipse(cx, top + len * 0.5, 30 * open, len * 0.62).fill({ color: 0x1a0426, alpha: 0.5 * open });
-  let x = cx, y = top; g.moveTo(x, y);
-  const segs = 8;
-  for (let i = 0; i < segs; i++) { x = cx + (Math.random() - 0.5) * 24 * open; y = top + (len / segs) * (i + 1); g.lineTo(x, y); }
-  g.stroke({ width: 2 * open + 0.5, color: 0xe0b3ff, alpha: 0.9 });
-  y = top; g.moveTo(cx, y);
-  for (let i = 0; i < segs; i++) { x = cx + (Math.random() - 0.5) * 10 * open; y = top + (len / segs) * (i + 1); g.lineTo(x, y); }
-  g.stroke({ width: 1, color: 0xffffff, alpha: 0.75 * open });
+  // spiral tortilayotgan materiya izlari
+  const streaks = new Graphics();
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    streaks.moveTo(Math.cos(a) * 40, Math.sin(a) * 14)
+      .arc(0, 0, 40 - i * 3, a, a + 1.2).stroke({ width: 2, color: 0xffe0a0, alpha: 0.5 });
+  }
+  disk.addChild(streaks);
+  const core = new Graphics().circle(0, 0, 30).fill(0x04030a).circle(0, 0, 30).stroke({ width: 2, color: 0x1a1030 });
+  const photon = new Graphics().circle(0, 0, 33).stroke({ width: 3, color: 0xffe6b0, alpha: 0.95 });
+  c.addChild(halo, disk, core, photon);
+  c.scale.set(0);
+  return { c, disk, halo };
 }
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
-  const scene = assembleForge(app);
+  // 1-o'yin shahri — yoritilgan, rang-barang
+  const city = assembleCity(app, { startLit: true });
   const cm = new ColorMatrixFilter();
-  scene.root.filters = [cm];
+  city.root.filters = [cm];
 
-  // intro'da maqsad-kristall va halqa kerak emas
-  scene.targetCrystal.visible = false;
-  scene.tHalo.visible = false;
-  scene.ring.visible = false;
-
-  // kamalak (kristall orqasida)
-  const rainbow = makeRainbow();
-  scene.root.addChildAt(rainbow, 1);
-
-  // gullar (yer bo'ylab)
+  // gullar (old plan, ko'cha bo'ylab)
   const flowerDefs = [
-    { x: 165, y: 458 }, { x: 275, y: 468 }, { x: 380, y: 460 },
-    { x: 620, y: 460 }, { x: 725, y: 470 }, { x: 835, y: 458 },
-    { x: 300, y: 502 }, { x: 700, y: 502 },
+    { x: 120, y: 512 }, { x: 250, y: 520 }, { x: 380, y: 514 },
+    { x: 640, y: 514 }, { x: 770, y: 522 }, { x: 890, y: 510 },
+    { x: 430, y: 540 }, { x: 600, y: 540 },
   ];
   const flowers = flowerDefs.map((d, i) => {
-    const color = RAINBOW[i % RAINBOW.length];
+    const color = FLOWER_COLORS[i % FLOWER_COLORS.length];
     const f = makeFlower(color);
     f.c.x = d.x; f.c.y = d.y;
-    scene.root.addChild(f.c);
+    city.root.addChild(f.c);
     return { ...f, wx: d.x, wy: d.y, color };
   });
 
-  // yoriq (olam qatlamida)
-  const rift = new Graphics();
-  scene.root.addChild(rift);
-
-  // RANGLI OQIM — filtrsiz qatlam (root desaturatsiyasi ta'sir qilmaydi)
+  // qora tuynuk + rangli oqim — FILTRSIZ ustki qatlam (desaturatsiya ta'sir qilmaydi)
+  const topLayer = new Container();
+  app.stage.addChild(topLayer);
+  const bh = makeBlackHole();
+  topLayer.addChild(bh.c);
   const streamLayer = new Container();
-  app.stage.addChild(streamLayer);
+  topLayer.addChild(streamLayer);
   const streams = [];
 
-  // manba nuqtalari (gullar + kamalak + kristall)
-  const sources = [];
-  flowers.forEach((f) => sources.push({ x: f.wx, y: f.wy - 38, color: f.color }));
-  for (let i = 0; i < 10; i++) {
-    const ang = Math.PI * (1.12 + 0.72 * Math.random());
-    sources.push({ x: 500 + Math.cos(ang) * (255 + Math.random() * 80), y: 500 + Math.sin(ang) * (255 + Math.random() * 80), color: RAINBOW[i % RAINBOW.length] });
+  function randSource() {
+    const roll = Math.random();
+    if (roll < 0.62) return { x: 90 + Math.random() * 820, y: 210 + Math.random() * 230, color: Math.random() < 0.2 ? 0x7ff4ff : 0xffd76a };
+    if (roll < 0.85) { const f = flowers[Math.floor(Math.random() * flowers.length)]; return { x: f.wx, y: f.wy - 28, color: f.color }; }
+    return { x: 100 + Math.random() * 800, y: GROUND_Y + 20 + Math.random() * 40, color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)] };
   }
-  sources.push({ x: 500, y: 250, color: 0xffffff });
 
   let t = 0, done = false;
-  let riftOpen = 0, riftTarget = 0, sat = 1;
+  let bhScale = 0, bhTarget = 0, drainK = 0;
   let emitAcc = 0, popCount = 0;
-  let shimmered = false, cracked = false, hollowed = false;
+  let formed = false, hollowed = false;
 
   ctlRef.current.skip = () => {
     if (done) return;
-    done = true; sat = 0; riftTarget = 0.3;
+    done = true; drainK = 1; bhTarget = 1;
     cm.reset(); cm.saturate(-1, false);
     onSceneDone();
   };
@@ -134,81 +114,78 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05);
     t += dt;
-    scene.tweens.tick(dt);
-    scene.particles.tick(dt);
-
-    if (!shimmered && t > 0.2) { shimmered = true; playShimmer(); }
+    city.tweens.tick(dt);
+    city.particles.tick(dt);
 
     // ---- ssenariy ----
-    let drainK = 0;
-    if (t < 2.6) {
-      // GULLASH — quvnoq rang zarralari
-      if (Math.random() < 0.08) {
-        const s = sources[Math.floor(Math.random() * flowers.length)];
-        scene.particles.burst(s.x, s.y, s.color, 3, 90);
-      }
+    if (t < 2.4) {
+      drainK = 0;
     } else {
-      if (!cracked) { cracked = true; riftTarget = 1; playRift(); playDrain(); useGameStore.getState().triggerShake(9); }
-      drainK = Math.min((t - 2.7) / 3.1, 1);
-      sat = 1 - drainK;
-      if (!hollowed && drainK >= 1 && t > 5.9) { hollowed = true; done = true; playHollow(); onSceneDone(); }
+      if (!formed) { formed = true; bhTarget = 1; playRift(); playDrain(); useGameStore.getState().triggerShake(10); }
+      drainK = Math.min((t - 2.5) / 3.4, 1);
+      if (!hollowed && drainK >= 1 && t > 6.1) { hollowed = true; done = true; playHollow(); onSceneDone(); }
     }
 
-    riftOpen += (riftTarget - riftOpen) * Math.min(dt * 4, 1);
-    drawRift(rift, riftOpen);
+    bhScale += (bhTarget - bhScale) * Math.min(dt * 3, 1);
+    bh.disk.rotation += dt * 0.7;
+    bh.halo.alpha = 0.4 + 0.25 * Math.sin(t * 3);
 
-    // gullar so'liydi, kamalak o'chadi
+    // gullar so'liydi
     flowers.forEach((f, i) => {
-      const wil = Math.min(1, Math.max(0, (drainK - i * 0.04) * 1.3));
+      const wil = Math.min(1, Math.max(0, (drainK - i * 0.03) * 1.3));
       f.head.rotation = wil * 0.95;
-      f.head.y = -38 + wil * 12;
-      f.head.scale.set(1 - wil * 0.28);
+      f.head.y = -34 + wil * 11;
+      f.head.scale.set(1 - wil * 0.3);
     });
-    rainbow.alpha = 1 - drainK;
 
-    // desaturatsiya
+    // shahar so'nadi + rangsizlanadi
     cm.reset();
-    cm.saturate(sat - 1, false);
+    cm.saturate(-drainK, false);
+    cityTick(city, dt, t, {
+      litCount: Math.round(8 - 6 * drainK),
+      energy: 90 * (1 - drainK * 0.85),
+      night: true,
+      tramOn: drainK < 0.5,
+      shooting: false,
+    });
 
-    const col = hueRGB((t * 70) % 360);
-    forgeTick(scene, dt, t, { r: col.r, g: col.g, b: col.b, target: { r: 0, g: 0, b: 0 }, similarity: 0, connected: true, pulse: 0 });
+    // ---- rangli oqim qora tuynukka spiral bo'lib so'riladi ----
+    const S = city.root.scale.x, ox = city.root.x, oy = city.root.y;
+    // qora tuynukni osmonga joylashtirish (ekran koordinatasi)
+    bh.c.x = ox + BHX * S; bh.c.y = oy + BHY * S;
+    bh.c.scale.set(S * bhScale);
 
-    // kristall so'nishi (forgeTick'dan keyin)
-    const life = 1 - drainK * 0.72;
-    scene.cGlow.alpha *= life;
-    scene.aura.alpha *= life;
-
-    // ---- rangli oqim yoriqqa so'riladi ----
-    const S = scene.root.scale.x, ox = scene.root.x, oy = scene.root.y;
-    if (cracked && drainK < 1) {
+    if (formed && drainK < 1) {
       emitAcc += dt;
-      while (emitAcc > 0.045) {
-        emitAcc -= 0.045;
-        const s = sources[Math.floor(Math.random() * sources.length)];
-        const g = new Graphics().circle(0, 0, 2 + Math.random() * 2.6).fill(s.color);
+      while (emitAcc > 0.04) {
+        emitAcc -= 0.04;
+        const s = randSource();
+        const dx = s.x - BHX, dy = s.y - BHY;
+        const g = new Graphics().circle(0, 0, 2 + Math.random() * 2.4).fill(s.color);
         streamLayer.addChild(g);
-        streams.push({ g, wx0: s.x, wy0: s.y, p: 0, dur: 0.7 + Math.random() * 0.5, sway: (Math.random() - 0.5) * 100, color: s.color });
+        streams.push({ g, r0: Math.hypot(dx, dy), a0: Math.atan2(dy, dx), p: 0, dur: 0.8 + Math.random() * 0.6, spin: 4 + Math.random() * 4 });
       }
     }
     for (let i = streams.length - 1; i >= 0; i--) {
       const st = streams[i];
       st.p += dt / st.dur;
-      const e = st.p * st.p * st.p; // yoriqqa tortilish (tezlashish)
-      let wx = lerp(st.wx0, RX, e);
-      let wy = lerp(st.wy0, RY, e);
-      wx += Math.sin(st.p * Math.PI) * st.sway * (1 - e);
+      const e = st.p * st.p;                 // markazga tezlashish
+      const r = st.r0 * (1 - e);             // radius qisqaradi
+      const a = st.a0 + st.spin * st.p;      // spiral aylanish
+      const wx = BHX + Math.cos(a) * r;
+      const wy = BHY + Math.sin(a) * r;
       st.g.x = ox + wx * S;
       st.g.y = oy + wy * S;
-      st.g.scale.set(S * (1.25 - e * 0.8));
+      st.g.scale.set(S * (1.2 - e * 0.8));
       st.g.alpha = st.p < 0.12 ? st.p * 8 : (1 - e);
       if (st.p >= 1) {
-        if ((popCount++ % 5) === 0) playColorPop(560 + Math.random() * 620);
+        if ((popCount++ % 6) === 0) playColorPop(560 + Math.random() * 640);
         st.g.destroy(); streams.splice(i, 1);
       }
     }
   });
 
-  return () => { scene.tweens.clear(); streams.forEach((s) => s.g.destroy()); };
+  return () => { city.tweens.clear(); streams.forEach((s) => s.g.destroy()); };
 }
 
 export default function ColorMixerIntro({ onStart }) {
@@ -221,7 +198,7 @@ export default function ColorMixerIntro({ onStart }) {
   );
 
   return (
-    <div className="absolute inset-0 z-30" style={{ background: '#05060f' }}>
+    <div className="absolute inset-0 z-30" style={{ background: '#03040c' }}>
       <PixiStage build={build} className="rounded-xl">
         {phase === 'scene' && (
           <div className="absolute top-3 right-3 pointer-events-auto">
