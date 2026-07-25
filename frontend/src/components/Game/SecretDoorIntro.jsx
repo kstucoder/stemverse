@@ -8,15 +8,15 @@ import DialogueBox from './DialogueBox';
 import { playAlarm } from './gameAudio';
 
 const LINES = [
-  { text: "Josuslik topshirig'i! Shahar bankining seyfida o'g'irlangan energiya yadrosi yashiringan — uni qaytarishimiz shart.", emotion: 'worried' },
-  { text: "Seyf qizil lazerlar bilan qo'riqlanadi. Uni faqat maxfiy kod ochadi — tugmani to'g'ri ritmda bosish kerak.", emotion: 'normal' },
-  { text: "Platangga tugma, LED va buzzer ula. Har bosishda bitta qulf shtifti ochiladi.", emotion: 'normal' },
-  { text: "Tugmani 5 marta bos — shtiftlar birin-ketin ochilib, seyf eshigi ochiladi. Tayyormisan, agent?", emotion: 'excited' },
+  { text: "Yarim tun. Shahar bankining yer ostidagi seyf xonasidamiz — bu yerda o'g'irlangan energiya yadrosi saqlanadi.", emotion: 'worried' },
+  { text: "Har tomonda qizil lazerli to'r, shiftda esa aylanuvchi kamera. Bitta xato — va signalizatsiya ishga tushadi!", emotion: 'worried' },
+  { text: "Seyfni faqat maxfiy kod ochadi. Platangga tugma, LED va buzzer ula — bu bizning kod kiritish pultimiz.", emotion: 'normal' },
+  { text: "Tugmani 5 marta to'g'ri bos — rigellar birin-ketin ochilib, po'lat eshik ochiladi. Diqqat bilan, agent!", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleVault(app);
-  let t = 0, done = false, alarmed = false;
+  let t = 0, done = false, a1 = false, a2 = false;
 
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
 
@@ -25,8 +25,9 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     t += dt;
     scene.tweens.tick(dt);
     scene.particles.tick(dt);
-    if (!alarmed && t > 0.4) { alarmed = true; playAlarm(); }
-    if (!done && t > 4.2) { done = true; onSceneDone(); }
+    if (!a1 && t > 0.4) { a1 = true; playAlarm(); }
+    if (!a2 && t > 3.0) { a2 = true; playAlarm(); }  // ikkinchi ogohlantirish — tarang muhit
+    if (!done && t > 5.4) { done = true; onSceneDone(); }
     vaultTick(scene, dt, t, { pins: 0, openPulse: false, connected: false });
   });
 
@@ -51,7 +52,7 @@ export default function SecretDoorIntro({ onStart }) {
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
-            <DialogueBox name="ELECTRA" role="Agent muhandis" lines={LINES} actionLabel="🔓 Seyfni buz" onAction={onStart} accent="#00eeff" />
+            <DialogueBox name="ELECTRA" role="Maxfiy agent" lines={LINES} actionLabel="🔓 Seyfni buz" onAction={onStart} accent="#00eeff" />
           </div>
         )}
       </PixiStage>
