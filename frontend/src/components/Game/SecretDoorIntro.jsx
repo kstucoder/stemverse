@@ -104,18 +104,25 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
       const kb = Math.min(Math.max((t - 5.4) / 0.5, 0), 1);
       bolts.forEach((b) => { b.peg.x = 30 * (1 - kb); });
       [5.45, 5.65, 5.85].forEach((ti, i) => { if (!clunks[i] && t > ti) { clunks[i] = true; playClunk(); } });
-    } else if (t < 7.7) {                // 4) tabloga borish
-      const k = smooth((t - 6.0) / 1.7);
+    } else if (t < 7.5) {                // 4) tabloga borish
+      const k = smooth((t - 6.0) / 1.5);
       gA.c.x = lerp(360, 748, k); gB.c.x = lerp(452, 800, k);
       walk(gA, k < 0.98); walk(gB, k < 0.98);
-    } else {                            // 5) lazerni yoqish
+    } else if (t < 8.4) {                // 5) lazerni yoqish
       gA.c.x = 748; gB.c.x = 800; walk(gA, false); walk(gB, false);
       gB.armF.rotation = -1.1;                       // tugmani bosadi
-      const ka = smooth(Math.min((t - 7.7) / 0.7, 1));
+      const ka = smooth(Math.min((t - 7.5) / 0.7, 1));
       panelGlow.alpha = ka * (0.5 + 0.4 * Math.sin(t * 12));
       laserA = ka;
-      if (!alarmed && t > 7.8) { alarmed = true; playAlarm(); }
-      if (!done && t > 8.7) { done = true; onSceneDone(); }
+      if (!alarmed && t > 7.6) { alarmed = true; playAlarm(); }
+    } else {                            // 6) soqchilar sahnadan chiqib ketadi
+      panelGlow.alpha = 0.5 + 0.4 * Math.sin(t * 12);
+      laserA = 1;
+      gB.armF.rotation += (0 - gB.armF.rotation) * Math.min(dt * 6, 1);
+      const k = smooth(Math.min((t - 8.4) / 1.4, 1));
+      gA.c.x = lerp(748, 1160, k); gB.c.x = lerp(800, 1200, k);
+      walk(gA, k < 0.98); walk(gB, k < 0.98);
+      if (!done && t > 9.8) { done = true; onSceneDone(); }
     }
 
     // lazerlarni chizish (faollashganda)
