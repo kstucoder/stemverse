@@ -113,7 +113,8 @@ export function assembleVault(app) {
   for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2; const rr = i % 5 === 0 ? 50 : 55; dial.moveTo(Math.cos(a) * rr, Math.sin(a) * rr).lineTo(Math.cos(a) * 63, Math.sin(a) * 63).stroke({ width: i % 5 === 0 ? 2 : 1, color: 0x6b7699 }); }
   doorLeaf.addChild(dial);
   // dial ko'rsatkichi (qizil)
-  const pointer = new Graphics().poly([0, -70, -5, -60, 5, -60]).fill(0xff3b46);
+  const pointer = new Graphics().poly([0, -70, -5, -60, 5, -60]).fill(0xffffff);
+  pointer.tint = 0xff3b46;
   doorLeaf.addChild(pointer);
 
   // dastak g'ildiragi
@@ -146,13 +147,21 @@ export function assembleVault(app) {
   cam.addChild(camEye);
   root.addChild(cam);
 
+  // ---- devordagi boshqaruv tablosi (lazerni faollashtiradi) ----
+  const panel = new Container(); panel.x = 838; panel.y = 196;
+  panel.addChild(new Graphics().roundRect(-44, -56, 88, 112, 8).fill(0x141a26).roundRect(-44, -56, 88, 112, 8).stroke({ width: 2, color: 0x2c3346 }));
+  const panelScreen = new Graphics().roundRect(-34, -46, 68, 42, 4).fill(0x0a1420).roundRect(-34, -46, 68, 42, 4).stroke({ width: 1, color: 0x223049 });
+  panel.addChild(panelScreen);
+  for (let i = 0; i < 6; i++) panel.addChild(new Graphics().circle(-24 + (i % 3) * 24, 12 + Math.floor(i / 3) * 24, 6).fill(0x2c3346).circle(-24 + (i % 3) * 24, 12 + Math.floor(i / 3) * 24, 6).stroke({ width: 1, color: 0x4a5470 }));
+  root.addChild(panel);
+
   // ogohlantirish chiroqlari
   const warn = new Graphics();
   root.addChild(warn);
 
   return {
-    app, tweens, particles, skyC, bg, root, spot, interior, goldGlow, core, frame, doorLeaf, bolts, dial, pointer, wheel, pinLEDs, lasers, laserPts, cam, camEye, warn, CX, CY, R,
-    pinsS: 0, dialR: 0, opened: false, laserA: 1, warnT: 0,
+    app, tweens, particles, skyC, bg, root, spot, interior, goldGlow, core, frame, doorLeaf, bolts, dial, pointer, wheel, pinLEDs, lasers, laserPts, cam, camEye, warn, panel, panelScreen, CX, CY, R,
+    stepS: 0, dialR: 0, opened: false, laserA: 1, warnT: 0,
   };
 }
 
@@ -164,20 +173,27 @@ export function vaultTick(scene, dt, t, ctl) {
   const sc = Math.min(w / LW, h / LH);
   root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
 
-  const pins = ctl.connected ? (ctl.pins || 0) : 0;
-  scene.pinsS += (pins - scene.pinsS) * Math.min(dt * 5, 1);
-  const frac = scene.pinsS / PINS;
+  const step = ctl.connected ? (ctl.step || 0) : 0;
+  scene.stepS += (step - scene.stepS) * Math.min(dt * 6, 1);
+  const frac = scene.stepS / 3;
 
-  // dial aylanishi (har rigelda buriladi)
-  scene.dialR += (pins * 1.4 - scene.dialR) * Math.min(dt * 5, 1) + dt * 0.25;
-  dial.rotation = scene.dialR;
+  // disk POT bilan REAL VAQTDA aylanadi; ko'rsatkich (tepada) qo'zg'almas turadi
+  const dialNum = ctl.connected ? (ctl.dialNum || 0) : 0;
+  dial.rotation = (dialNum / 40) * Math.PI * 2;
+  pointer.tint = ctl.onTarget ? 0x39e06a : 0xff3b46;
   pointer.rotation = 0;
 
-  // rigellar tashqariga siljiydi (ochilgan sari)
-  bolts.forEach((b) => { b.peg.x = frac * 30; b.peg.tint = frac > 0.15 ? 0x6ad07a : 0x565f7c; });
+  // rigellar tashqariga siljiydi (har tasdiqlangan raqamda)
+  bolts.forEach((b) => { b.peg.x = frac * 30; b.peg.tint = frac > 0.1 ? 0x6ad07a : 0x565f7c; });
 
-  // pin LED'lar
-  pinLEDs.forEach((p, i) => { const on = i < scene.pinsS - 0.2; p.led.clear(); p.led.circle(p.px, p.py, 5).fill(on ? 0x39e06a : 0x3a1015); if (on) p.led.circle(p.px, p.py, 7).stroke({ width: 1.5, color: 0x39e06a, alpha: 0.6 }); });
+  // 3 ta step LED (kombinatsiya raqamlari)
+  pinLEDs.forEach((p, i) => {
+    const on = i < Math.round(scene.stepS);
+    const nextGlow = ctl.onTarget && i === Math.round(scene.stepS);
+    p.led.clear();
+    p.led.circle(p.px, p.py, 5).fill(on ? 0x39e06a : nextGlow ? 0xffc21a : 0x3a1015);
+    if (on || nextGlow) p.led.circle(p.px, p.py, 7).stroke({ width: 1.5, color: on ? 0x39e06a : 0xffc21a, alpha: 0.6 });
+  });
 
   // ochilish
   if (ctl.openPulse && !scene.opened) {
