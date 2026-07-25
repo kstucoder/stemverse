@@ -71,7 +71,7 @@ export function assembleVault(app) {
   const core = new Graphics().circle(0, -22, 20).fill(0x00eeff).circle(0, -22, 12).fill(0xbdf5ff);
   interior.addChild(goldGlow, vaultHole, bars, core);
   interior.alpha = 0; interior.scale.set(0.9);
-  root.addChild(interior);
+  // interior romdan KEYIN qo'shiladi (rom teshigidan ko'rinishi uchun)
 
   // ---- seyf romi (devordagi teshik atrofidagi qalin po'lat) ----
   const frame = new Container(); frame.x = CX; frame.y = CY;
@@ -84,6 +84,7 @@ export function assembleVault(app) {
   const hinges = new Graphics();
   [-70, 70].forEach((dy) => { hinges.roundRect(CX + R + 10, CY + dy - 16, 30, 32, 6).fill(0x2c3346).roundRect(CX + R + 10, CY + dy - 16, 30, 32, 6).stroke({ width: 2, color: 0x4a5470 }); hinges.circle(CX + R + 25, CY + dy, 5).fill(0x59617e); });
   root.addChild(hinges);
+  root.addChild(interior);   // rom+ilgakdan keyin — teshikdan oltin ko'rinadi
 
   // ---- eshik pardasi (ilgak atrofida ochiladi) ----
   const doorLeaf = new Container();
@@ -150,7 +151,7 @@ export function assembleVault(app) {
   root.addChild(warn);
 
   return {
-    app, tweens, particles, skyC, bg, root, spot, interior, goldGlow, frame, doorLeaf, bolts, dial, pointer, wheel, pinLEDs, lasers, laserPts, cam, camEye, warn,
+    app, tweens, particles, skyC, bg, root, spot, interior, goldGlow, core, frame, doorLeaf, bolts, dial, pointer, wheel, pinLEDs, lasers, laserPts, cam, camEye, warn, CX, CY, R,
     pinsS: 0, dialR: 0, opened: false, laserA: 1, warnT: 0,
   };
 }
