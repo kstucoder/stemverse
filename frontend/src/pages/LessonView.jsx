@@ -9,6 +9,9 @@ import EnergyCityIntro from '../components/Game/EnergyCityIntro';
 import TrafficIntro from '../components/Game/TrafficIntro';
 import ColorMixerIntro from '../components/Game/ColorMixerIntro';
 import LightShowIntro from '../components/Game/LightShowIntro';
+import SecretDoorIntro from '../components/Game/SecretDoorIntro';
+import SpeedRunnerIntro from '../components/Game/SpeedRunnerIntro';
+import ThereminIntro from '../components/Game/ThereminIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -23,6 +26,9 @@ const PREMIUM_INTRO = {
   traffic_light: TrafficIntro,
   color_mixer: ColorMixerIntro,
   light_show: LightShowIntro,
+  secret_code: SecretDoorIntro,
+  speed_runner: SpeedRunnerIntro,
+  light_theremin: ThereminIntro,
 };
 
 export default function LessonView() {

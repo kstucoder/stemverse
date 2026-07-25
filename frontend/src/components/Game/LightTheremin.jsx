@@ -1,99 +1,136 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, drawGlassPanel, ParticleSystem } from './gameHelpers';
+// 🎵 VOLTRA "Yorug'lik Cholg'usi" (PixiJS Premium Edition)
+// Digital Twin: LDR (yorug'lik sensori) → ovoz balandligi. Qo'l soyasi bilan
+// pitch'ni boshqarib, 3 ta nishon-notaga navbatma-navbat moslashtir (biroz ushlab
+// tur) — 3 nota tutilsa g'alaba. Jonli ossilator har kadr yangilanadi.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleTheremin, thereminTick } from './pixi/thereminScene';
 import useGameStore from '../../stores/gameStore';
-import { startLiveTone, updateLiveTone, stopLiveTone } from './gameAudio';
+import { startLiveTone, updateLiveTone, stopLiveTone, playChime } from './gameAudio';
+
+const TARGETS = [0.28, 0.55, 0.82];
+const HOLD = 0.8;
 
 export default function LightTheremin() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const particles = useRef(new ParticleSystem());
-  const time = useRef(0);
-  const [freq, setFreq] = useState(200);
-  const [volume, setVolume] = useState(0.5);
-  const winRef = useRef(false);
+  const serialLdr = useGameStore((s) => s.serialData.ldr);
+  const score = useGameStore((s) => s.score);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
 
-  // The real theremin instrument sweeps pitch continuously with hand position —
-  // so this uses a live oscillator (updated every frame) instead of one-shot notes.
+  const [note, setNote] = useState(0);
+  const [prog, setProg] = useState(0);
+  const [freqHz, setFreqHz] = useState(200);
+
+  const freqNormRef = useRef(0);
+  const connRef = useRef(false);
+  const noteIdxRef = useRef(0);
+  const holdRef = useRef(0);
+  const capturePulseRef = useRef(0);
+  const winRef = useRef(false);
+  const hudAcc = useRef(0);
+
+  const ctlRef = useRef({ freqNorm: 0, targetNorm: 0.28, matched: false, captureProgress: 0, capturePulse: 0, connected: false, noteIndex: 0 });
+
+  const fn = arduinoConnected ? Math.min(1, (serialLdr || 0) / 1023) : 0;
+  freqNormRef.current = fn;
+  connRef.current = arduinoConnected;
+
   useEffect(() => {
     startLiveTone();
-    return () => stopLiveTone();
+    let raf, last = performance.now();
+    const loop = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.05); last = now;
+      const f = freqNormRef.current; const conn = connRef.current;
+      const freq = 200 + f * 1800;
+      updateLiveTone(freq, conn ? 0.1 : 0);
+      const idx = noteIdxRef.current;
+      if (conn && idx < 3) {
+        const target = TARGETS[idx];
+        const matched = Math.abs(f - target) < 0.05;
+        holdRef.current = matched ? Math.min(HOLD, holdRef.current + dt) : Math.max(0, holdRef.current - dt * 1.5);
+        ctlRef.current.matched = matched;
+        if (holdRef.current >= HOLD) {
+          holdRef.current = 0;
+          noteIdxRef.current = idx + 1;
+          capturePulseRef.current += 1;
+          playChime(freq);
+          useGameStore.getState().incrementScore(50);
+          setNote(idx + 1);
+          if (idx + 1 >= 3 && !winRef.current) {
+            winRef.current = true;
+            const st = useGameStore.getState();
+            if (st.onWin) st.onWin(st.score);
+          }
+        }
+      } else { ctlRef.current.matched = false; holdRef.current = 0; }
+
+      ctlRef.current.freqNorm = f;
+      ctlRef.current.targetNorm = TARGETS[Math.min(noteIdxRef.current, 2)];
+      ctlRef.current.captureProgress = holdRef.current / HOLD;
+      ctlRef.current.capturePulse = capturePulseRef.current;
+      ctlRef.current.connected = conn;
+      ctlRef.current.noteIndex = noteIdxRef.current;
+
+      hudAcc.current += dt;
+      if (hudAcc.current > 0.1) { hudAcc.current = 0; setProg(holdRef.current / HOLD); setFreqHz(Math.round(freq)); }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(raf); stopLiveTone(); };
   }, []);
 
-  const draw = useCallback((ctx, w, h, t) => {
-    time.current = t;
-    ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#0f0015', '#1a0030', '#0d0015']);
+  const build = useCallback((app) => {
+    const scene = assembleTheremin(app);
+    let t = 0;
+    app.ticker.add((tk) => {
+      const dt = Math.min(tk.deltaMS / 1000, 0.05);
+      t += dt;
+      scene.particles.tick(dt);
+      thereminTick(scene, dt, t, ctlRef.current);
+    });
+    return () => {};
+  }, []);
 
-    // Frequency waves
-    const freqVal = serialData.ldr ? Math.max(100, (serialData.ldr / 1023) * 2000) : 500;
-    const amp = (serialData.ldr ? serialData.ldr / 1023 : 0.5) * 80;
-    setFreq(freqVal);
-    if (arduinoConnected) updateLiveTone(freqVal, 0.1);
-    else updateLiveTone(freqVal, 0);
-
-    // Draw sound waves
-    ctx.strokeStyle = `rgba(0, 245, 255, ${0.3 + amp / 160})`;
-    ctx.lineWidth = 2;
-    for (let wave = 0; wave < 3; wave++) {
-      ctx.beginPath();
-      for (let x = 0; x < w; x += 2) {
-        const y = h / 2 + Math.sin((x + t * 200 * (freqVal / 500)) * 0.02 * (wave + 1) + wave) * (amp + wave * 20);
-        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-
-    // Frequency bars
-    const bars = Math.floor((freqVal / 2000) * 20);
-    for (let i = 0; i < 20; i++) {
-      const barH = (i < bars) ? 8 + i * 3 : 4;
-      ctx.fillStyle = i < bars ? `hsl(${180 + i * 8}, 100%, ${50 + i * 2}%)` : C.PANEL;
-      ctx.fillRect(w / 2 - 100 + i * 10, h - 80 - barH, 6, barH);
-    }
-
-    // Glow effect
-    drawGlow(ctx, w / 2, h / 2, 40 + amp, C.CYAN_GLOW);
-
-    // Particles
-    if (amp > 30) {
-      particles.current.emit(w / 2, h / 2, C.CYAN, 1, 50 + amp);
-      particles.current.emit(w / 2, h / 2, C.PURPLE, 1, 30 + amp * 0.5);
-    }
-    particles.current.update(0.016);
-    particles.current.draw(ctx);
-
-    // Win check
-    if (arduinoConnected && freqVal > 1500 && !winRef.current && winConditions) {
-      winRef.current = true;
-      incrementScore(50);
-      if (onWin) onWin(score + 50);
-    }
-
-    // HUD
-    ctx.font = 'bold 24px Chakra Petch, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = C.CYAN;
-    ctx.fillText('🎵 ' + Math.floor(freqVal) + 'Hz', w / 2, 50);
-    ctx.fillStyle = C.MUTED;
-    ctx.font = '14px Chakra Petch, monospace';
-    ctx.fillText("☀️ Qo'lingizni LDR sensor ustida harakatlantiring", w / 2, 80);
-    ctx.fillText("Yorug'lik → Yuqori ovoz", w / 2, 100);
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-  }, [serialData.ldr, serialData.led, score, winConditions, onWin, incrementScore, arduinoConnected]);
+  const panel = {
+    background: 'rgba(11,17,32,0.82)', border: '1px solid rgba(120,90,255,0.22)',
+    borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace',
+  };
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">Score</p>
-        <p className="font-game text-white text-lg">{score}</p>
+    <PixiStage build={build} className="rounded-xl">
+      {/* Yuqori-chap: ball + notalar */}
+      <div className="absolute top-3 left-3 flex gap-2">
+        <div style={panel}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF', textShadow: '0 0 8px rgba(120,90,255,0.5)' }}>⭐ {Math.round(score)}</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
+        </div>
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>{Math.min(note, 3)}/3</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>NOTA</div>
+        </div>
       </div>
-      <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">LED</p>
-        <div className={`w-5 h-5 rounded-full ${arduinoConnected && serialData.led ? 'bg-neon-green shadow-lg shadow-neon-green/50 animate-pulse' : 'bg-dark-600'}`} />
+
+      {/* Yuqori-o'ng: chastota */}
+      <div className="absolute top-3 right-3" style={{ ...panel, textAlign: 'center', minWidth: 96 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#a78bfa', textShadow: '0 0 12px rgba(120,90,255,0.6)' }}>{freqHz}Hz</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>CHASTOTA</div>
       </div>
-    </GameCanvas>
+
+      {/* Past-markaz: ushlash progressi */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, padding: '9px 16px', minWidth: 220, textAlign: 'center' }}>
+        <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 5 }}>
+          <div style={{ height: '100%', width: `${prog * 100}%`, background: 'linear-gradient(90deg,#39e06a,#a78bfa)', boxShadow: '0 0 8px rgba(57,224,106,0.6)' }} />
+        </div>
+        <div style={{ fontSize: 10, color: '#94a3b8' }}>
+          {arduinoConnected ? "☀️ Qo'lingni sensor ustida harakatlantir — nishon notaga moslash" : 'Platani ulang'}
+        </div>
+      </div>
+
+      {/* Ulanish chipi */}
+      {!arduinoConnected && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(120,90,255,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#a78bfa' }}>🎵 Platani ulang — LDR sensorli yorug'lik cholg'usi</span>
+        </div>
+      )}
+    </PixiStage>
   );
 }

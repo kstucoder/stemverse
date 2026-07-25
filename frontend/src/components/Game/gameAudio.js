@@ -298,6 +298,28 @@ export function startMusic(bpm = 124) {
 export function setMusicVolume(v) { musicVol = Math.max(0, Math.min(1, v)); }
 export function stopMusic() { if (musicTimer) { clearInterval(musicTimer); musicTimer = null; } }
 
+// ===== Seyf (Secret Door) + Theremin ovozlari =====
+export function playClunk() {
+  // og'ir metall qulf tovushi
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(120, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.09);
+    g.gain.setValueAtTime(0.16, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.15);
+  } catch (e) { /* silent */ }
+  playTone(220, 0.05, 'square', 0.05);
+}
+
+export function playChime(freq = 880) {
+  // toza nota qo'ng'irog'i (theremin nota tutildi)
+  playTone(freq, 0.35, 'sine', 0.1);
+  setTimeout(() => playTone(freq * 1.5, 0.3, 'sine', 0.06), 70);
+}
+
 // ===== LIVE CONTINUOUS TONE (theremin-style — frequency updates every frame
 // instead of a discrete triggered note) =====
 let liveOsc = null, liveGain = null;

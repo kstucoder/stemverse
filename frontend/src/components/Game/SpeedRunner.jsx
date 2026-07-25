@@ -1,207 +1,121 @@
-// 🏃 VOLTRA Speed Runner — Premium Edition
-import { useEffect, useRef, useState } from 'react';
+// 🏃 VOLTRA "Tom Ustidan Poyga" (PixiJS Premium Edition)
+// Digital Twin: POT → yugurish tezligi, BTN → sakrash. To'siqlardan sakrab o't,
+// energiya orblarini yig', 1000m yugur — g'alaba. To'qnashuv → o'yin tugadi.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleRunner, runnerTick } from './pixi/runnerScene';
 import useGameStore from '../../stores/gameStore';
-import { C } from './gameHelpers';
-import { playJump, playCrash } from './gameAudio';
+import { playJump, playCrash, playScore } from './gameAudio';
 
-const PLAYER_X = 50;       // fixed horizontal position (%), world scrolls instead
-const GRAVITY = 260;       // % per second^2 — real parabolic fall, not a teleport
-const JUMP_VELOCITY = 130; // initial upward speed (% per second)
+const MAX_SPEED = 330;
 
 export default function SpeedRunner() {
-  const { serialData, score, incrementScore, arduinoConnected } = useGameStore();
-  const [playerY, setPlayerY] = useState(0);
-  const [isJumping, setIsJumping] = useState(false);
+  const serialBtn = useGameStore((s) => s.serialData.btn);
+  const serialPot = useGameStore((s) => s.serialData.pot);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
   const [distance, setDistance] = useState(0);
-  const [obstacles, setObstacles] = useState([]);
   const [gameOver, setGameOver] = useState(false);
-  const playerYRef = useRef(0);
-  const jumpingRef = useRef(false);
-  const vyRef = useRef(0);
-  const prevBtnRef = useRef(0);
-  const obstacleCounter = useRef(0);
+  const jumpPulse = useRef(0);
+  const resetPulse = useRef(0);
+  const prevBtn = useRef(0);
   const winRef = useRef(false);
 
-  useEffect(() => {
-    if (distance >= 1000 && !winRef.current && !gameOver) {
-      winRef.current = true;
-      const store = useGameStore.getState();
-      if (store.onWin) store.onWin(score);
-    }
-  }, [distance, score, gameOver]);
+  const pot = serialPot || 0;
+  const speedX = arduinoConnected ? Math.max(0, Math.round((pot / 1023) * 10)) : 0;
 
-  // Speed is driven by the real potentiometer (0-1023). When Arduino is not
-  // connected, speed stays at 0 — no auto-run, no auto-scoring.
-  const pot = serialData.pot || 0;
-  const speed = arduinoConnected ? Math.max(1, Math.round((pot / 1023) * 10)) : 0;
-  const progress = Math.min(distance / 1000, 1);
-
-  // Jump trigger — edge-triggered on the real button so a held press doesn't
-  // re-fire every frame, and blocked while already airborne.
-  useEffect(() => {
-    const btn = serialData.btn || 0;
-    if (btn === 1 && prevBtnRef.current === 0 && !jumpingRef.current && !gameOver) {
-      jumpingRef.current = true;
-      setIsJumping(true);
-      vyRef.current = JUMP_VELOCITY;
-      playJump();
-    }
-    prevBtnRef.current = btn;
-  }, [serialData.btn, gameOver]);
-
-  // Real jump physics: velocity decays under gravity, giving an actual
-  // parabolic arc instead of an instant up/down teleport.
-  useEffect(() => {
-    if (gameOver) return;
-    let raf;
-    let last = performance.now();
-    const step = (now) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      if (jumpingRef.current) {
-        vyRef.current -= GRAVITY * dt;
-        let ny = playerYRef.current + vyRef.current * dt;
-        if (ny <= 0) {
-          ny = 0;
-          jumpingRef.current = false;
-          vyRef.current = 0;
-          setIsJumping(false);
-        }
-        playerYRef.current = ny;
-        setPlayerY(ny);
-      }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [gameOver]);
-
-  // World scroll + obstacle spawn/collision — a single stable interval (not
-  // torn down and rebuilt every tick), checking collisions against the
-  // freshly-moved obstacle positions and the current jump height via refs.
-  useEffect(() => {
-    const gameLoop = setInterval(() => {
-      if (gameOver || speed <= 0) return;
-      setDistance((d) => d + speed * 0.5);
-      incrementScore(Math.round(speed * 0.1));
-      obstacleCounter.current += speed;
-
-      setObstacles((prev) => {
-        let next = prev.map((o) => ({ ...o, x: o.x - speed * 0.5 })).filter((o) => o.x > -15);
-        if (obstacleCounter.current > 30) {
-          obstacleCounter.current = 0;
-          next = [...next, { id: Date.now(), x: 100, height: 10 + Math.random() * 20, width: 8 }];
-        }
-        const hit = next.some((o) => Math.abs(o.x - PLAYER_X) < 8 && playerYRef.current < o.height);
-        if (hit) { setGameOver(true); playCrash(); }
-        return next;
-      });
-    }, 33);
-    return () => clearInterval(gameLoop);
-  }, [gameOver, speed, incrementScore]);
-
-  const reset = () => {
-    setGameOver(false);
-    setDistance(0);
-    setObstacles([]);
-    setPlayerY(0);
-    playerYRef.current = 0;
-    jumpingRef.current = false;
-    vyRef.current = 0;
-    setIsJumping(false);
-    winRef.current = false;
+  const ctlRef = useRef({
+    speed: 0, jumpPulse: 0, resetPulse: 0, connected: false,
+    onCrash: () => {}, onCoin: () => {}, onWin: () => {}, onDistance: () => {},
+  });
+  ctlRef.current.speed = arduinoConnected ? (pot / 1023) * MAX_SPEED : 0;
+  ctlRef.current.jumpPulse = jumpPulse.current;
+  ctlRef.current.resetPulse = resetPulse.current;
+  ctlRef.current.connected = arduinoConnected;
+  ctlRef.current.onCrash = (d) => { setGameOver(true); setDistance(d); playCrash(); };
+  ctlRef.current.onCoin = () => { incrementScore(10); playScore(); };
+  ctlRef.current.onDistance = (d) => setDistance(d);
+  ctlRef.current.onWin = () => {
+    if (winRef.current) return;
+    winRef.current = true;
+    const store = useGameStore.getState();
+    if (store.onWin) store.onWin(score);
   };
 
+  // sakrash — edge-triggered
+  useEffect(() => {
+    const btn = serialBtn || 0;
+    if (btn === 1 && prevBtn.current === 0 && arduinoConnected && !gameOver) { jumpPulse.current += 1; playJump(); }
+    prevBtn.current = btn;
+  }, [serialBtn, arduinoConnected, gameOver]);
+
+  const reset = () => { resetPulse.current += 1; winRef.current = false; setGameOver(false); setDistance(0); };
+
+  const build = useCallback((app) => {
+    const scene = assembleRunner(app);
+    let t = 0;
+    app.ticker.add((tk) => {
+      const dt = Math.min(tk.deltaMS / 1000, 0.05);
+      t += dt;
+      scene.particles.tick(dt);
+      runnerTick(scene, dt, t, ctlRef.current);
+    });
+    return () => {};
+  }, []);
+
+  const panel = {
+    background: 'rgba(11,17,32,0.82)', border: '1px solid rgba(0,238,255,0.15)',
+    borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace',
+  };
+  const progress = Math.min(distance / 1000, 1);
+
   return (
-    <div className="relative h-full min-h-[500px] overflow-hidden select-none" style={{ background: 'linear-gradient(180deg, #020617 0%, #0B1120 100%)', borderRadius: 14 }}>
+    <PixiStage build={build} className="rounded-xl">
+      {/* HUD statlar */}
+      <div className="absolute top-3 left-3 flex gap-2">
+        {[
+          { icon: '📏', value: `${Math.round(distance)}m`, label: 'Masofa' },
+          { icon: '⚡', value: `x${speedX}`, label: 'Tezlik' },
+          { icon: '⭐', value: Math.round(score), label: 'Ball' },
+        ].map((it) => (
+          <div key={it.label} style={panel}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#EAF3FF' }}>{it.icon} {it.value}</div>
+            <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>{it.label}</div>
+          </div>
+        ))}
+      </div>
 
-      {/* Animated ground grid */}
-      <div className="absolute inset-x-0 bottom-0 h-1/3" style={{
-        background: `repeating-linear-gradient(90deg, transparent 0px, transparent 39px, rgba(0,238,255,0.03) 39px, rgba(0,238,255,0.03) 40px)`,
-      }} />
-
-      {gameOver ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20" style={{ background: 'rgba(4,6,14,0.85)', backdropFilter: 'blur(8px)' }}>
-          <div className="text-5xl font-bold mb-3" style={{ fontFamily: 'Chakra Petch, monospace', color: C.CYAN, textShadow: `0 0 30px ${C.CYAN}80` }}>HALOKAT!</div>
-          <div className="text-lg mb-8" style={{ color: C.WHITE, fontFamily: 'Chakra Petch, monospace' }}>Siz {Math.round(distance)}m yugurdingiz</div>
-          <button onClick={reset} className="px-8 py-3 font-bold text-sm uppercase tracking-wider rounded-xl transition-all" style={{
-            fontFamily: 'Chakra Petch, monospace', color: C.DARK, background: `linear-gradient(135deg, ${C.CYAN}, ${C.CYAN}dd)`,
-            boxShadow: `0 0 20px rgba(0,238,255,0.4)`,
-          }}>Qayta urinish</button>
+      {/* progress */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-2/3">
+        <div style={{ height: 7, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${progress * 100}%`, background: 'linear-gradient(90deg,#39e06a,#00eeff)', boxShadow: '0 0 12px rgba(0,238,255,0.5)' }} />
         </div>
-      ) : (
-        <>
-          {/* Player */}
-          <div className="absolute bottom-0" style={{
-            left: `${PLAYER_X}%`,
-            bottom: `${playerY + 20}%`,
-            transform: 'translateX(-50%)',
-          }}>
-            <div className="w-8 h-10 relative" style={{
-              background: C.CYAN,
-              borderRadius: '4px 4px 8px 8px',
-              boxShadow: `0 0 15px ${C.CYAN}99`,
-            }}>
-              {/* Head dot */}
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full" style={{ background: C.GOLD, boxShadow: `0 0 6px ${C.GOLD}` }} />
-            </div>
-          </div>
+        <div style={{ textAlign: 'center', fontSize: 9, marginTop: 3, color: '#64748b' }}>{Math.round(distance)} / 1000 m</div>
+      </div>
 
-          {/* Obstacles */}
-          {obstacles.map((o) => (
-            <div key={o.id} className="absolute bottom-0 transition-all duration-75 ease-linear" style={{
-              left: `${o.x}%`,
-              bottom: '20%',
-              width: `${o.width}%`,
-              height: `${o.height + 5}%`,
-              background: `linear-gradient(180deg, ${C.PINK}dd, ${C.PINK}44)`,
-              borderRadius: '4px 4px 0 0',
-              border: `1px solid ${C.PINK}60`,
-              boxShadow: `0 0 8px ${C.PINK}40`,
-            }} />
-          ))}
+      {/* boshqaruv maslahati */}
+      <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-4 pointer-events-none">
+        <span style={{ ...panel, fontSize: 9, padding: '4px 10px', color: '#94a3b8' }}>POT → Tezlik</span>
+        <span style={{ ...panel, fontSize: 9, padding: '4px 10px', color: '#94a3b8' }}>BTN → Sakrash</span>
+      </div>
 
-          {/* HUD */}
-          <div className="absolute top-4 left-4 right-4 flex justify-between">
-            {[
-              { icon: '📏', value: `${Math.round(distance)}m`, label: 'Masofa' },
-              { icon: '⚡', value: `x${speed}`, label: 'Tezlik' },
-              { icon: '⭐', value: score, label: 'Ball' },
-            ].map((h,i) => (
-              <div key={i} className="px-4 py-2.5" style={{
-                background: C.GLASS, border: `1px solid rgba(0,238,255,0.1)`,
-                borderRadius: 12, backdropFilter: 'blur(8px)',
-              }}>
-                <div className="text-sm font-bold" style={{ color: C.WHITE, fontFamily: 'Chakra Petch, monospace' }}>{h.icon} {h.value}</div>
-                <div className="text-[10px] uppercase tracking-wider" style={{ color: C.MUTED, fontFamily: 'Chakra Petch, monospace' }}>{h.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Progress bar */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-3/4">
-            <div className="h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <div className="h-full rounded-full transition-all duration-300" style={{
-                width: `${progress * 100}%`,
-                background: `linear-gradient(90deg, ${C.GREEN}, ${C.CYAN})`,
-                boxShadow: `0 0 12px ${C.CYAN}60`
-              }} />
-            </div>
-          </div>
-
-          {/* Controls hint */}
-          <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-6">
-            <span className="text-[10px] uppercase tracking-wider px-3 py-1 rounded-full" style={{
-              fontFamily: 'Chakra Petch, monospace', color: C.MUTED,
-              background: C.GLASS, border: `1px solid rgba(0,238,255,0.08)`,
-            }}>POT → Tezlik</span>
-            <span className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full transition-all ${isJumping ? 'scale-110' : ''}`} style={{
-              fontFamily: 'Chakra Petch, monospace', color: isJumping ? C.CYAN : C.MUTED,
-              background: C.GLASS, border: `1px solid ${isJumping ? C.CYAN : 'rgba(0,238,255,0.08)'}`,
-            }}>BTN → Sakrash</span>
-          </div>
-        </>
+      {/* Game over */}
+      {gameOver && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-auto" style={{ background: 'rgba(4,6,14,0.82)', backdropFilter: 'blur(6px)' }}>
+          <div style={{ fontSize: 40, fontWeight: 800, fontFamily: 'Orbitron, monospace', color: '#ff2d78', textShadow: '0 0 30px rgba(255,45,120,0.6)' }}>HALOKAT!</div>
+          <div style={{ color: '#EAF3FF', fontFamily: 'Chakra Petch, monospace', margin: '10px 0 22px' }}>{Math.round(distance)}m yugurdingiz</div>
+          <button onClick={reset} className="btn-primary">Qayta urinish</button>
+        </div>
       )}
-    </div>
+
+      {/* Ulanish chipi */}
+      {!arduinoConnected && !gameOver && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(0,238,255,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#00eeff' }}>🏃 Platani ulang — POT bilan yugur, tugma bilan sakra</span>
+        </div>
+      )}
+    </PixiStage>
   );
 }

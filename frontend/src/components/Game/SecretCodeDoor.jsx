@@ -1,150 +1,108 @@
-// Secret Code Door — Spy-themed canvas game with code-breaking
-import { useState, useRef, useCallback, useEffect } from 'react';
-import GameCanvas from './GameCanvas';
-import { C, drawGradientBackground, drawGlow, drawVignette, drawScanlines, ParticleSystem } from './gameHelpers';
+// 🔓 VOLTRA "Seyf Sirini Buz" (PixiJS Premium Edition)
+// Digital Twin: bitta tugma (BTN). Har bosish bitta qulf shtiftini ochadi;
+// 5 marta bosilsa seyf ochiladi. Win: 5 bosish (komponent onWin).
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleVault, vaultTick } from './pixi/vaultScene';
+import GuideCharacter from './GuideCharacter';
 import useGameStore from '../../stores/gameStore';
-import { playClick, playWin } from './gameAudio';
+import { playClunk, playWin } from './gameAudio';
 
-const CODE_LENGTH = 5;
+const CODE = 5;
 
 export default function SecretCodeDoor() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const particles = useRef(new ParticleSystem());
-  // The real circuit has exactly ONE push button, so it can only report
-  // discrete press events — not a chosen 0/1 digit. The "secret code" is
-  // therefore: press the button CODE_LENGTH times in a row to unlock the door.
-  const [pressCount, setPressCount] = useState(0);
-  const [doorOpen, setDoorOpen] = useState(false);
-  const [feedback, setFeedback] = useState('Tugmani ' + CODE_LENGTH + ' marta bosing...');
+  const serialBtn = useGameStore((s) => s.serialData.btn);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
+  const [pins, setPins] = useState(0);
+  const [open, setOpen] = useState(false);
+  const prevBtn = useRef(0);
   const winRef = useRef(false);
-  const lastBtnState = useRef(0);
 
-  // Handle button press — edge-triggered so a held button only counts once.
+  const ctlRef = useRef({ pins: 0, openPulse: false, connected: false });
+  ctlRef.current.pins = pins;
+  ctlRef.current.openPulse = open;
+  ctlRef.current.connected = arduinoConnected;
+
   useEffect(() => {
-    if (doorOpen) return;
-    const btn = serialData.btn || 0;
-    if (btn === 1 && lastBtnState.current === 0) {
-      playClick();
-      incrementScore(5);
-      const next = pressCount + 1;
-      setPressCount(next);
-      particles.current.emit(50, 50, '#00ff88', 5, 50);
-
-      if (next >= CODE_LENGTH) {
-        setDoorOpen(true);
-        setFeedback('🔓 ESHIK OCHILDI!');
+    if (open) return;
+    const btn = serialBtn || 0;
+    if (btn === 1 && prevBtn.current === 0 && arduinoConnected) {
+      const next = pins + 1;
+      incrementScore(10);
+      if (next >= CODE) {
+        setPins(CODE);
+        setOpen(true);
         playWin();
-        particles.current.emit(50, 70, '#ffdd00', 50, 200);
-        if (arduinoConnected && !winRef.current && winConditions) {
+        if (!winRef.current) {
           winRef.current = true;
-          incrementScore(100);
-          if (onWin) onWin(score + 100);
+          const store = useGameStore.getState();
+          if (store.onWin) store.onWin(score + 100);
         }
       } else {
-        setFeedback(`✅ ${next}/${CODE_LENGTH} bosish qabul qilindi!`);
+        setPins(next);
+        playClunk();
       }
     }
-    lastBtnState.current = btn;
-  }, [serialData.btn, doorOpen, pressCount, winConditions, onWin, incrementScore, score]);
+    prevBtn.current = btn;
+  }, [serialBtn, arduinoConnected, open, pins, score, incrementScore]);
 
-  const draw = useCallback((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#050510', '#0a0020', '#050510']);
+  const build = useCallback((app) => {
+    const scene = assembleVault(app);
+    let t = 0;
+    app.ticker.add((tk) => {
+      const dt = Math.min(tk.deltaMS / 1000, 0.05);
+      t += dt;
+      scene.tweens.tick(dt);
+      scene.particles.tick(dt);
+      vaultTick(scene, dt, t, ctlRef.current);
+    });
+    return () => scene.tweens.clear();
+  }, []);
 
-    // Vault door
-    const dX = w / 2 - 80, dY = h / 2 - 100, dW = 160, dH = 200;
-
-    // Door frame
-    ctx.fillStyle = C.PANEL;
-    ctx.fillRect(dX - 5, dY - 5, dW + 10, dH + 10);
-
-    // Door
-    ctx.fillStyle = doorOpen ? C.DARK : '#2a2a3a';
-    ctx.fillRect(dX, dY, dW, dH);
-
-    if (!doorOpen) {
-      // Door details
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(dX + 10, dY + 10, dW - 20, 50);
-      ctx.strokeRect(dX + 10, dY + 70, dW - 20, 50);
-      ctx.strokeRect(dX + 10, dY + 130, dW - 20, 50);
-
-      // Press counter display
-      ctx.fillStyle = pressCount > 0 ? C.CYAN : '#475569';
-      ctx.font = 'bold 24px Chakra Petch, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('●'.repeat(pressCount).split('').join(' ') || '— — — — —', w / 2, dY + 38);
-
-      // Progress dots
-      for (let i = 0; i < CODE_LENGTH; i++) {
-        ctx.fillStyle = i < pressCount ? C.GREEN : C.PANEL;
-        ctx.beginPath();
-        ctx.arc(w / 2 - 40 + i * 20, dY + 95, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Lock icon
-      ctx.font = '40px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🔒', w / 2, dY + 155);
-    } else {
-      // Open door
-      ctx.fillStyle = 'rgba(0,255,136,0.1)';
-      ctx.fillRect(dX, dY, dW, dH);
-      ctx.font = '60px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🔓', w / 2, dY + dH / 2 + 15);
-      drawGlow(ctx, w / 2, dY + dH / 2, 60, 'rgba(0,255,136,0.15)');
-    }
-
-    // Button-press indicators — one lamp per required press
-    const ky = h * 0.65;
-    for (let i = 0; i < CODE_LENGTH; i++) {
-      const kx = w / 2 - 80 + i * 40;
-      ctx.fillStyle = i < pressCount ? C.CYAN : C.PANEL;
-      ctx.shadowColor = i < pressCount ? C.CYAN : 'transparent';
-      ctx.shadowBlur = i < pressCount ? 8 : 0;
-      ctx.beginPath();
-      ctx.roundRect(kx, ky, 30, 22, 4);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = i < pressCount ? C.WHITE : '#475569';
-      ctx.font = '10px Chakra Petch, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(String(i + 1), kx + 15, ky + 15);
-    }
-
-    // Feedback text
-    if (feedback) {
-      ctx.fillStyle = doorOpen ? C.GREEN : C.GOLD;
-      ctx.font = 'bold 14px Chakra Petch, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(feedback, w / 2, h - 40);
-    }
-
-    // Instructions
-    ctx.fillStyle = C.MUTED;
-    ctx.font = '12px Chakra Petch, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`🔘 Tugmani bosing: ${pressCount}/${CODE_LENGTH}`, 15, 25);
-
-    // Score
-    ctx.fillStyle = C.WHITE;
-    ctx.font = 'bold 14px Chakra Petch, monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(`Score: ${score}`, w - 15, 25);
-
-    particles.current.update(0.016);
-    particles.current.draw(ctx);
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-  }, [pressCount, doorOpen, feedback, score]);
+  const panel = {
+    background: 'rgba(11,17,32,0.82)', border: '1px solid rgba(0,238,255,0.15)',
+    borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace',
+  };
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl" />
+    <PixiStage build={build} className="rounded-xl">
+      {/* Yuqori-chap: ball */}
+      <div className="absolute top-3 left-3" style={panel}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF', textShadow: '0 0 8px rgba(0,238,255,0.5)' }}>⭐ {Math.round(score)}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
+      </div>
+
+      {/* Yuqori-o'ng: holat */}
+      <div className="absolute top-3 right-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: open ? '#39e06a' : '#ff3b46', textShadow: `0 0 12px ${open ? '#39e06a' : '#ff3b46'}80` }}>{open ? 'OCHIQ' : 'QULF'}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>SEYF</div>
+      </div>
+
+      {/* Past-markaz: shtift progressi */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, padding: '9px 16px' }}>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 5 }}>
+          {Array.from({ length: CODE }).map((_, i) => (
+            <span key={i} style={{
+              width: 22, height: 10, borderRadius: 3,
+              background: i < pins ? 'linear-gradient(90deg,#39e06a,#00eeff)' : 'rgba(255,59,70,0.25)',
+              boxShadow: i < pins ? '0 0 8px rgba(57,224,106,0.6)' : 'none',
+            }} />
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#94a3b8' }}>
+          {open ? '🔓 Seyf ochildi!' : arduinoConnected ? `🔘 Sirli kodni kiriting: ${pins}/${CODE}` : 'Platani ulang'}
+        </div>
+      </div>
+
+      {/* Ulanish chipi */}
+      {!arduinoConnected && !open && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(255,59,70,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#ff6b6b' }}>🔒 Platani ulang — tugma bilan seyfni buzing</span>
+        </div>
+      )}
+    </PixiStage>
   );
 }
