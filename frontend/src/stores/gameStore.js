@@ -69,13 +69,14 @@ const useGameStore = create((set, get) => ({
     if (key === 'led') {
       nc.lightsOn = value === 1;
       if (value === 1) {
-        nc.buildingsLit = Math.min(state.cityState.buildingsLit + 1, state.cityState.totalBuildings);
+        // Har blink shaharning 1/5 qismini yoqadi — 5 blinkda shahar TO'LIQ
+        // yonadi va aynan shu payt g'alaba sharti (led_blink_count=5) bajariladi.
+        nc.buildingsLit = Math.min(state.cityState.buildingsLit + state.cityState.totalBuildings / 5, state.cityState.totalBuildings);
         nc.isNight = false;
-        np.ledBlinks += 0.5;
-      } else {
-        nc.buildingsLit = Math.max(state.cityState.buildingsLit - 0.5, 0);
-        if (nc.buildingsLit <= 0) nc.isNight = true;
+        np.ledBlinks += 1;
       }
+      // LED o'chganda binolar yonig'ligicha qoladi (blink orasidagi pauza) —
+      // shahar tobora yorishib boradi, orqaga qaytmaydi.
     }
 
     if (key === 'btn' && value === 1) {
