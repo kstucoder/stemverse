@@ -250,6 +250,54 @@ export function playHollow() {
   setTimeout(() => playTone(146, 1.1, 'sine', 0.04), 220);
 }
 
+// ===== DISKO MUSIQA DVIGATELI (Light Show intro) =====
+function kick(vol = 0.2) {
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.11);
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.18);
+  } catch (e) { /* silent */ }
+}
+function hat(vol = 0.03) {
+  try {
+    const ctx = getContext();
+    const dur = 0.03;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
+let musicTimer = null, musicStep = 0, musicVol = 1;
+export function startMusic(bpm = 124) {
+  stopMusic();
+  musicStep = 0;
+  const interval = 60000 / bpm / 4; // 16-lik
+  const bass = [82, 82, 110, 82, 98, 98, 110, 98];
+  const arp = [523, 659, 784, 988];
+  musicTimer = setInterval(() => {
+    const s = musicStep % 16;
+    if (s % 4 === 0) kick(0.2 * musicVol);
+    if (s % 2 === 1) hat(0.03 * musicVol);
+    if (s % 2 === 0) playTone(bass[(s / 2) % 8], 0.18, 'sawtooth', 0.05 * musicVol);
+    if (s === 6 || s === 14) playTone(arp[Math.floor(musicStep / 16) % arp.length], 0.12, 'square', 0.035 * musicVol);
+    musicStep++;
+  }, interval);
+}
+export function setMusicVolume(v) { musicVol = Math.max(0, Math.min(1, v)); }
+export function stopMusic() { if (musicTimer) { clearInterval(musicTimer); musicTimer = null; } }
+
 // ===== LIVE CONTINUOUS TONE (theremin-style — frequency updates every frame
 // instead of a discrete triggered note) =====
 let liveOsc = null, liveGain = null;

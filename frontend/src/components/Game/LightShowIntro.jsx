@@ -1,32 +1,36 @@
-// LightShowIntro — "Festival boshlanishi" kinematik cutscene.
-// Xronika: tiklangan shaharda katta festival — minglab odam qorong'i sahna
-// oldida kutmoqda (telefon chiroqlari) → yorug'lik pulti ishga tushmoqchi bo'lib
-// bir necha bor chaqnaydi, so'ng KUYADI (uchqun) → Electra chiqib seni yorug'lik
-// muhandisi etib tayinlaydi → "Shouni boshla".
+// LightShowIntro — "Festival tunini" kinematik cutscene (~10s, musiqa + raqs).
+// Xronika: olomon yig'iladi → musiqa boshlanadi, odamlar raqsga tushadi →
+// yorug'lik pulti guldur-guldur yonadi, DISKO AVJIGA CHIQADI (lazerlar, strob,
+// raqqoslar, olomon jo'shadi) → to'satdan pult KUYADI (uchqun, musiqa uziladi,
+// zulmat) → Electra chiqib seni yorug'lik muhandisi etib tayinlaydi.
 import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleStage, stageTick } from './pixi/stageScene';
 import DialogueBox from './DialogueBox';
 import useGameStore from '../../stores/gameStore';
-import { playBeat, playZap } from './gameAudio';
+import { startMusic, stopMusic, setMusicVolume, playZap, playHollow } from './gameAudio';
 
 const LINES = [
-  { text: "Shahar tiklandi — bugun katta festival! Lekin qara, minglab odam kutmoqda, sahna esa qop-qorong'i...", emotion: 'worried' },
-  { text: "Yorug'lik pulti kuyib qoldi — chiroqlar, lazerlar, hammasi o'lik. Konsert boshlanmayapti!", emotion: 'worried' },
-  { text: "Sen yorug'lik muhandisisan! Platangga LED'lar va tugmani ula — bu sahnaning yangi pulti.", emotion: 'normal' },
-  { text: "Tugmani musiqa ritmiga bosib sahnani jonlantir. 3 ta qo'shiqni yoritib ber — olomonni portlat! Tayyormisan?", emotion: 'excited' },
+  { text: "Festival endigina avjiga chiqqandi — musiqa gumburlab, minglab odam raqsga tushgandi... birdan yorug'lik pulti kuyib, hammayoq zim-ziyo bo'ldi!", emotion: 'worried' },
+  { text: "Musiqa to'xtadi, olomon esa hamon kutmoqda. Bu shouni endi faqat sen qutqara olasan!", emotion: 'worried' },
+  { text: "Sen yorug'lik muhandisisan — platangga LED'lar va tugmani ula, bu sahnaning yangi pulti.", emotion: 'normal' },
+  { text: "Tugmani musiqa ritmiga bosib sahnani jonlantir, 3 ta qo'shiqni yoritib ber — olomonni portlat! Tayyormisan?", emotion: 'excited' },
 ];
+
+const CONFETTI = [0xff2d78, 0xffd166, 0x00eeff, 0x39e06a];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleStage(app);
-  let t = 0, done = false;
-  let phase = 'wait';       // wait → ignite → fail → done
-  let beatP = 0, igniteAcc = 0, sparked = false;
-  let connected = false;
+  startMusic(124);
+  setMusicVolume(0.45);
+
+  let t = 0, done = false, phase = 'gather';
+  let beatP = 0, beatAcc = 0, musicUp = false, failed = false;
+  let connected = false, groove = 0;
 
   ctlRef.current.skip = () => {
     if (done) return;
-    done = true; onSceneDone();
+    done = true; stopMusic(); onSceneDone();
   };
 
   app.ticker.add((tk) => {
@@ -34,28 +38,46 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     t += dt;
     scene.particles.tick(dt);
 
-    if (phase === 'wait') {
-      if (t > 2.2) { phase = 'ignite'; igniteAcc = 0; }
-    } else if (phase === 'ignite') {
-      connected = true;             // chiroqlar ishga tushmoqchi
-      igniteAcc += dt;
-      if (igniteAcc > 0.16) { igniteAcc = 0; beatP += 1; playBeat(beatP); }
-      if (t > 3.0) {
-        phase = 'fail'; connected = false; sparked = true;
-        playZap();
-        scene.strobe.alpha = 0.6;
-        scene.particles.burst(480, 100, 0x9adfff, 20, 240);
-        useGameStore.getState().triggerShake(9);
+    if (phase === 'gather') {
+      // olomon yig'iladi, musiqa sekin boshlanadi, odamlar chayqala boshlaydi
+      connected = false;
+      groove = Math.min(0.45, (t / 3.5) * 0.45);
+      if (t > 3.5) phase = 'powerup';
+    } else if (phase === 'powerup') {
+      // chiroqlar guldur-guldur yonadi
+      connected = true; groove = 0.7;
+      if (!musicUp) { musicUp = true; setMusicVolume(0.8); }
+      beatAcc += dt; if (beatAcc > 0.48) { beatAcc = 0; beatP += 1; }
+      if (t > 5.0) { phase = 'party'; setMusicVolume(1); }
+    } else if (phase === 'party') {
+      // DISKO AVJI — lazerlar, strob, raqs
+      connected = true; groove = 1;
+      beatAcc += dt;
+      if (beatAcc > 0.48) {
+        beatAcc = 0; beatP += 1;
+        if (Math.random() < 0.4) scene.particles.burst(120 + Math.random() * 760, 110, CONFETTI[beatP % 4], 3, 240);
+      }
+      if (t > 8.4) {
+        phase = 'fail'; connected = false; failed = true;
+        stopMusic(); playZap();
+        scene.strobe.alpha = 0.7;
+        scene.particles.burst(480, 100, 0x9adfff, 26, 260);
+        useGameStore.getState().triggerShake(12);
+        setTimeout(() => playHollow(), 420);
       }
     } else if (phase === 'fail') {
-      connected = false;
-      if (!done && t > 3.4) { done = true; onSceneDone(); }
+      // pult kuydi — zulmat, olomon hafsalasi pir
+      connected = false; groove = 0.18;
+      if (!done && t > 9.9) { done = true; onSceneDone(); }
     }
 
-    stageTick(scene, dt, t, { beatPulse: beatP, dancePulse: 0, intensity: 0, songIndex: 0, ledOn: 0, connected });
+    stageTick(scene, dt, t, {
+      beatPulse: beatP, dancePulse: 0, intensity: 0,
+      songIndex: Math.floor(t / 2) % 3, ledOn: 0, connected, groove,
+    });
   });
 
-  return () => {};
+  return () => { stopMusic(); };
 }
 
 export default function LightShowIntro({ onStart }) {

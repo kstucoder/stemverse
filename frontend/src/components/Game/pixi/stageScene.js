@@ -30,6 +30,21 @@ function coneTexture(color) {
   return cv;
 }
 
+// sahna raqqosi (harakatlanuvchi qo'l/oyoq, groove bilan raqsga tushadi)
+function makeDancer(x, tint) {
+  const c = new Container();
+  c.x = x; c.y = STAGE_Y + 34;
+  const legL = new Graphics().roundRect(-2.4, 0, 4.8, 22, 2).fill(0x0a0f18); legL.x = -4; legL.y = -6;
+  const legR = new Graphics().roundRect(-2.4, 0, 4.8, 22, 2).fill(0x0a0f18); legR.x = 4; legR.y = -6;
+  const torso = new Graphics().roundRect(-7, -34, 14, 30, 5).fill(0x0a0f18);
+  const armL = new Graphics().roundRect(-2, 0, 4, 20, 2).fill(0x0a0f18); armL.x = -6; armL.y = -32;
+  const armR = new Graphics().roundRect(-2, 0, 4, 20, 2).fill(0x0a0f18); armR.x = 6; armR.y = -32;
+  const head = new Graphics().circle(0, -42, 6.5).fill(0x0a0f18);
+  const rim = new Graphics().circle(0, -42, 6.5).stroke({ width: 1.4, color: tint, alpha: 0.6 });
+  c.addChild(legL, legR, torso, armL, armR, head, rim);
+  return { c, armL, armR, legL, legR, rim, base: STAGE_Y + 34, ph: Math.random() * 6.28 };
+}
+
 export function assembleStage(app) {
   app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.42, bloomScale: 1.1, brightness: 1.0, blur: 6, quality: 4 })];
   app.stage.filterArea = app.renderer.screen;
@@ -134,8 +149,15 @@ export function assembleStage(app) {
     const phone = new Graphics().circle(0, -52, 2.2).fill(0xfff2b0); phone.alpha = 0;
     c.addChild(armL, armR, body, head, phone);
     crowdC.addChild(c);
-    crowd.push({ c, armL, armR, phone, ph: Math.random() * 6.28, baseY: LH + 8 });
+    crowd.push({ c, armL, armR, phone, ph: Math.random() * 6.28, baseY: LH + 8, baseX: x });
   }
+
+  // sahna raqqoslari
+  const dancers = [380, 500, 620].map((x, i) => {
+    const d = makeDancer(x, i % 2 ? 0xff2d78 : 0x00eeff);
+    root.addChild(d.c);
+    return d;
+  });
 
   // strob (butun sahna oq chaqnash)
   const strobe = new Sprite(radialTexture('rgba(255,255,255,0.9)', 512));
@@ -145,14 +167,14 @@ export function assembleStage(app) {
   return {
     app, particles,
     skyC, sky, starC, stars,
-    root, bars, lights, lasers, stage, footlights, fogA, fogB, crowd, strobe,
+    root, bars, lights, lasers, stage, footlights, fogA, fogB, crowd, dancers, strobe,
     beatEnergy: 0, lastBeat: 0, lastDance: 0, sweepT: 0,
   };
 }
 
 // ctl = { beatPulse, dancePulse, intensity, songIndex, ledOn, connected }
 export function stageTick(scene, dt, t, ctl) {
-  const { app, root, sky, starC, stars, bars, lights, lasers, footlights, fogA, fogB, crowd, strobe, particles } = scene;
+  const { app, root, sky, starC, stars, bars, lights, lasers, footlights, fogA, fogB, crowd, dancers, strobe, particles } = scene;
   const w = app.screen.width, h = app.screen.height;
 
   sky.width = w; sky.height = h;
@@ -224,14 +246,30 @@ export function stageTick(scene, dt, t, ctl) {
   fogA.x = 500 + Math.sin(t * 0.3) * 120; fogB.x = 500 - Math.sin(t * 0.24) * 150;
   fogA.alpha = 0.5 + be * 0.3; fogB.alpha = 0.4 + be * 0.2;
 
-  // olomon — beat'da qo'l ko'taradi, kutganda telefon chiroqchasi
+  // groove — musiqa/raqs jadalligi (beat'dan mustaqil: odamlar shунчаki raqsga tushadi)
+  const groove = ctl.groove ?? (conn ? 0.5 : 0.12);
+
+  // olomon — raqsga tushadi (sakraydi, chayqaladi), beat'da qo'l ko'taradi
   crowd.forEach((p) => {
-    const bob = Math.sin(t * 2 + p.ph) * 2;
-    p.c.y = p.baseY + bob;
-    const raise = conn ? be : 0;
-    p.armL.rotation = raise * -0.5 + Math.sin(t * 4 + p.ph) * 0.08 * raise;
-    p.armR.rotation = raise * 0.5 - Math.sin(t * 4 + p.ph) * 0.08 * raise;
-    p.phone.alpha = conn ? Math.max(0, 0.5 - be) * 0.7 : 0.5 + 0.3 * Math.sin(t * 2 + p.ph);
+    p.c.y = p.baseY + Math.sin(t * 3 + p.ph) * (2 + 4 * groove);
+    p.c.x = p.baseX + Math.sin(t * 2 + p.ph) * 5 * groove;
+    const raise = Math.max(be, groove * 0.5);
+    p.armL.rotation = -raise * 0.5 + Math.sin(t * 5 + p.ph) * 0.25 * groove;
+    p.armR.rotation = raise * 0.5 - Math.sin(t * 5 + p.ph) * 0.25 * groove;
+    p.phone.alpha = conn ? Math.max(0, 0.45 - be) * 0.7 : 0.45 + 0.3 * Math.sin(t * 2 + p.ph);
+  });
+
+  // sahna raqqoslari
+  dancers.forEach((d, i) => {
+    const pump = Math.sin(t * 7 + d.ph);
+    d.c.y = d.base - Math.abs(Math.sin(t * 4 + d.ph)) * 7 * groove;
+    d.c.rotation = Math.sin(t * 3 + d.ph) * 0.12 * groove;
+    d.armL.rotation = -0.4 + pump * 1.1 * groove;
+    d.armR.rotation = 0.4 - pump * 1.1 * groove;
+    d.legL.rotation = pump * 0.22 * groove;
+    d.legR.rotation = -pump * 0.22 * groove;
+    d.rim.tint = i % 2 ? song.b : song.a;
+    d.rim.alpha = 0.3 + be * 0.6 + groove * 0.2;
   });
 
   strobe.alpha = Math.min(strobe.alpha, 0.5);
