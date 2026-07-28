@@ -1,174 +1,101 @@
-import { useState, useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas';
-import { C, drawGradientBackground, drawGlassPanel, drawNeonStat, drawProgressBar, drawVignette, drawScanlines, ParticleSystem, drawGlow } from './gameHelpers';
+// 🌱 VOLTRA "Harorat Bog'i" (PixiJS Premium Edition)
+// Digital Twin: TEMP sensori. 20–30°C = mukammal zona — o'simliklar gullaydi.
+// Shu zonada 30 soniya ushlab tur — bog' to'liq jonlanadi (komponent onWin).
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleGarden, gardenTick } from './pixi/gardenScene';
 import useGameStore from '../../stores/gameStore';
 import { playLevelUp, playError } from './gameAudio';
 
+const GOAL = 30;
+
 export default function TempGarden() {
-  const { serialData, score, incrementScore, winConditions, onWin, arduinoConnected } = useGameStore();
-  const particles = useRef(new ParticleSystem());
-  const [gardenState, setGardenState] = useState('growing');
+  const serialTemp = useGameStore((s) => s.serialData.temp);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
+  const [hud, setHud] = useState({ temp: 12, grow: 0 });
+  const tempRef = useRef(12);
+  const connRef = useRef(false);
+  const growRef = useRef(0);
   const winRef = useRef(false);
-  const growTimer = useRef(0);
   const prevZone = useRef(null);
+  const hudAcc = useRef(0);
+  const ctlRef = useRef({ temp: 12, zone: 'cold', growth: 0, connected: false });
 
-  const draw = useCallback((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    const temp = serialData.temp ?? 25;
-    const isCold = temp < 20;
-    const isHot = temp > 30;
-    const isPerfect = temp >= 20 && temp <= 30;
+  tempRef.current = arduinoConnected ? (serialTemp ?? 25) : 12;
+  connRef.current = arduinoConnected;
 
-    // Sky based on temperature
-    if (isCold) drawGradientBackground(ctx, w, h, ['#1a1a3e', '#2d2d5e', '#1a1a3e']);
-    else if (isHot) drawGradientBackground(ctx, w, h, ['#4a1a00', '#8a3a00', '#4a1a00']);
-    else drawGradientBackground(ctx, w, h, ['#0a2a1a', '#1a4a2a', '#0a2a1a']);
-
-    // Ground
-    ctx.fillStyle = isHot ? '#3d2b1f' : isCold ? '#2a2a3a' : '#2d4a2d';
-    ctx.fillRect(0, h * 0.65, w, h * 0.35);
-
-    // Plants that grow based on temperature
-    const plantCount = 5;
-    const growth = Math.max(0, Math.min(1, (25 - Math.abs(temp - 25)) / 10));
-
-    for (let i = 0; i < plantCount; i++) {
-      const px = w * (0.1 + i * 0.2);
-      const py = h * 0.65;
-
-      if (isPerfect) {
-        // Flowering plant
-        const stemH = 40 + growth * 60;
-        ctx.strokeStyle = '#4ade80';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(px, py - stemH);
-        ctx.stroke();
-
-        // Leaves
-        ctx.fillStyle = '#22c55e';
-        ctx.beginPath();
-        ctx.ellipse(px - 8, py - stemH * 0.5, 6, 3, -0.3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(px + 8, py - stemH * 0.6, 6, 3, 0.3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Flower
-        const flowerColor = [`#ff00e5`, `#ffdd00`, `#00f5ff`, `#ff6600`, `#9900ff`][i];
-        drawGlow(ctx, px, py - stemH, 10, flowerColor + '40');
-        ctx.fillStyle = flowerColor;
-        for (let p = 0; p < 5; p++) {
-          const a = (p / 5) * Math.PI * 2 + t;
-          ctx.beginPath();
-          ctx.ellipse(px + Math.cos(a) * 6, py - stemH + Math.sin(a) * 6, 4, 4, a, 0, Math.PI * 2);
-          ctx.fill();
+  useEffect(() => {
+    let raf, last = performance.now();
+    const loop = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.05); last = now;
+      const temp = tempRef.current; const conn = connRef.current;
+      const zone = temp < 20 ? 'cold' : temp > 30 ? 'hot' : 'perfect';
+      if (conn) {
+        if (prevZone.current && zone !== prevZone.current) {
+          if (zone === 'perfect') playLevelUp(); else if (prevZone.current === 'perfect') playError();
         }
-        ctx.fillStyle = '#ffdd00';
-        ctx.beginPath();
-        ctx.arc(px, py - stemH, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Particles for healthy plants
-        if (Math.random() < 0.02) {
-          particles.current.emit(px, py - stemH, flowerColor, 2, 20);
-        }
-      } else if (isHot) {
-        // Wilted plant
-        ctx.strokeStyle = '#92400e';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.quadraticCurveTo(px + 5, py - 20, px - 3, py - 30);
-        ctx.stroke();
-        // Brown leaves
-        ctx.fillStyle = '#78350f';
-        ctx.beginPath();
-        ctx.ellipse(px, py - 25, 5, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Heat shimmer
-        ctx.fillStyle = `rgba(255,100,0,${0.05 + 0.05 * Math.sin(t * 3)})`;
-        ctx.fillRect(px - 15, py - 40, 30, 15);
-      } else {
-        // Dormant plant
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(px, py - 15);
-        ctx.stroke();
-        ctx.fillStyle = '#334155';
-        ctx.beginPath();
-        ctx.ellipse(px, py - 17, 3, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Snow particles when cold
-        if (Math.random() < 0.1) {
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.beginPath();
-          ctx.arc(Math.random() * w, Math.random() * h, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-
-    particles.current.update(0.016);
-    particles.current.draw(ctx);
-
-    // Zone-transition cues — only when entering/leaving a state, not every frame
-    if (arduinoConnected && temp > 0) {
-      const zone = isPerfect ? 'perfect' : isHot ? 'hot' : 'cold';
-      if (prevZone.current !== null && zone !== prevZone.current) {
-        if (zone === 'perfect') playLevelUp();
-        else if (prevZone.current === 'perfect') playError();
-      }
-      prevZone.current = zone;
-    }
-
-    // Grow timer for win — only active when real Arduino sensor is connected
-    if (arduinoConnected && temp > 0) {
-      growTimer.current += 0.016;
-      if (isPerfect) {
-        if (growTimer.current > 30 && !winRef.current && winConditions) {
+        prevZone.current = zone;
+        if (zone === 'perfect') growRef.current = Math.min(GOAL, growRef.current + dt);
+        else growRef.current = Math.max(0, growRef.current - dt * 0.5);
+        if (growRef.current >= GOAL && !winRef.current) {
           winRef.current = true;
           incrementScore(175);
-          if (onWin) onWin(score + 175);
+          const st = useGameStore.getState();
+          if (st.onWin) st.onWin(st.score + 175);
         }
-      } else {
-        growTimer.current = Math.max(0, growTimer.current - 0.01);
       }
-    }
+      ctlRef.current = { temp, zone, growth: growRef.current / GOAL, connected: conn };
+      hudAcc.current += dt;
+      if (hudAcc.current > 0.15) { hudAcc.current = 0; setHud({ temp: Math.round(temp), grow: growRef.current }); }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [incrementScore]);
 
-    // HUD
-    drawGlassPanel(ctx, 10, 10, 180, 60, 10);
-    ctx.fillStyle = C.MUTED;
-    ctx.font = '11px Chakra Petch, monospace';
-    ctx.fillText('🌡️ Harorat', 20, 30);
-    ctx.fillStyle = isPerfect ? C.GREEN : isHot ? '#ef4444' : '#60a5fa';
-    ctx.font = 'bold 20px Chakra Petch, monospace';
-    ctx.fillText(Math.round(temp) + '°C', 20, 55);
+  const build = useCallback((app) => {
+    const scene = assembleGarden(app);
+    let t = 0;
+    app.ticker.add((tk) => { const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt; scene.particles.tick(dt); gardenTick(scene, dt, t, ctlRef.current); });
+    return () => {};
+  }, []);
 
-    ctx.fillStyle = C.MUTED;
-    ctx.font = '11px Chakra Petch, monospace';
-    ctx.fillText(isPerfect ? "✅ Zo'r!" : isHot ? '🔥 Juda issiq!' : "❄️ Juda sovuq!", 20, 70);
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-  }, [serialData.temp, score, winConditions, onWin, incrementScore, arduinoConnected]);
+  const zone = hud.temp < 20 ? 'cold' : hud.temp > 30 ? 'hot' : 'perfect';
+  const zoneColor = zone === 'perfect' ? '#39e06a' : zone === 'hot' ? '#ff3b46' : '#3b82ff';
+  const panel = { background: 'rgba(11,17,32,0.82)', border: '1px solid rgba(57,224,106,0.2)', borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">Score</p>
-        <p className="font-game text-white text-lg">{score}</p>
+    <PixiStage build={build} className="rounded-xl">
+      <div className="absolute top-3 left-3 flex gap-2">
+        <div style={panel}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>⭐ {Math.round(score)}</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
+        </div>
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: zoneColor, textShadow: `0 0 10px ${zoneColor}70` }}>{hud.temp}°C</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#64748b' }}>{zone === 'perfect' ? "MUKAMMAL" : zone === 'hot' ? 'JAZIRAMA' : 'SOVUQ'}</div>
+        </div>
       </div>
-      <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        🌡️ 20-30°C = O'simliklar baxtli!<br />
-        🟢 Yashil LED = Zo'r hudud
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, minWidth: 250, textAlign: 'center' }}>
+        <div style={{ height: 7, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 5 }}>
+          <div style={{ height: '100%', width: `${(hud.grow / GOAL) * 100}%`, background: 'linear-gradient(90deg,#39e06a,#ffd166)', boxShadow: '0 0 8px rgba(57,224,106,0.6)' }} />
+        </div>
+        <div style={{ fontSize: 10, color: zone === 'perfect' ? '#39e06a' : '#94a3b8' }}>
+          {!arduinoConnected ? 'Platani ulang — TEMP sensori haroratni beradi'
+            : zone === 'perfect' ? `🌸 Zo'r! Haroratni ushlab tur: ${Math.round(hud.grow)}/${GOAL}s`
+              : '🎯 Haroratni 20–30°C oralig\'iga keltir'}
+        </div>
       </div>
-    </GameCanvas>
+
+      {!arduinoConnected && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(57,224,106,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#39e06a' }}>🌱 Platani ulang — harorat sensori bilan bog'ni gullat</span>
+        </div>
+      )}
+    </PixiStage>
   );
 }
