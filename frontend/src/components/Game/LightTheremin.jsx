@@ -69,6 +69,7 @@ export default function LightTheremin() {
       ctlRef.current.capturePulse = capturePulseRef.current;
       ctlRef.current.connected = conn;
       ctlRef.current.noteIndex = noteIdxRef.current;
+      ctlRef.current.progress = Math.min(noteIdxRef.current, 3) / 3;
 
       hudAcc.current += dt;
       if (hudAcc.current > 0.1) { hudAcc.current = 0; setProg(holdRef.current / HOLD); setFreqHz(Math.round(freq)); }

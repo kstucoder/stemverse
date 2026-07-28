@@ -1,114 +1,141 @@
-// thereminScene — VOLTRA "Yorug'lik Cholg'usi" PixiJS olami.
-// LDR (yorug'lik sensori) → ovoz balandligi (chastota). Qo'l soyasi bilan
-// balandlikni boshqarib, 3 ta nishon-notaga moslashtirasan. Tungi shahar +
-// aurora fonida yorug'lik ustuni pitch bilan ko'tariladi.
+// thereminScene — VOLTRA "Aurora Cholg'usi" PixiJS olami.
+// LDR (yorug'lik sensori) → ovoz balandligi (pitch). Qo'l soyasi bilan yorug'lik
+// nurini ko'tarib-tushirib 3 ta nishon-notaga moslashtirasan. Har nota tutilganda
+// osmonda AURORA yoyiladi, olovqurtlar uyg'onadi, uyqudagi shahar chiroqlari
+// musiqaga hamohang jonlanadi. 3 nota → shahar to'liq uyg'onadi.
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
 import { gradTexture, radialTexture, makeParticles, makeSkyline } from './cityScene';
 
-export const LW = 1000;
-export const LH = 560;
-const X = 500, YB = 486, YT = 96;   // pitch o'qi (past → baland)
+export const LW = 1000, LH = 560;
+const PEDX = 500, PEDY = 470, YB = 452, YT = 96;
 const mapY = (n) => YB - Math.max(0, Math.min(1, n)) * (YB - YT);
 
 function hslHex(h, s, l) {
-  h /= 360; const a = s * Math.min(l, 1 - l);
+  h = (h % 360) / 360; const a = s * Math.min(l, 1 - l);
   const f = (n) => { const k = (n + h * 12) % 12; return l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1))); };
   return (Math.round(f(0) * 255) << 16) | (Math.round(f(8) * 255) << 8) | Math.round(f(4) * 255);
 }
 
 export function assembleTheremin(app) {
-  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.4, bloomScale: 1.1, brightness: 1.0, blur: 6, quality: 4 })];
+  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.38, bloomScale: 1.15, brightness: 1.0, blur: 7, quality: 4 })];
   app.stage.filterArea = app.renderer.screen;
 
   const skyC = new Container(); app.stage.addChild(skyC);
-  const sky = new Sprite(gradTexture(['#0a0618', '#160a30', '#0d0a24', '#06060f'])); skyC.addChild(sky);
+  const sky = new Sprite(gradTexture(['#04060f', '#0a0a22', '#0f0a2a', '#080814'])); skyC.addChild(sky);
   const starC = new Container(); skyC.addChild(starC);
   const stars = [];
-  for (let i = 0; i < 80; i++) { const g = new Graphics().circle(0, 0, 0.6 + Math.random() * 1.4).fill(0xeaf3ff); starC.addChild(g); stars.push({ g, fx: Math.random(), fy: Math.random() * 0.6, b: 0.3 + Math.random() * 0.5, sp: 0.6 + Math.random() * 2, ph: Math.random() * 6.28 }); }
+  for (let i = 0; i < 100; i++) { const g = new Graphics().circle(0, 0, 0.6 + Math.random() * 1.5).fill(0xeaf3ff); starC.addChild(g); stars.push({ g, fx: Math.random(), fy: Math.random() * 0.62, b: 0.3 + Math.random() * 0.5, sp: 0.6 + Math.random() * 2, ph: Math.random() * 6.28 }); }
+  const moon = new Sprite(radialTexture('rgba(200,220,255,0.5)', 256)); moon.anchor.set(0.5); moon.width = moon.height = 130; skyC.addChild(moon);
 
   const root = new Container(); app.stage.addChild(root);
 
-  const aurora = new Sprite(radialTexture('rgba(120,90,255,0.4)', 512)); aurora.anchor.set(0.5); aurora.width = 900; aurora.height = 420; aurora.x = X; aurora.y = 250; aurora.alpha = 0.5;
-  root.addChild(aurora);
+  const aurora = new Graphics(); root.addChild(aurora);      // osmon auroraси
 
-  const sky1 = makeSkyline(120, 0x120a2a, 19); sky1.y = 486 - 470; sky1.alpha = 0.6; root.addChild(sky1);
+  // uyqudagi shahar — derazalarni alohida boshqaramiz
+  const sky1 = makeSkyline(90, 0x0a1428, 19); sky1.y = PEDY - 470; sky1.alpha = 0.55; root.addChild(sky1);
+  const sky2 = makeSkyline(150, 0x0d1a34, 27); sky2.y = PEDY - 470; sky2.alpha = 0.7; root.addChild(sky2);
+  const winC = new Container(); root.addChild(winC);
+  const wins = [];
+  for (let i = 0; i < 90; i++) { const g = new Graphics().rect(0, 0, 5, 7).fill(0xffd76a); g.x = 30 + Math.random() * (LW - 60); g.y = 250 + Math.random() * (PEDY - 260); g.alpha = 0; winC.addChild(g); wins.push({ g, ph: Math.random() * 6.28, sp: 0.5 + Math.random() * 2, cool: Math.random() < 0.2 }); }
 
-  // pitch yo'lagi (faint track)
-  const track = new Graphics().roundRect(X - 30, YT, 60, YB - YT, 12).fill({ color: 0xffffff, alpha: 0.03 }).roundRect(X - 30, YT, 60, YB - YT, 12).stroke({ width: 1, color: 0x3a3a6a, alpha: 0.4 });
-  root.addChild(track);
+  const beam = new Graphics(); root.addChild(beam);          // nur ustuni
+  const target = new Graphics(); root.addChild(target);      // nishon halqasi
 
-  const pillar = new Graphics(); root.addChild(pillar);
-  const targetG = new Graphics(); root.addChild(targetG);
+  const orb = new Container(); orb.x = PEDX;                  // pitch indikatori
+  const oGlow = new Sprite(radialTexture('rgba(255,255,255,0.8)', 256)); oGlow.anchor.set(0.5); oGlow.width = oGlow.height = 130;
+  const oCore = new Graphics().circle(0, 0, 15).fill(0xffffff);
+  orb.addChild(oGlow, oCore); root.addChild(orb);
 
-  const indicator = new Container(); indicator.x = X;
-  const iGlow = new Sprite(radialTexture('rgba(255,255,255,0.7)', 256)); iGlow.anchor.set(0.5); iGlow.width = iGlow.height = 120;
-  const iCore = new Graphics().circle(0, 0, 16).fill(0xffffff).circle(0, 0, 16).stroke({ width: 2, color: 0xffffff, alpha: 0.6 });
-  indicator.addChild(iGlow, iCore);
-  root.addChild(indicator);
+  // pedestal (cholg'u tagligi)
+  const ped = new Container(); ped.x = PEDX; ped.y = PEDY; root.addChild(ped);
+  ped.addChild(new Graphics().ellipse(0, 8, 60, 16).fill(0x0c1220).ellipse(0, 8, 60, 16).stroke({ width: 2, color: 0x2a3552 }));
+  ped.addChild(new Graphics().moveTo(-26, 6).lineTo(-16, -34).lineTo(16, -34).lineTo(26, 6).fill(0x141c30).moveTo(-26, 6).lineTo(-16, -34).lineTo(16, -34).lineTo(26, 6).stroke({ width: 2, color: 0x2a3552 }));
+  ped.addChild(new Graphics().poly([0, -60, 14, -40, 0, -28, -14, -40]).fill(0x9adfff).poly([0, -60, 14, -40, 0, -28, -14, -40]).stroke({ width: 1.5, color: 0xffffff, alpha: 0.7 })); // kristall
 
-  const waveG = new Graphics(); root.addChild(waveG);
   const particles = makeParticles(root);
 
-  return { app, root, sky, starC, stars, aurora, pillar, targetG, indicator, iGlow, iCore, waveG, particles, lastCapture: 0 };
+  // olovqurtlar
+  const flies = []; const flyC = new Container(); root.addChild(flyC);
+  for (let i = 0; i < 34; i++) { const g = new Graphics().circle(0, 0, 2).fill(0xbfffa0); g.x = Math.random() * LW; g.y = 140 + Math.random() * 300; g.alpha = 0; flyC.addChild(g); flies.push({ g, x: g.x, y: g.y, ph: Math.random() * 6.28, sp: 0.3 + Math.random() * 0.6 }); }
+
+  return { app, skyC, sky, starC, stars, moon, root, aurora, winC, wins, beam, target, orb, oGlow, oCore, ped, particles, flies, lastCapture: 0, awaken: 0 };
 }
 
-// ctl = { freqNorm, targetNorm, matched, captureProgress, capturePulse, connected, noteIndex }
+// ctl = { freqNorm, targetNorm, matched, captureProgress, capturePulse, progress, connected, noteIndex }
 export function thereminTick(scene, dt, t, ctl) {
-  const { app, root, sky, starC, stars, aurora, pillar, targetG, indicator, iGlow, iCore, waveG, particles } = scene;
+  const { app, sky, starC, stars, moon, root, aurora, wins, beam, target, orb, oGlow, oCore, particles, flies } = scene;
   const w = app.screen.width, h = app.screen.height;
   sky.width = w; sky.height = h;
   const sc = Math.min(w / LW, h / LH);
   root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
-  stars.forEach((s) => { s.g.x = s.fx * w; s.g.y = s.fy * h; s.g.alpha = s.b * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph)); });
+  moon.x = w * 0.16; moon.y = h * 0.2;
+  stars.forEach((s) => { s.g.x = s.fx * w; s.g.y = s.fy * h; s.g.alpha = s.b * (0.4 + 0.5 * Math.sin(t * s.sp + s.ph)); });
 
-  const fn = ctl.connected ? (ctl.freqNorm || 0) : 0.05;
+  const fn = ctl.connected ? (ctl.freqNorm || 0) : 0.04;
+  const progress = ctl.progress || 0;
+  scene.awaken += (progress - scene.awaken) * Math.min(dt * 1.2, 1);
   const fy = mapY(fn);
-  const hue = 190 + fn * 150;
-  const col = hslHex(hue, 0.85, 0.6);
+  const hue = 150 + fn * 180;
+  const col = hslHex(hue, 0.8, 0.62);
+  const intensity = 0.25 + fn * 0.55 + scene.awaken * 0.4 + (ctl.matched ? 0.25 : 0);
 
-  aurora.tint = col; aurora.alpha = 0.35 + fn * 0.35 + 0.08 * Math.sin(t * 1.5);
+  // ---- aurora ribbonlari ----
+  aurora.clear();
+  const bands = 3;
+  for (let b = 0; b < bands; b++) {
+    const bh = hslHex(hue + b * 55, 0.75, 0.55);
+    const yBase = 60 + b * 34;
+    const amp = (18 + b * 8) * intensity;
+    aurora.moveTo(0, yBase);
+    for (let x = 0; x <= LW; x += 24) aurora.lineTo(x, yBase + Math.sin(x * 0.008 + t * (0.6 + b * 0.25) + b) * amp);
+    for (let x = LW; x >= 0; x -= 24) aurora.lineTo(x, yBase + 40 + Math.sin(x * 0.008 + t * (0.6 + b * 0.25) + b + 1) * amp);
+    aurora.fill({ color: bh, alpha: 0.05 + intensity * 0.12 });
+  }
 
-  // yorug'lik ustuni
-  pillar.clear();
-  pillar.roundRect(X - 22, fy, 44, YB - fy, 12).fill({ color: col, alpha: 0.85 });
-  pillar.roundRect(X - 22, fy, 44, 8, 4).fill({ color: 0xffffff, alpha: 0.6 });
+  // ---- shahar derazalari (progress bilan uyg'onadi + pitch pulsi) ----
+  wins.forEach((wn) => {
+    const base = 0.12 + scene.awaken * 0.7;
+    const pulse = 0.3 * fn * Math.sin(t * (2 + wn.sp) + wn.ph);
+    wn.g.alpha = Math.max(0, base + pulse) * (0.6 + 0.4 * Math.sin(t * wn.sp + wn.ph));
+    wn.g.tint = wn.cool ? 0x8ff4ff : 0xffd76a;
+  });
 
-  // indikator
-  indicator.y = fy;
-  iCore.tint = col; iGlow.tint = col;
-  iGlow.alpha = 0.4 + 0.2 * Math.sin(t * 4);
-  indicator.scale.set(1 + 0.08 * Math.sin(t * 5));
+  // ---- nur ustuni ----
+  beam.clear();
+  beam.moveTo(PEDX - 4, PEDY - 60).lineTo(PEDX - 14, fy).lineTo(PEDX + 14, fy).lineTo(PEDX + 4, PEDY - 60).fill({ color: col, alpha: 0.28 + fn * 0.3 });
+  beam.roundRect(PEDX - 4, fy, 8, PEDY - 60 - fy, 4).fill({ color: col, alpha: 0.85 });
 
-  // nishon chizig'i + ushlash halqasi
+  // ---- pitch orb ----
+  orb.y = fy; oCore.tint = col; oGlow.tint = col; oGlow.alpha = 0.4 + 0.2 * Math.sin(t * 5);
+  orb.scale.set(1 + 0.1 * Math.sin(t * 6));
+
+  // ---- nishon halqasi ----
   const ty = mapY(ctl.targetNorm || 0.5);
   const matched = ctl.matched;
   const tcol = matched ? 0x39e06a : 0xffc21a;
-  targetG.clear();
-  targetG.moveTo(X - 130, ty).lineTo(X + 130, ty).stroke({ width: 2.5, color: tcol, alpha: 0.9 });
-  targetG.moveTo(X - 150, ty).lineTo(X - 132, ty).stroke({ width: 4, color: tcol });
-  targetG.moveTo(X + 132, ty).lineTo(X + 150, ty).stroke({ width: 4, color: tcol });
-  // ushlash progressi (halqa)
+  target.clear();
+  target.circle(PEDX, ty, 30).stroke({ width: 2, color: tcol, alpha: 0.35 });
+  target.moveTo(PEDX - 150, ty).lineTo(PEDX - 40, ty).moveTo(PEDX + 40, ty).lineTo(PEDX + 150, ty).stroke({ width: 2, color: tcol, alpha: 0.7 });
   const cp = Math.max(0, Math.min(1, ctl.captureProgress || 0));
-  if (cp > 0.01) targetG.arc(X, ty, 26, -Math.PI / 2, -Math.PI / 2 + cp * Math.PI * 2).stroke({ width: 4, color: 0x39e06a, alpha: 0.95 });
+  if (cp > 0.01) target.arc(PEDX, ty, 30, -Math.PI / 2, -Math.PI / 2 + cp * Math.PI * 2).stroke({ width: 5, color: 0x39e06a, alpha: 0.95 });
 
-  // to'lqin
-  waveG.clear();
-  const amp = 8 + fn * 46;
-  const freqScale = 0.5 + fn * 3;
-  for (let k = 0; k < 2; k++) {
-    let started = false;
-    for (let px = 40; px < LW - 40; px += 6) {
-      const yy = 520 + Math.sin((px + t * 300 * freqScale) * 0.03) * amp * (1 - k * 0.4);
-      if (!started) { waveG.moveTo(px, yy); started = true; } else waveG.lineTo(px, yy);
-    }
-    waveG.stroke({ width: 2, color: col, alpha: 0.5 - k * 0.2 });
-  }
+  // ---- olovqurtlar ----
+  flies.forEach((f) => {
+    f.ph += dt * f.sp;
+    const play = fn > 0.08 ? 1 : 0.3;
+    const tx = fn > 0.15 ? PEDX + Math.cos(f.ph * 2) * 90 : f.x + Math.cos(f.ph) * 40;
+    const tyy = fn > 0.15 ? fy + Math.sin(f.ph * 2) * 70 : f.y + Math.sin(f.ph) * 30;
+    f.g.x += (tx - f.g.x) * Math.min(dt * 0.8, 1);
+    f.g.y += (tyy - f.g.y) * Math.min(dt * 0.8, 1);
+    f.g.alpha = (0.2 + scene.awaken * 0.6) * play * (0.5 + 0.5 * Math.sin(f.ph * 4));
+    f.g.tint = hslHex(hue + 40, 0.6, 0.7);
+  });
 
-  // nota tutildi — portlash
+  // ---- nota tutildi — aurora portlashi ----
   if (ctl.capturePulse !== scene.lastCapture) {
     scene.lastCapture = ctl.capturePulse;
-    particles.burst(X, ty, 0x39e06a, 30, 220);
-    for (let i = 0; i < 6; i++) particles.burst(X + (Math.random() - 0.5) * 120, ty - Math.random() * 40, col, 3, 160);
+    particles.burst(PEDX, ty, 0x39e06a, 30, 220);
+    for (let i = 0; i < 10; i++) particles.burst(PEDX + (Math.random() - 0.5) * 200, ty - Math.random() * 60, col, 3, 180);
   }
 }
