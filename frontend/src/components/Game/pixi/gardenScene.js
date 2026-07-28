@@ -29,7 +29,7 @@ function makePlant(x, flowerColor) {
   const bud = new Graphics().circle(0, 0, 5).fill(0x6a9e4a);   // g'uncha (doim ko'rinadi)
   const ice = new Graphics();                                  // muz kristallari
   flower.addChild(glow, petals, bud, ice);
-  return { c, stem, leafL, leafR, flower, glow, petals, bud, ice, flowerColor, bloom: 0.12, sway: Math.random() * 6.28 };
+  return { c, stem, leafL, leafR, flower, glow, petals, bud, ice, flowerColor, grown: 0, pf: 0, petalOpen: 0, sway: Math.random() * 6.28 };
 }
 
 export function assembleGarden(app) {
@@ -123,12 +123,13 @@ export function gardenTick(scene, dt, t, ctl) {
   if (scene.hotS > 0.1) { for (let i = 0; i < 8; i++) { const gx = 60 + i * 120; groundFx.moveTo(gx, GY + 10).lineTo(gx + 14, GY + 30).lineTo(gx + 4, GY + 50).stroke({ width: 2, color: 0x5a1e08, alpha: scene.hotS * 0.6 }); } }
   if (scene.coldS > 0.1) groundFx.rect(0, GY, LW, LH - GY).fill({ color: 0xbfe0ff, alpha: scene.coldS * 0.14 });
 
-  // o'simliklar — g'uncha ochilay deb muzlaydi yoki qovjiraydi
+  // o'simliklar — POYA BALANDLIGI = to'plangan progress (saqlanadi), GULBARG
+  // faqat oltin zonada ochiladi; zonadan chiqsa yumiladi va muzlaydi/qovjiraydi.
   plants.forEach((p, i) => {
-    const targetBloom = zone === 'perfect' ? 0.5 + growth * 0.5 : zone === 'cold' ? 0.14 : 0.1;
-    p.bloom += (targetBloom - p.bloom) * Math.min(dt * 1.2, 1);
-    const stemH = 20 + p.bloom * 78;
-    const droop = scene.hotS * 20 * (1 - p.bloom * 0.5);
+    p.grown += (growth - p.grown) * Math.min(dt * 2, 1);                        // haqiqiy progress (balandlik)
+    p.pf += (((zone === 'perfect') ? 1 : 0) - p.pf) * Math.min(dt * 2.5, 1);    // hozirgi 'oltin zona' holati
+    const stemH = 20 + p.grown * 74 + p.pf * 8;
+    const droop = scene.hotS * 20 * (0.7 - p.grown * 0.3);
     p.stem.clear();
     p.stem.moveTo(0, 0).quadraticCurveTo(droop * 0.5, -stemH * 0.6, droop, -stemH).stroke({ width: 4, color: scene.hotS > 0.3 ? 0x8a6a30 : scene.coldS > 0.3 ? 0x6a8f7a : 0x2f9e4f });
     const leafTint = scene.hotS > 0.3 ? 0x9a7a3a : scene.coldS > 0.3 ? 0xbfe0ff : 0xffffff;
@@ -136,18 +137,20 @@ export function gardenTick(scene, dt, t, ctl) {
     p.leafL.tint = p.leafR.tint = leafTint;
     p.flower.x = droop; p.flower.y = -stemH;
 
-    // g'uncha doim ko'rinadi (shishadi), gulbarglar faqat ochilganda
-    const open = clamp((p.bloom - 0.5) / 0.5);
-    p.bud.scale.set(0.7 + p.bloom * 0.7);
-    p.bud.tint = scene.coldS > 0.35 ? 0xaad4ff : scene.hotS > 0.35 ? 0x7a4420 : (open > 0.4 ? 0xffe14a : 0x6a9e4a);
-    p.petals.alpha = open; p.petals.scale.set(0.6 + open * 0.5); p.petals.rotation = Math.sin(t * 1.5 + p.sway) * 0.1;
-    p.glow.alpha = open * (0.4 + 0.2 * Math.sin(t * 3 + i)); p.glow.tint = p.flowerColor;
+    // gulbarglar faqat OLTIN ZONADA + progress bilan ochiladi (zonadan chiqsa yumiladi)
+    const openTarget = (zone === 'perfect') ? clamp((p.grown - 0.1) / 0.9) : 0;
+    p.petalOpen += (openTarget - p.petalOpen) * Math.min(dt * 3, 1);
+    const po = p.petalOpen;
+    p.bud.scale.set(0.7 + p.grown * 0.5 + p.pf * 0.22);                          // g'uncha shishadi (balandlik saqlanadi)
+    p.bud.tint = scene.coldS > 0.35 ? 0xaad4ff : scene.hotS > 0.35 ? 0x7a4420 : (po > 0.4 ? 0xffe14a : 0x6a9e4a);
+    p.petals.alpha = po; p.petals.scale.set(0.55 + po * 0.5); p.petals.rotation = Math.sin(t * 1.5 + p.sway) * 0.1;
+    p.glow.alpha = po * (0.4 + 0.2 * Math.sin(t * 3 + i)); p.glow.tint = p.flowerColor;
 
-    // muz kristallari (juda sovuqda g'uncha ustida)
+    // muz kristallari (juda sovuqda — baland poyada ham)
     p.ice.clear();
     if (scene.coldS > 0.4) { const a = scene.coldS; for (let k = 0; k < 6; k++) { const ang = (k / 6) * Math.PI * 2; p.ice.moveTo(0, 0).lineTo(Math.cos(ang) * 9, Math.sin(ang) * 9).stroke({ width: 1.5, color: 0xeaf6ff, alpha: a * 0.8 }); } p.ice.circle(0, 0, 3).fill({ color: 0xffffff, alpha: a * 0.7 }); }
 
-    if (zone === 'perfect' && open > 0.7 && Math.random() < 0.02) particles.burst(120 + i * 150 + droop, GY - stemH, p.flowerColor, 2, 60);
+    if (zone === 'perfect' && po > 0.7 && Math.random() < 0.02) particles.burst(120 + i * 150 + droop, GY - stemH, p.flowerColor, 2, 60);
   });
 
   // qor bo'ron
