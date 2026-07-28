@@ -13,6 +13,7 @@ import SecretDoorIntro from '../components/Game/SecretDoorIntro';
 import SpeedRunnerIntro from '../components/Game/SpeedRunnerIntro';
 import ThereminIntro from '../components/Game/ThereminIntro';
 import TempGardenIntro from '../components/Game/TempGardenIntro';
+import RadarIntro from '../components/Game/RadarIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -31,6 +32,7 @@ const PREMIUM_INTRO = {
   speed_runner: SpeedRunnerIntro,
   light_theremin: ThereminIntro,
   temp_garden: TempGardenIntro,
+  distance_radar: RadarIntro,
 };
 
 export default function LessonView() {

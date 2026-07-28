@@ -314,6 +314,11 @@ export function playClunk() {
   playTone(220, 0.05, 'square', 0.05);
 }
 
+export function playBlip(freq = 1400) {
+  // radar beep — qisqa tik
+  playTone(freq, 0.045, 'square', 0.045);
+}
+
 export function playChime(freq = 880) {
   // toza nota qo'ng'irog'i (theremin nota tutildi)
   playTone(freq, 0.35, 'sine', 0.1);
