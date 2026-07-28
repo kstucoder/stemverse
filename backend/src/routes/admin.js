@@ -61,6 +61,19 @@ router.get('/stats', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
+// Foydalanuvchi xp/level/role yangilash (masalan demo akkauntga barcha darslarni ochish)
+router.patch('/users/:id', async (req, res) => {
+  try {
+    const { xp, level, role } = req.body;
+    const data = {};
+    if (xp !== undefined) data.xp = xp;
+    if (level !== undefined) data.level = level;
+    if (role !== undefined) data.role = role;
+    const user = await prisma.user.update({ where: { id: req.params.id }, data });
+    res.json({ id: user.id, email: user.email, xp: user.xp, level: user.level, role: user.role });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
 router.get('/users', async (req, res) => {
   try {
     const users = await prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, xp: true, level: true, createdAt: true, kits: true, _count: { select: { progress: true } } }, orderBy: { createdAt: "desc" } });
