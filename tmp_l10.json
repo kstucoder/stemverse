@@ -1,4 +1,0 @@
-{
-  "components": ["Arduino Uno","2xTugma","LED","Buzzer","2x220Ω","Breadboard","Simlar"],
-  "codeExample": "int b1=2, b2=3, led=13, buzzer=8;\nvoid setup(){pinMode(b1,INPUT);pinMode(b2,INPUT);pinMode(led,OUTPUT);pinMode(buzzer,OUTPUT);Serial.begin(9600);}\nvoid loop(){\n  int w=0;\n  if(digitalRead(b1)==HIGH) w=1;\n  else if(digitalRead(b2)==HIGH) w=2;\n  if(w>0){                          // kim birinchi bosdi\n    Serial.print(\"BTN:\");Serial.println(w);\n    digitalWrite(led,HIGH); tone(buzzer,1200,40); delay(250);\n    digitalWrite(led,LOW); Serial.println(\"BTN:0\");\n  }\n  delay(12);\n}"
-}
