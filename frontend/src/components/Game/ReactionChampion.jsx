@@ -1,129 +1,134 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, ParticleSystem } from './gameHelpers';
+// ⚔️ VOLTRA "Neon Refleks Dueli" (PixiJS Premium Edition)
+// Digital Twin: 2 tugma + LED + buzzer. Markazdagi signal tasodifiy YASHIL bo'ladi
+// → birinchi bo'lib tugmasini bosgan o'yinchi yutadi (Arduino BTN:1/BTN:2 yuboradi).
+// Yashildan oldin bossa — falstart (raqib ochko oladi). 5 g'alaba → chempion.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleDuel, duelTick } from './pixi/duelScene';
 import useGameStore from '../../stores/gameStore';
+import { playScore, playError, playWin } from './gameAudio';
 
 export default function ReactionChampion() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const particles = useRef(new ParticleSystem());
-  const [state, setState] = useState('waiting'); // waiting, ready, go, result
+  const serialBtn = useGameStore((s) => s.serialData.btn);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
+  const [state, setState] = useState('waiting');
   const [winner, setWinner] = useState(0);
-  const [p1Score, setP1Score] = useState(0);
-  const [p2Score, setP2Score] = useState(0);
-  const timerRef = useRef(null);
-  const startTime = useRef(0);
+  const [foul, setFoul] = useState(false);
+  const [p1, setP1] = useState(0);
+  const [p2, setP2] = useState(0);
+  const [reactionMs, setReactionMs] = useState(0);
+
+  const prevBtn = useRef(0);
+  const goTimer = useRef(null);
+  const nextTimer = useRef(null);
+  const goStart = useRef(0);
   const winRef = useRef(false);
-  const dims = useRef({ w: 500, h: 500 });
+  const roundPulse = useRef(0);
+  const stateRef = useRef('waiting');
+  stateRef.current = state;
+
+  const ctlRef = useRef({ state: 'waiting', winner: 0, p1: 0, p2: 0, connected: false, roundPulse: 0 });
+  ctlRef.current.state = state; ctlRef.current.winner = winner; ctlRef.current.p1 = p1; ctlRef.current.p2 = p2;
+  ctlRef.current.connected = arduinoConnected; ctlRef.current.roundPulse = roundPulse.current;
 
   const startRound = useCallback(() => {
+    if (winRef.current) return;
+    setWinner(0); setFoul(false); setReactionMs(0);
     setState('ready');
-    const delay = 1500 + Math.random() * 3000;
-    timerRef.current = setTimeout(() => {
-      setState('go');
-      startTime.current = Date.now();
-    }, delay);
+    clearTimeout(goTimer.current);
+    goTimer.current = setTimeout(() => { setState('go'); goStart.current = performance.now(); }, 1500 + Math.random() * 3000);
   }, []);
 
+  const resolveRound = useCallback((win, isFoul) => {
+    clearTimeout(goTimer.current);
+    setWinner(win); setFoul(isFoul);
+    roundPulse.current += 1;
+    incrementScore(isFoul ? 5 : 20);
+    isFoul ? playError() : playScore();
+    setState('result');
+    const setter = win === 1 ? setP1 : setP2;
+    setter((prev) => {
+      const nv = prev + 1;
+      if (nv >= 5) {
+        if (!winRef.current) { winRef.current = true; incrementScore(100); playWin(); const st = useGameStore.getState(); if (st.onWin) st.onWin(st.score + 100); }
+      } else {
+        clearTimeout(nextTimer.current);
+        nextTimer.current = setTimeout(() => startRound(), 1900);
+      }
+      return nv;
+    });
+  }, [incrementScore, startRound]);
+
+  // tugma (edge): BTN:1 / BTN:2 = qaysi o'yinchi birinchi bosgani
   useEffect(() => {
-    if (!arduinoConnected) return;
-    startRound();
-    return () => clearTimeout(timerRef.current);
-  }, [p1Score, p2Score, arduinoConnected]);
+    const v = serialBtn || 0;
+    if ((v === 1 || v === 2) && prevBtn.current === 0 && arduinoConnected) {
+      const s = stateRef.current;
+      if (s === 'ready') resolveRound(v === 1 ? 2 : 1, true);          // falstart → raqib yutadi
+      else if (s === 'go') { setReactionMs(Math.round(performance.now() - goStart.current)); resolveRound(v, false); }
+    }
+    prevBtn.current = v;
+  }, [serialBtn, arduinoConnected, resolveRound]);
 
-  // The Arduino sends the WINNER NUMBER itself in "BTN:" (0 = no one yet,
-  // 1 = pin 2 pressed first, 2 = pin 3 pressed first) — not a plain boolean —
-  // so both players must be credited based on the actual value received.
+  // ulanganda duel boshlanadi
   useEffect(() => {
-    if (state !== 'go') return;
-    const btn = serialData.btn || 0;
-    if (btn === 1 || btn === 2) {
-      setWinner(btn);
-      if (btn === 1) setP1Score(s => s + 1); else setP2Score(s => s + 1);
-      setState('result');
-      incrementScore(20);
-      particles.current.emit(dims.current.w / 2, dims.current.h / 2, btn === 1 ? '#00f5ff' : '#ff2d78', 30, 200);
-      setTimeout(() => setState('waiting'), 1500);
-    }
-  }, [serialData.btn, state, incrementScore]);
+    if (arduinoConnected && !winRef.current) startRound();
+    return () => { clearTimeout(goTimer.current); clearTimeout(nextTimer.current); };
+  }, [arduinoConnected, startRound]);
 
-  useEffect(() => {
-    if (arduinoConnected && (p1Score >= 5 || p2Score >= 5) && !winRef.current && winConditions) {
-      winRef.current = true;
-      incrementScore(100);
-      if (onWin) onWin(score + 100);
-    }
-  }, [p1Score, p2Score, score, winConditions, onWin, incrementScore]);
+  const build = useCallback((app) => {
+    const scene = assembleDuel(app);
+    let t = 0;
+    app.ticker.add((tk) => { const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt; scene.particles.tick(dt); duelTick(scene, dt, t, ctlRef.current); });
+    return () => {};
+  }, []);
 
-  const draw = useCallback((ctx, w, h, t) => {
-    dims.current = { w, h };
-    ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#0a0015', '#1a002a', '#0a0015']);
-
-    // Center circle
-    const cx = w / 2, cy = h / 2;
-    const pulse = state === 'go' ? 20 + 10 * Math.sin(t * 10) : 0;
-
-    ctx.fillStyle = state === 'go' ? C.GREEN : state === 'ready' ? C.GOLD : '#334155';
-    ctx.shadowColor = state === 'go' ? C.GREEN : state === 'ready' ? C.GOLD : 'transparent';
-    ctx.shadowBlur = pulse;
-    ctx.beginPath();
-    ctx.arc(cx, cy, state === 'waiting' ? 20 : 30 + pulse * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // State text
-    ctx.textAlign = 'center';
-    ctx.fillStyle = C.WHITE;
-    ctx.font = 'bold 28px Chakra Petch, monospace';
-    ctx.fillText(
-state === 'waiting' ? "⏳ Tayyorlaning..." :
-	      state === 'ready' ? "👀 Kuzating..." :
-	      state === 'go' ? "🔥 BOSING!" :
-	      `🎉 ${winner}-o'yinchi yutdi!`,
-      cx, cy - 60
-    );
-
-    if (state === 'go') {
-      ctx.fillStyle = `rgba(0,255,136,${0.1 + 0.1 * Math.sin(t * 8)})`;
-      ctx.font = 'bold 72px Chakra Petch, monospace';
-      ctx.fillText('🔥', cx, cy + 10);
-    }
-
-    // Player scores
-    ctx.fillStyle = C.CYAN;
-    ctx.font = 'bold 24px Chakra Petch, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('O1: ' + p1Score, 30, 50);
-    ctx.fillStyle = C.PINK;
-    ctx.textAlign = 'right';
-    ctx.fillText('O2: ' + p2Score, w - 30, 50);
-
-    // Progress to win (whichever player is ahead)
-    const leader = Math.max(p1Score, p2Score);
-    drawProgressBar(ctx, w / 2 - 100, h - 40, 200, 8, leader / 5, p1Score >= p2Score ? C.CYAN : C.PINK);
-
-    particles.current.update(0.016);
-    particles.current.draw(ctx);
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-
-    // LED indicator
-    ctx.fillStyle = `rgba(0,255,136,${state === 'go' ? 0.5 + 0.5 * Math.sin(t * 10) : 0.1})`;
-    ctx.fillRect(10, h - 30, 12, 12);
-  }, [state, p1Score, p2Score, score, winner]);
+  const prompt = state === 'ready' ? '👀 Kuzating...' : state === 'go' ? '🔥 BOSING!' : state === 'result' ? (foul ? `⛔ Falstart! ${3 - winner}-o'yinchi shoshdi` : `🎉 ${winner}-o'yinchi yutdi!`) : '⚔️ Duelga tayyorlaning';
+  const promptColor = state === 'go' ? '#21e065' : state === 'ready' ? '#ffc21a' : foul ? '#ff3b46' : '#EAF3FF';
+  const panel = { background: 'rgba(11,8,22,0.82)', border: '1px solid rgba(155,93,229,0.25)', borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
+  const pip = (on, c) => ({ width: 12, height: 12, borderRadius: '50%', background: on ? c : 'rgba(255,255,255,0.08)', boxShadow: on ? `0 0 8px ${c}` : 'none' });
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">Score</p>
-        <p className="font-game text-white text-lg">{score}</p>
+    <PixiStage build={build} className="rounded-xl">
+      {/* Tablo */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-4" style={{ ...panel, padding: '8px 18px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#00eeff' }}>{p1}</div>
+          <div style={{ display: 'flex', gap: 3, marginTop: 3 }}>{[0, 1, 2, 3, 4].map((i) => <span key={i} style={pip(i < p1, '#00eeff')} />)}</div>
+        </div>
+        <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>VS</div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#ff2d78' }}>{p2}</div>
+          <div style={{ display: 'flex', gap: 3, marginTop: 3 }}>{[0, 1, 2, 3, 4].map((i) => <span key={i} style={pip(i < p2, '#ff2d78')} />)}</div>
+        </div>
       </div>
-      <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2 text-xs text-dark-400">
-        1-o'yinchi: tugma (pin 2)<br />
-        2-o'yinchi: tugma (pin 3)
+
+      {/* Markaziy prompt */}
+      <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '46%', textAlign: 'center', pointerEvents: 'none' }}>
+        <div style={{ fontFamily: 'Orbitron, monospace', fontWeight: 800, fontSize: state === 'go' ? 34 : 22, color: promptColor, textShadow: `0 0 20px ${promptColor}90`, letterSpacing: '0.04em' }}>{prompt}</div>
+        {state === 'result' && !foul && reactionMs > 0 && <div style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 13, color: '#94a3b8', marginTop: 4 }}>reaksiya: {(reactionMs / 1000).toFixed(3)}s</div>}
       </div>
-    </GameCanvas>
+
+      {/* Ball */}
+      <div className="absolute bottom-3 left-3" style={panel}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#EAF3FF' }}>⭐ {Math.round(score)}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#64748b' }}>Ball</div>
+      </div>
+
+      {/* Boshqaruv */}
+      <div className="absolute bottom-3 right-3" style={{ ...panel, fontSize: 9, color: '#94a3b8', lineHeight: 1.5 }}>
+        <span style={{ color: '#00eeff' }}>1-o'yinchi</span>: tugma (pin 2)<br />
+        <span style={{ color: '#ff2d78' }}>2-o'yinchi</span>: tugma (pin 3)
+      </div>
+
+      {!arduinoConnected && (
+        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(155,93,229,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#c77dff' }}>⚔️ Platani ulang — 2 tugma bilan refleks duelini boshlang</span>
+        </div>
+      )}
+    </PixiStage>
   );
 }

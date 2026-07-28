@@ -14,6 +14,7 @@ import SpeedRunnerIntro from '../components/Game/SpeedRunnerIntro';
 import ThereminIntro from '../components/Game/ThereminIntro';
 import TempGardenIntro from '../components/Game/TempGardenIntro';
 import RadarIntro from '../components/Game/RadarIntro';
+import ReactionIntro from '../components/Game/ReactionIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -33,6 +34,7 @@ const PREMIUM_INTRO = {
   light_theremin: ThereminIntro,
   temp_garden: TempGardenIntro,
   distance_radar: RadarIntro,
+  reaction_champion: ReactionIntro,
 };
 
 export default function LessonView() {
