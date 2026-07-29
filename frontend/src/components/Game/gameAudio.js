@@ -149,6 +149,53 @@ export function playThunder() {
   } catch (e) { /* silent fail */ }
 }
 
+export function playWhoosh() {
+  // Asteroid atmosferani yorib tushishi — pastdan yuqoriga ko'tariluvchi shovqin (roar)
+  try {
+    const ctx = getContext();
+    const dur = 1.7;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.3;
+    f.frequency.setValueAtTime(180, ctx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(1900, ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.24, ctx.currentTime + dur * 0.82);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
+export function playBoom() {
+  // Chuqur zarba — pastga tushuvchi sub-bas + past chastotali shovqin punchi
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(130, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.95);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 1.25);
+    const dur = 0.75;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(950, ctx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + dur);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.42, ctx.currentTime);
+    ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(ng); ng.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
 // ===== KROMA (Color Mixer) — rang voqeligi ovozlari =====
 
 export function playShimmer() {
