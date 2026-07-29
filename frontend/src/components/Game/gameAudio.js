@@ -314,6 +314,13 @@ export function playClunk() {
   playTone(220, 0.05, 'square', 0.05);
 }
 
+export function playSeal() {
+  // xavfli moddani idishga solib zararsizlantirish — pasayuvchi "so'rish" + tasdiq
+  playTone(700, 0.18, 'sawtooth', 0.08);
+  setTimeout(() => playTone(400, 0.2, 'square', 0.07), 120);
+  setTimeout(() => { playTone(523, 0.25, 'sine', 0.1); playTone(784, 0.25, 'sine', 0.08); }, 320);
+}
+
 export function playBlip(freq = 1400) {
   // radar beep — qisqa tik
   playTone(freq, 0.045, 'square', 0.045);

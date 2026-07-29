@@ -1,0 +1,7 @@
+{
+  "title": "Chuqurlik Missiyasi",
+  "description": "Asteroid tushirgan xavfli moddani yer ostidan topib, maxsus idishga solib zararsizlantiring!",
+  "components": ["Arduino Uno","2xTugma","LED","Buzzer","2x220Ω","Breadboard","Simlar"],
+  "codeExample": "int b1=2, b2=3, led=13, buzzer=8; int prev=-1;\nvoid setup(){pinMode(b1,INPUT);pinMode(b2,INPUT);pinMode(led,OUTPUT);pinMode(buzzer,OUTPUT);Serial.begin(9600);}\nvoid loop(){\n  int w=(digitalRead(b1)?1:0)+(digitalRead(b2)?2:0); // 1=sakrash 2=emaklash 3=idishga sol\n  if(w!=prev){ Serial.print(\"BTN:\");Serial.println(w); prev=w; }\n  digitalWrite(led, w>0);\n  if(w>0) tone(buzzer, w==3?1400:900, 25);\n  delay(15);\n}",
+  "gameConfig": {"gameType":"reaction_champion","title":"Chuqurlik Missiyasi"}
+}
