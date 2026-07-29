@@ -4,7 +4,7 @@
 // Yashildan oldin bossa — falstart (raqib ochko oladi). 5 g'alaba → chempion.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleDuel, duelTick } from './pixi/duelScene';
+import { assembleDuel, duelTick } from './pixi/dragonScene';
 import useGameStore from '../../stores/gameStore';
 import { playScore, playError, playWin } from './gameAudio';
 
@@ -32,7 +32,7 @@ export default function ReactionChampion() {
 
   const ctlRef = useRef({ state: 'waiting', winner: 0, p1: 0, p2: 0, connected: false, roundPulse: 0 });
   ctlRef.current.state = state; ctlRef.current.winner = winner; ctlRef.current.p1 = p1; ctlRef.current.p2 = p2;
-  ctlRef.current.connected = arduinoConnected; ctlRef.current.roundPulse = roundPulse.current;
+  ctlRef.current.connected = arduinoConnected; ctlRef.current.roundPulse = roundPulse.current; ctlRef.current.foul = foul;
 
   const startRound = useCallback(() => {
     if (winRef.current) return;
@@ -86,7 +86,7 @@ export default function ReactionChampion() {
     return () => {};
   }, []);
 
-  const prompt = state === 'ready' ? '👀 Kuzating...' : state === 'go' ? '🔥 BOSING!' : state === 'result' ? (foul ? `⛔ Falstart! ${3 - winner}-o'yinchi shoshdi` : `🎉 ${winner}-o'yinchi yutdi!`) : '⚔️ Duelga tayyorlaning';
+  const prompt = state === 'ready' ? '😴 Ajdaho mudrayapti — teginma!' : state === 'go' ? '💎 GAVHARNI OL!' : state === 'result' ? (foul ? `🐉 Ajdaho uyg'ondi! ${3 - winner}-ovchi shoshdi` : `💎 ${winner}-ovchi gavharni oldi!`) : '🗺️ G\'orga tayyorlaning';
   const promptColor = state === 'go' ? '#21e065' : state === 'ready' ? '#ffc21a' : foul ? '#ff3b46' : '#EAF3FF';
   const panel = { background: 'rgba(11,8,22,0.82)', border: '1px solid rgba(155,93,229,0.25)', borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
   const pip = (on, c) => ({ width: 12, height: 12, borderRadius: '50%', background: on ? c : 'rgba(255,255,255,0.08)', boxShadow: on ? `0 0 8px ${c}` : 'none' });
@@ -120,13 +120,13 @@ export default function ReactionChampion() {
 
       {/* Boshqaruv */}
       <div className="absolute bottom-3 right-3" style={{ ...panel, fontSize: 9, color: '#94a3b8', lineHeight: 1.5 }}>
-        <span style={{ color: '#00eeff' }}>1-o'yinchi</span>: tugma (pin 2)<br />
-        <span style={{ color: '#ff2d78' }}>2-o'yinchi</span>: tugma (pin 3)
+        <span style={{ color: '#00eeff' }}>1-ovchi</span>: tugma (pin 2)<br />
+        <span style={{ color: '#ff2d78' }}>2-ovchi</span>: tugma (pin 3)
       </div>
 
       {!arduinoConnected && (
         <div className="absolute bottom-14 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(155,93,229,0.3)' }}>
-          <span style={{ fontSize: 11, color: '#c77dff' }}>⚔️ Platani ulang — 2 tugma bilan refleks duelini boshlang</span>
+          <span style={{ fontSize: 11, color: '#c77dff' }}>🐉 Platani ulang — 2 tugma bilan gavharni o'g'irlang</span>
         </div>
       )}
     </PixiStage>

@@ -1,23 +1,24 @@
-// ReactionIntro — "Refleks Arenasi" kinematik cutscene.
-// Arena ochiladi, ikki robot yuzma-yuz → namuna raund: signal YASHIL bo'ladi,
-// 1-robot tezroq zarba beradi (mexanikani o'rgatadi) → Electra qoidalarni
-// tushuntiradi (yakuniy chempionlik ko'rsatilmaydi — bola o'zi o'ynaydi).
+// ReactionIntro — "Ajdaho G'ori" kinematik sarguzasht cutscene.
+// Qorong'i g'or, mash'alalar, ulkan uxlab yotgan ajdaho, xazina yilt-yilti →
+// namuna: bir ovchi shoshib qo'l cho'zadi → AJDAHO UYG'ONADI (falstart xavfi) →
+// keyin gavhar yashil yonganda toza olinadi → Electra qoidalarni tushuntiradi.
 import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleDuel, duelTick } from './pixi/duelScene';
+import { assembleDuel, duelTick } from './pixi/dragonScene';
 import DialogueBox from './DialogueBox';
-import { playScore, playBlip } from './gameAudio';
+import useGameStore from '../../stores/gameStore';
+import { playBlip, playScore, playError } from './gameAudio';
 
 const LINES = [
-  { text: "Xush kelibsan, Refleks Arenasi'ga! Bu — eng tez qo'l egasini aniqlaydigan duel.", emotion: 'excited' },
-  { text: "Markazdagi signal tasodifiy YASHIL bo'ladi. Yashil yonishi bilan — kim birinchi tugmasini bossa, o'sha yutadi!", emotion: 'normal' },
-  { text: "Ehtiyot bo'l: yashildan OLDIN bossang — falstart bo'ladi va ochko raqibingga o'tadi. Sabr va tezlik kerak.", emotion: 'worried' },
-  { text: "Platangga 2 tugma, LED va buzzer ula. Do'sting bilan bellash — birinchi 5 ta g'alaba to'plagan CHEMPION! Tayyormisan?", emotion: 'excited' },
+  { text: "Sh-sh-sh... Ovoz chiqarma! Bu — Ajdaho g'ori. Bu yerda asrlar davomida to'plangan sehrli gavharlar bor.", emotion: 'normal' },
+  { text: "Lekin ularni ulkan ajdaho qo'riqlaydi — hozir u uxlab yotibdi. Gavharni faqat u YASHIL yongandagina olsang bo'ladi!", emotion: 'normal' },
+  { text: "Ehtiyot bo'l! Yashildan oldin qo'l cho'zsang — ajdaho uyg'onadi va gavhar raqibingga o'tadi. Sabr va tezlik kerak!", emotion: 'worried' },
+  { text: "Platangga 2 tugma, LED va buzzer ula. Do'sting bilan bellash — birinchi 5 ta gavharni olgan G'OLIB! Tayyormisan, sarguzashtchi?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleDuel(app);
-  let t = 0, done = false, rp = 0, resolved = false, blipped = false, wentGo = false;
+  let t = 0, done = false, rp = 0, foulDone = false, winDone = false, b1 = false, b2 = false, b3 = false;
 
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
 
@@ -25,14 +26,22 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
     scene.particles.tick(dt);
 
-    let state = 'waiting', winner = 0;
-    if (t < 2.2) state = 'waiting';
-    else if (t < 3.5) { state = 'ready'; if (!blipped) { blipped = true; playBlip(700); } }
-    else if (t < 4.1) { state = 'go'; if (!wentGo) { wentGo = true; playBlip(1400); } }
-    else { state = 'result'; winner = 1; if (!resolved) { resolved = true; rp++; playScore(); } }
+    let state = 'waiting', winner = 0, foul = false;
+    if (t < 2.6) { state = 'waiting'; }
+    else if (t < 3.1) { state = 'ready'; if (!b1) { b1 = true; playBlip(700); } }
+    else if (t < 5.4) {                    // FALSTART namunasi — ajdaho uyg'onadi
+      state = 'result'; winner = 1; foul = true;
+      if (!foulDone) { foulDone = true; rp = 1; playError(); useGameStore.getState().triggerShake(12); }
+    }
+    else if (t < 6.0) { state = 'ready'; if (!b2) { b2 = true; playBlip(700); } }
+    else if (t < 6.6) { state = 'go'; if (!b3) { b3 = true; playBlip(1400); } }
+    else {                                 // TOZA olish namunasi
+      state = 'result'; winner = 1; foul = false;
+      if (!winDone) { winDone = true; rp = 2; playScore(); }
+    }
 
-    duelTick(scene, dt, t, { state, winner, p1: resolved ? 1 : 0, p2: 0, connected: true, roundPulse: rp });
-    if (!done && t > 5.8) { done = true; onSceneDone(); }
+    duelTick(scene, dt, t, { state, winner, p1: 0, p2: 0, connected: true, roundPulse: rp, foul });
+    if (!done && t > 7.8) { done = true; onSceneDone(); }
   });
 
   return () => {};
@@ -43,7 +52,7 @@ export default function ReactionIntro({ onStart }) {
   const ctlRef = useRef({});
   const build = useMemo(() => (app) => buildIntroScene(app, ctlRef, () => setPhase('talk')), []);
   return (
-    <div className="absolute inset-0 z-30" style={{ background: '#0a0016' }}>
+    <div className="absolute inset-0 z-30" style={{ background: '#0a0806' }}>
       <PixiStage build={build} className="rounded-xl">
         {phase === 'scene' && (
           <div className="absolute top-3 right-3 pointer-events-auto">
@@ -55,7 +64,7 @@ export default function ReactionIntro({ onStart }) {
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
-            <DialogueBox name="ELECTRA" role="Arena boshlovchisi" lines={LINES} actionLabel="⚔️ Duelni boshla" onAction={onStart} accent="#c77dff" />
+            <DialogueBox name="ELECTRA" role="Sarguzasht yo'lboshchisi" lines={LINES} actionLabel="💎 G'orga kir" onAction={onStart} accent="#ffd23f" />
           </div>
         )}
       </PixiStage>
