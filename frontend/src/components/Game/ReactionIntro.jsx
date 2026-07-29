@@ -369,7 +369,7 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     if (t > T.ENTRY && !impacted) warn.alpha = clamp((t - T.ENTRY) / 1.6, 0, 1) * (0.55 + 0.45 * Math.sin(t * 9)) * 0.7;
 
     // ----- asteroid tushishi -----
-    if (t >= T.ENTRY && t < T.IMPACT && !impacted) {
+    if (!impacted && t >= T.ENTRY && t < T.IMPACT) {
       if (!whooshed) { whooshed = true; playWhoosh(); }
       meteor.visible = true;
       const k = smooth(clamp((t - T.ENTRY) / (T.IMPACT - T.ENTRY), 0, 1));
@@ -382,7 +382,8 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
         embers.spawn({ x: meteor.x - Math.cos(0.72) * 30, y: meteor.y - Math.sin(0.72) * 30, tint: [0xffcf7a, 0xff8a3a][Math.random() < 0.5 ? 0 : 1], blend: 'add',
           size: 5 + Math.random() * 8, vx: -120 - Math.random() * 120, vy: -120 - Math.random() * 120, g: 40, grow: -0.5, life: 0.4 + Math.random() * 0.5, drag: 0.97 });
       }
-      if (k >= 1) doImpact();
+    } else if (!impacted && t >= T.IMPACT) {
+      doImpact();   // frame-rate'dan qat'i nazar aynan bir marta ishga tushadi
     }
 
     // ----- xavfli modda yer qa'riga -----
