@@ -25,7 +25,7 @@ const smooth = (k) => k * k * (3 - 2 * k);
 const rnd = (a = 1, b = 0) => b + Math.random() * (a - b);
 
 // Kinematik xronologiya (soniya)
-const T = { LETTER: 0.9, ENTRY: 1.7, DESCENT: 2.4, IMPACT: 4.25, SUBST: 5.25, END: 8.4 };
+const T = { LETTER: 0.9, ENTRY: 1.7, DESCENT: 2.4, IMPACT: 4.25, SUBST: 4.85, END: 8.4 };
 
 /* ---------- lokal tekstura yordamchilari ---------- */
 function vignetteTexture(size = 512) {
@@ -241,6 +241,14 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   { const pts = []; for (let i = 0; i < 9; i++) { const a = (i / 9) * 6.28; const r = 9 + Math.random() * 5; pts.push(Math.cos(a) * r, Math.sin(a) * r); } mCore.poly(pts).fill(0x3a2a20).stroke({ width: 1.5, color: 0xffb060, alpha: 0.8 }); }
   meteor.addChild(mCore);
 
+  // ------- yer qa'riga kirayotgan modda yadrosi (qizigan asteroid bo'lagi) -------
+  const subCore = new Container(); subCore.visible = false; world.addChild(subCore);
+  const scGlow = new Sprite(radialTexture('rgba(140,255,150,0.9)', 256)); scGlow.anchor.set(0.5); scGlow.width = scGlow.height = 88; scGlow.blendMode = 'add'; subCore.addChild(scGlow);
+  const scHot = new Sprite(radialTexture('rgba(255,205,130,0.95)', 256)); scHot.anchor.set(0.5); scHot.width = scHot.height = 44; scHot.blendMode = 'add'; subCore.addChild(scHot);
+  const scRock = new Graphics();
+  { const pts = []; for (let i = 0; i < 9; i++) { const a = (i / 9) * 6.28; const r = 8 + Math.random() * 4; pts.push(Math.cos(a) * r, Math.sin(a) * r); } scRock.poly(pts).fill(0x2e1d10).stroke({ width: 1.6, color: 0x9dff6a, alpha: 0.95 }); }
+  subCore.addChild(scRock);
+
   // ------- zarra tizimlari -------
   const softTex = radialTexture('rgba(255,255,255,0.85)', 128);
   const smoke = makeFX(world, softTex);
@@ -380,11 +388,19 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     // ----- xavfli modda yer qa'riga -----
     if (impacted && t >= T.SUBST) {
       if (!substarted) startSubstance();
-      substP += dt * 0.85;
+      substP += dt * 0.8;
       boltP = clamp(substP, 0, 1);
-      const ybot = SURF + boltP * (LH - SURF - 8);
+      const depthK = 1 - (1 - boltP) * (1 - boltP);          // easeOut — modda YER QA'RIGA shiddat bilan kiradi
+      const ybot = SURF + depthK * (LH - SURF - 8);
       bolt.clear();
-      if (substP < 1.5) drawBolt(bolt, SURF, ybot, 30 + 22 * Math.sin(t * 22));
+      // chaqmoq sirtdan modda yadrosigacha ulanadi (yadro pastga kirib boradi)
+      drawBolt(bolt, SURF, ybot, (substP < 1.5 ? 30 : 12) + 20 * Math.sin(t * 22));
+      // modda yadrosi — chaqmoq bilan birga chuqurga kirib boradi
+      subCore.visible = true;
+      subCore.x = IX + Math.sin(t * 16) * 3; subCore.y = ybot;
+      const scP = 0.82 + 0.18 * Math.sin(t * 20);
+      scGlow.scale.set(scP * (1 + depthK * 0.4)); scHot.scale.set(scP);
+      scRock.rotation += dt * 3.5;
       veinG.clear();
       const pulse = 0.45 + 0.35 * Math.sin(t * 6);
       veins.forEach(v => { if (v.rev <= boltP + 0.05) { const a = clamp((boltP - v.rev) * 3, 0, 1); veinG.moveTo(v.x1, v.y1).lineTo(v.x2, v.y2).stroke({ width: v.w, color: 0x7dff5a, alpha: a * pulse }); } });
