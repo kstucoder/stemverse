@@ -5,3 +5,5 @@ dist/
 .DS_Store
 .vercel
 .prisma
+tmp_l10b.json
+tmp_*.json
