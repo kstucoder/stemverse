@@ -196,6 +196,61 @@ export function playBoom() {
   } catch (e) { /* silent */ }
 }
 
+export function startWind() {
+  // Uzluksiz shamol ambiyensi — filtrlangan shovqin + LFO gustlar. stop() qaytaradi.
+  try {
+    const ctx = getContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    const dur = 3;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 460; f.Q.value = 0.7;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 620; bp.Q.value = 0.4;
+    const g = ctx.createGain(); g.gain.value = 0.0001;
+    src.connect(f); f.connect(bp); bp.connect(g); g.connect(ctx.destination);
+    src.start();
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.075, ctx.currentTime + 2.2);
+    // gustlar: gain va filtr chastotasini sekin tebratamiz
+    const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.16;
+    const lfoG = ctx.createGain(); lfoG.gain.value = 0.045;
+    lfo.connect(lfoG); lfoG.connect(g.gain); lfo.start();
+    const lfo2 = ctx.createOscillator(); lfo2.type = 'sine'; lfo2.frequency.value = 0.09;
+    const lfo2G = ctx.createGain(); lfo2G.gain.value = 240;
+    lfo2.connect(lfo2G); lfo2G.connect(f.frequency); lfo2.start();
+    let stopped = false;
+    return (fade = 0.6) => {
+      if (stopped) return; stopped = true;
+      try {
+        const now = ctx.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + fade);
+        src.stop(now + fade + 0.05); lfo.stop(now + fade + 0.05); lfo2.stop(now + fade + 0.05);
+      } catch (e) { /* silent */ }
+    };
+  } catch (e) { return () => {}; }
+}
+
+export function playSizzle() {
+  // Elektr chirsillashi — pasayuvchi bandpass shovqin (chaqmoq razryadi)
+  try {
+    const ctx = getContext();
+    const dur = 0.5;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.5);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 1.2;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.14, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
 // ===== KROMA (Color Mixer) — rang voqeligi ovozlari =====
 
 export function playShimmer() {
