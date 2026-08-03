@@ -234,6 +234,13 @@ export function startWind() {
   } catch (e) { return () => {}; }
 }
 
+export function playBeacon() {
+  // Rezonans mayog'i faollashuvi — pastdan yuqoriga ko'tariluvchi triada + yorqin chime
+  const notes = [262, 330, 392, 523, 659];
+  notes.forEach((f, i) => setTimeout(() => playTone(f, 0.5, 'sine', 0.09), i * 90));
+  setTimeout(() => { [784, 988, 1319].forEach((f, i) => setTimeout(() => playTone(f, 0.6, 'triangle', 0.08), i * 60)); }, 480);
+}
+
 export function playServo() {
   // Servo motor "wrrr" — qisqa filtrlangan burilish tovushi
   try {
