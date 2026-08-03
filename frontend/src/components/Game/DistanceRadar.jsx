@@ -3,7 +3,7 @@
 // Qo'lni ko'tar-tushir -> plita tik relsda suriladi -> kelayotgan meteorni
 // to'g'ri balandlikda kutib olib QAYTAR. O'tib ketsa mahalla qorayadi, yurak −1.
 // 12 meteor qaytarilsa -> shahar himoyalandi (onWin).
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleShield, shieldTick, CAL_NEAR, CAL_FAR } from './pixi/shieldScene';
 import useGameStore from '../../stores/gameStore';
@@ -24,11 +24,16 @@ export default function DistanceRadar() {
   // qo'l masofasi (sm). Ulanmasa demo rejim (avto-boshqaruv).
   const dist = arduinoConnected ? Math.max(0, Math.min(400, Math.round(serialDist ?? 30))) : 30;
 
-  const ctlRef = useRef({ dist: 30, connected: false, demo: true, mode: 'play', resetPulse: 0 });
+  const ctlRef = useRef({ dist: 30, connected: false, mode: 'play', resetPulse: 0 });
   ctlRef.current.dist = dist;
   ctlRef.current.connected = arduinoConnected;
-  ctlRef.current.demo = !arduinoConnected;
   ctlRef.current.resetPulse = resetRef.current;
+
+  // Arduino ulanishi o'zgarganda o'yinni toza boshlash (ulangach haqiqiy o'yin boshlanadi)
+  useEffect(() => {
+    resetRef.current += 1; winRef.current = false;
+    setBlocked(0); setHearts(3); setStatus('play');
+  }, [arduinoConnected]);
   ctlRef.current.onBlock = (n) => { incrementScore(60); setBlocked(n); playZap(); playScore(); };
   ctlRef.current.onWarn = () => { playAlarm(); };
   ctlRef.current.onMiss = (hp) => { setHearts(hp); playBoom(); useGameStore.getState().triggerShake(14); };

@@ -116,6 +116,12 @@ export function assembleShield(app) {
       this.meteors.push(m);
       return m;
     },
+    // fon meteori (ulanmaganda ko'rinish uchun) — o'yin mantig'iga ta'sir qilmaydi
+    spawnAmbient(y, speed) {
+      const m = this.spawnMeteor(y, speed);
+      m.ambient = true; m.c.y = y; m.c.scale.set(0.68); m.c.alpha = 0.85;
+      return m;
+    },
     reset() {
       this.meteors.forEach((m) => m.c.destroy()); this.meteors.length = 0;
       this.districts.forEach((d) => { d.alive = true; });
@@ -136,10 +142,12 @@ export function shieldTick(scene, dt, t, ctl) {
   if (ctl.resetPulse !== undefined && ctl.resetPulse !== scene.lastReset) { scene.lastReset = ctl.resetPulse; scene.reset(); }
 
   // ----- qalqon plitasi pozitsiyasi -----
+  // Faqat Arduino ulanganda plita masofaga bog'lanadi. Ulanmaganda o'zi O'YNAMAYDI —
+  // sokin idle turadi (meteorlarni avtomatik ushlamaydi).
   let targetY;
   if (ctl.connected) targetY = mapRange(ctl.dist ?? 200, CAL_NEAR, CAL_FAR, RAIL_BOT, RAIL_TOP); // uzoq(baland) -> tepa
-  else if (ctl.demo) { const near = nearestMeteor(meteors); targetY = near ? near.c.y : (RAIL_TOP + RAIL_BOT) / 2 + Math.sin(t * 0.8) * 120; }
-  else targetY = scene.plateTargetY; // intro tashqaridan boshqaradi
+  else if (ctl.mode === 'intro') targetY = scene.plateTargetY;                                   // intro skripti boshqaradi
+  else targetY = (RAIL_TOP + RAIL_BOT) / 2 + Math.sin(t * 0.7) * 55;                             // ulanmagan: sokin tebranish
   targetY = clamp(targetY, RAIL_TOP, RAIL_BOT);
   scene.plateY += (targetY - scene.plateY) * Math.min(dt * 12, 1);
   plate.y = scene.plateY;
@@ -150,8 +158,9 @@ export function shieldTick(scene, dt, t, ctl) {
   ripple.clear();
   if (scene.rippleT > 0) { scene.rippleT -= dt; const k = 1 - scene.rippleT / 0.5; ripple.circle(0, 0, 20 + k * 70).stroke({ width: 4 * (1 - k) + 1, color: 0x6affe0, alpha: (1 - k) * 0.9 }); }
 
-  // ----- meteorlarni spawn qilish (faqat play) -----
-  if (ctl.mode === 'play' && !scene.won && !scene.lost) {
+  // ----- meteorlarni spawn qilish -----
+  if (ctl.mode === 'play' && ctl.connected && !scene.won && !scene.lost) {
+    // HAQIQIY o'yin — faqat Arduino ulangan bo'lsa
     scene.elapsed += dt;
     const diff = clamp(scene.elapsed / 60, 0, 1);
     scene.spawnT -= dt;
@@ -161,6 +170,10 @@ export function shieldTick(scene, dt, t, ctl) {
       scene.spawnMeteor(RAIL_TOP + 20 + Math.random() * (RAIL_BOT - RAIL_TOP - 40), speed);
       if (diff > 0.35 && Math.random() < 0.3) scene.spawnMeteor(RAIL_TOP + 20 + Math.random() * (RAIL_BOT - RAIL_TOP - 40), speed * 1.05); // ikkinchi meteor
     }
+  } else if (ctl.mode === 'play' && !ctl.connected) {
+    // ULANMAGAN — faqat ko'rinish uchun fon meteorlari (ball yo'q, shaharga tegmaydi)
+    scene.spawnT -= dt;
+    if (scene.spawnT <= 0) { scene.spawnT = 1.3 + Math.random() * 1.5; scene.spawnAmbient(26 + Math.random() * 90, 200 + Math.random() * 90); }
   }
 
   // ----- meteorlar fizikasi + blok/miss -----
@@ -172,6 +185,8 @@ export function shieldTick(scene, dt, t, ctl) {
     m.c.x -= m.spd * dt;
     m.core.rotation += dt * 3;
     m.glow.alpha = 0.7 + 0.3 * Math.sin(t * 6 + i);
+    // fon (ambient) meteori: hech qanday blok/miss/ball yo'q — faqat uchib o'tadi
+    if (m.ambient) { if (m.c.x < -60) { m.c.destroy(); meteors.splice(i, 1); } continue; }
     // telegraph (rels yaqinida marker) — meteor yaqinlashsa tez miltillaydi
     const near = m.c.x < RAIL_X + 260;
     if (near) anyNear = true;
@@ -240,11 +255,6 @@ export function shieldTick(scene, dt, t, ctl) {
   particles.tick(dt);
 }
 
-function nearestMeteor(meteors) {
-  let best = null, bx = Infinity;
-  meteors.forEach((m) => { if (!m.dead && m.c.x < bx) { bx = m.c.x; best = m; } });
-  return best;
-}
 function hitDistrict(scene, x) {
   const dw = LW / scene.districts.length;
   return clamp(Math.floor(clamp(x, 0, LW - 1) / dw), 0, scene.districts.length - 1);
