@@ -55,7 +55,7 @@ export default function RobotArm() {
 
   const panel = { background: 'rgba(10,14,20,0.82)', border: '1px solid rgba(0,234,255,0.2)', borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
   const baseDeg = Math.round(((ctlRef.current.a0) / 1023) * 180);
-  const reachPct = Math.round(((ctlRef.current.a1) / 1023) * 100);
+  const elbowDeg = Math.round(((ctlRef.current.a1) / 1023) * 180);
 
   return (
     <PixiStage build={build} className="rounded-xl">
@@ -63,11 +63,11 @@ export default function RobotArm() {
       <div className="absolute top-3 left-3 flex gap-2">
         <div style={{ ...panel, textAlign: 'center' }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: '#00eaff', textShadow: '0 0 10px rgba(0,234,255,0.6)' }}>{baseDeg}°</div>
-          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>BURCHAK</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>ASOS SERVO</div>
         </div>
         <div style={{ ...panel, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#6affe0', textShadow: '0 0 10px rgba(57,255,208,0.6)' }}>{reachPct}%</div>
-          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>CHO'ZILISH</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#6affe0', textShadow: '0 0 10px rgba(57,255,208,0.6)' }}>{elbowDeg}°</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>TIRSAK SERVO</div>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ export default function RobotArm() {
       {/* boshqaruv eslatmasi */}
       {arduinoConnected && status === 'play' && (
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
-          {['POT1 → Burchak', 'POT2 → Cho\'zilish', 'TUGMA → Griper'].map((s) => (
+          {['POT1 → Asos servo', 'POT2 → Tirsak servo', 'TUGMA → Griper'].map((s) => (
             <span key={s} style={{ fontSize: 9, color: '#8fc5dc', background: 'rgba(10,14,20,0.7)', border: '1px solid rgba(0,234,255,0.15)', borderRadius: 7, padding: '4px 9px', fontFamily: 'Chakra Petch, monospace' }}>{s}</span>
           ))}
         </div>

@@ -6,7 +6,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Container, Graphics } from 'pixi.js';
 import PixiStage from './pixi/PixiStage';
-import { assembleArm, armTick, PIVOT_Y, CANS, CONTAIN, TH_MIN, TH_MAX, R_MIN, R_MAX } from './pixi/robotArmScene';
+import { assembleArm, armTick, PIVOT_Y, CANS, CONTAIN, solveArm } from './pixi/robotArmScene';
 import DialogueBox from './DialogueBox';
 import { playServo, playGeiger, playClunk, playSeal, playAlarm } from './gameAudio';
 
@@ -19,7 +19,7 @@ const LINES = [
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleArm(app);
-  scene.introTh = (TH_MIN + TH_MAX) / 2; scene.introR = (R_MIN + R_MAX) / 2; scene.introBtn = 0;
+  scene.introB = 90; scene.introE = 120; scene.introBtn = 0;
 
   // odam figurasi (radiatsiyadan chekinadi)
   const humanC = new Container(); humanC.x = 900; humanC.y = PIVOT_Y + 44; scene.root.addChild(humanC);
@@ -34,15 +34,16 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     onMove: () => { const n = performance.now(); if (n - (ctl._sv || 0) > 130) { ctl._sv = n; playServo(); } },
     onGrab: () => playClunk(), onSeal: () => playSeal(), onGeiger: () => playGeiger() };
 
-  const C0 = CANS[0];
+  const s0 = solveArm(CANS[0].x, CANS[0].y);       // idish[0] uchun servo burchaklari
+  const sc = solveArm(CONTAIN.x, CONTAIN.y);       // konteyner uchun
   const script = [
     { t: 1.0, fn: () => playAlarm() },
-    { t: 3.4, fn: () => { scene.introTh = C0.th; scene.introR = C0.r; } },   // qo'l idish[0] ustiga
-    { t: 4.5, fn: () => { scene.introBtn = 1; } },                          // ushla (rising edge)
-    { t: 4.65, fn: () => { scene.introBtn = 0; } },
-    { t: 4.9, fn: () => { scene.introTh = CONTAIN.th; scene.introR = CONTAIN.r; } }, // konteynerga
-    { t: 6.1, fn: () => { scene.introBtn = 1; } },                          // qo'yib yubor -> muhrlash
-    { t: 6.25, fn: () => { scene.introBtn = 0; } },
+    { t: 3.4, fn: () => { scene.introB = s0.B; scene.introE = s0.E; } },    // qo'l idish[0] ustiga
+    { t: 4.6, fn: () => { scene.introBtn = 1; } },                         // ushla (rising edge)
+    { t: 4.75, fn: () => { scene.introBtn = 0; } },
+    { t: 5.0, fn: () => { scene.introB = sc.B; scene.introE = sc.E; } },    // konteynerga
+    { t: 6.3, fn: () => { scene.introBtn = 1; } },                         // qo'yib yubor -> muhrlash
+    { t: 6.45, fn: () => { scene.introBtn = 0; } },
   ];
 
   let t = 0, done = false, idx = 0;
