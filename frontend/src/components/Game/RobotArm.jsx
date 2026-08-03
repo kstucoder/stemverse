@@ -19,6 +19,7 @@ export default function RobotArm() {
   const [sealed, setSealed] = useState(0);
   const [holding, setHolding] = useState(false);
   const [status, setStatus] = useState('play');
+  const [distress, setDistress] = useState(true);   // operator yordam so'rayapti (boshlanishda)
   const winRef = useRef(false);
   const resetRef = useRef(0);
   const servoAcc = useRef(0);
@@ -42,6 +43,11 @@ export default function RobotArm() {
   useEffect(() => {
     resetRef.current += 1; winRef.current = false;
     setSealed(0); setHolding(false); setStatus('play');
+    if (arduinoConnected) {
+      setDistress(true);
+      const id = setTimeout(() => setDistress(false), 8500);
+      return () => clearTimeout(id);
+    }
   }, [arduinoConnected]);
 
   const restart = () => { resetRef.current += 1; winRef.current = false; setSealed(0); setHolding(false); setStatus('play'); };
@@ -106,6 +112,14 @@ export default function RobotArm() {
       {!arduinoConnected && status === 'play' && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(0,234,255,0.3)' }}>
           <span style={{ fontSize: 11, color: '#00eaff' }}>🔌 Platani ulang — servo robot qo'lni boshqar</span>
+        </div>
+      )}
+
+      {/* operator yordam so'rayapti — boshqaruv tizimi buzilgan */}
+      {arduinoConnected && status === 'play' && distress && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse pointer-events-none" style={{ ...panel, maxWidth: 460, border: '1px solid rgba(255,90,74,0.45)', background: 'rgba(30,12,12,0.85)' }}>
+          <div style={{ fontSize: 11, color: '#ff8a6a', fontWeight: 700, textAlign: 'center' }}>📡 SIGNAL: Operatorning boshqaruv tizimi shikastlangan!</div>
+          <div style={{ fontSize: 10, color: '#e7b4a4', textAlign: 'center', marginTop: 2 }}>U sizdan yordam so'rayapti — robot qo'lni endi SIZ boshqaring, muhandis.</div>
         </div>
       )}
 

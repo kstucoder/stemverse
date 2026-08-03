@@ -267,7 +267,9 @@ export function armTick(scene, dt, t, ctl) {
   warnOv.alpha = scene.rad > 0.55 ? (scene.rad - 0.55) * 0.28 * (0.5 + 0.5 * Math.sin(t * 9)) : 0;
   scene.geigerAcc += dt;
   const iv = lerp(0.6, 0.12, scene.rad);
-  if (scene.rad > 0.02 && scene.geigerAcc > iv) { scene.geigerAcc = 0; if (ctl.onGeiger) ctl.onGeiger(); }
+  // "chiq-chiq" ovozi FAQAT Arduino signal kelganda (ulangan) yoki intro cutscene'da
+  const geigerOn = ctl.connected || ctl.mode === 'intro';
+  if (geigerOn && scene.rad > 0.02 && scene.geigerAcc > iv) { scene.geigerAcc = 0; if (ctl.onGeiger) ctl.onGeiger(); }
 
   particles.tick(dt);
 }

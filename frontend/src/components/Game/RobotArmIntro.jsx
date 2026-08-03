@@ -21,12 +21,16 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleArm(app);
   scene.introB = 90; scene.introE = 120; scene.introBtn = 0;
 
-  // odam figurasi (radiatsiyadan chekinadi)
+  // boshqaruv nuri (odam -> robot asos) — masofadan boshqaruvni ko'rsatadi
+  const link = new Graphics(); scene.root.addChild(link);
+
+  // odam figurasi (radiatsiyadan xavfsiz masofaga chekinib, SHU YERDAN boshqaradi)
   const humanC = new Container(); humanC.x = 900; humanC.y = PIVOT_Y + 44; scene.root.addChild(humanC);
   const h = new Graphics();
   h.circle(0, -54, 10).fill(0x2a3a4c).stroke({ width: 1.5, color: 0x4a5a70 });
   h.roundRect(-9, -44, 18, 32, 5).fill(0x233240).stroke({ width: 1.5, color: 0x415066 });
   h.rect(-8, -12, 6, 16).fill(0x2a3a4c); h.rect(2, -12, 6, 16).fill(0x2a3a4c);
+  h.roundRect(6, -34, 14, 9, 2).fill(0x14202b).stroke({ width: 1, color: 0x00eaff, alpha: 0.7 });  // qo'ldagi pult
   humanC.addChild(h);
   const warn = new Graphics(); warn.poly([0, -82, 8, -68, -8, -68]).fill(0xff3b46); warn.rect(-1.4, -79, 2.8, 7).fill(0x1a0a0a).circle(0, -70, 1.4).fill(0x1a0a0a); warn.alpha = 0; humanC.addChild(warn);
 
@@ -53,11 +57,19 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
     while (idx < script.length && t >= script[idx].t) { script[idx].fn(); idx++; }
 
-    // odam: yaqinlashadi (1.0-2.2), ogohlantirish, chekinadi (2.3-3.3)
-    if (t < 2.2) humanC.x = 900 - (clamp01((t - 0.6) / 1.6)) * 250;
-    else if (t < 3.4) { humanC.x = 650 + clamp01((t - 2.3) / 1.1) * 420; }
-    warn.alpha = (t > 1.6 && t < 3.2) ? 0.5 + 0.5 * Math.sin(t * 12) : Math.max(0, warn.alpha - dt * 3);
-    humanC.visible = humanC.x < 1040;
+    // odam: yaqinlashadi (0.6-2.0) -> radiatsiyadan ogohlanadi -> xavfsiz masofaga
+    // chekinadi (2.2-3.2) va SHU YERDA turib pult bilan boshqaradi (sahnadan CHIQMAYDI)
+    if (t < 2.0) humanC.x = 900 - clamp01((t - 0.6) / 1.4) * 250;         // 900 -> 650 yaqinlashadi
+    else if (t < 3.2) humanC.x = 650 + clamp01((t - 2.2) / 1.0) * 208;    // 650 -> 858 chekinadi
+    else humanC.x = 858;                                                  // xavfsiz masofada turadi
+    warn.alpha = (t > 1.5 && t < 3.0) ? 0.5 + 0.5 * Math.sin(t * 12) : Math.max(0, warn.alpha - dt * 3);
+
+    // masofaviy boshqaruv nuri (odam pulti -> robot asos), robot ishlaganda ko'rinadi
+    link.clear();
+    if (t > 3.1) {
+      const hx = humanC.x - 6, hy = humanC.y - 30, bx = 500, by = PIVOT_Y - 4;
+      for (let i = 0; i < 11; i++) { const a = i / 11, b = (i + 0.45) / 11; link.moveTo(hx + (bx - hx) * a, hy + (by - hy) * a).lineTo(hx + (bx - hx) * b, hy + (by - hy) * b).stroke({ width: 1.5, color: 0x00eaff, alpha: 0.3 + 0.25 * Math.sin(t * 6 - i) }); }
+    }
 
     armTick(scene, dt, t, ctl);
     if (!done && t > 7.6) { done = true; onSceneDone(); }
