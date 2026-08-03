@@ -243,8 +243,8 @@ export function armTick(scene, dt, t, ctl) {
   canisters.forEach((k) => {
     if (k.sealed) return;
     k.glow.alpha = 0.4 + 0.22 * Math.sin(t * 4 + k.c.x);
-    k._liquid.clear(); const lvl = 0.5 + 0.12 * Math.sin(t * 2 + k.c.x);
-    k._liquid.roundRect(-10, 14 - 26 * lvl, 20, 26 * lvl, 3).fill({ color: 0x39ff88, alpha: 0.35 });
+    k.liquid.clear(); const lvl = 0.5 + 0.12 * Math.sin(t * 2 + k.c.x);
+    k.liquid.roundRect(-10, 14 - 26 * lvl, 20, 26 * lvl, 3).fill({ color: 0x39ff88, alpha: 0.35 });
     k.sym.rotation += dt * 0.5;
   });
   scene.vaporAcc += dt;
