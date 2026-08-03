@@ -1,42 +1,49 @@
-// RadarIntro — "Meteorit to'dasi" kinematik cutscene (asteroid hikoyasi davomi).
-// Asteroid zarbasidan keyin shaharga meteorit bo'laklari yaqinlashmoqda → radar
-// yonadi → bitta nishon namuna sifatida qulflanadi (yakun emas) → Electra
-// operatorni tayinlaydi va ko'rsatma beradi.
+// RadarIntro — "Osmon Qalqoni" kinematik cutscene (asteroid hikoyasi davomi).
+// Asosiy asteroiddan keyin osmon meteor bo'laklariga to'ldi → shahar ustidagi
+// energiya gumbazi zaiflashmoqda → bitta meteor teshib o'tib mahallani qoraytiradi
+// (stakes) → qalqon operatori namuna sifatida ikki meteorni to'g'ri balandlikda
+// kutib olib QAYTARADI (yakun emas) → Electra operatorni tayinlaydi.
+// Butun ketma-ketlik FRAME-RATE'DAN mustaqil (skript vaqt bo'yicha).
 import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleRadar, radarTick } from './pixi/radarScene';
+import { assembleShield, shieldTick, RAIL_TOP, RAIL_BOT } from './pixi/shieldScene';
 import DialogueBox from './DialogueBox';
-import { playAlarm } from './gameAudio';
+import useGameStore from '../../stores/gameStore';
+import { playAlarm, playZap, playBoom, playScore } from './gameAudio';
 
 const LINES = [
-  { text: "Diqqat! Asteroid zarbasidan so'ng kosmosdan shaharga meteorit bo'laklari to'dasi yaqinlashmoqda!", emotion: 'worried' },
-  { text: "Bizda radar bor — lekin nishonlarni kimdir qo'lda topib qulflashi kerak. Bu vazifa — sening zimmangda, operator!", emotion: 'normal' },
-  { text: "Platangga ultrasonik sensor, 4 ta LED va buzzer ula. Sensor masofani o'lchaydi — bu radar kursori.", emotion: 'normal' },
-  { text: "Sariq kursor halqasini nishon masofasiga moslab, radar nuri o'tishini kut — 5 ta meteorni qulfla, shaharni qutqar! Tayyormisan?", emotion: 'excited' },
+  { text: "Diqqat! Asosiy asteroid urildi — endi osmon uning bo'laklariga to'ldi. Meteor yomg'iri to'g'ri shahar ustiga yog'moqda!", emotion: 'worried' },
+  { text: "Ko'rdingmi? Bitta bo'lak gumbazni teshib o'tib, butun bir mahallani qoraytirdi. Har o'tkazib yuborilgan meteor — yo'qolgan uy.", emotion: 'worried' },
+  { text: "Bizda bitta energiya qalqoni bor, lekin u faqat bitta nuqtani qoplaydi. Uni to'g'ri balandlikka surib turish — SENING vazifang, operator!", emotion: 'normal' },
+  { text: "Platangga ultrasonik sensor, 4 LED va buzzer ula. Qo'lingni ko'tar-tushir — masofa qalqon balandligini boshqaradi. Har meteorni kutib ol va qaytar. Tayyormisan?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
-  const scene = assembleRadar(app);
-  let t = 0, done = false, dist = 200, alarmed = false;
+  const scene = assembleShield(app);
+  scene.plateTargetY = (RAIL_TOP + RAIL_BOT) / 2;
 
+  const ctl = { dist: 30, connected: false, demo: false, mode: 'intro', resetPulse: 0,
+    onBlock: () => { playZap(); playScore(); },
+    onMiss: () => { playBoom(); useGameStore.getState().triggerShake(13); } };
+
+  // skript: [vaqt(s), harakat] — vaqt bo'yicha bir marta ishga tushadi
+  const SPD = 340;
+  const script = [
+    { t: 1.2, fn: () => playAlarm() },
+    { t: 1.5, fn: () => scene.spawnMeteor(150, SPD) },                                  // A — o'tib ketadi (stakes)
+    { t: 3.6, fn: () => { scene.plateTargetY = 350; scene.spawnMeteor(350, SPD); } },   // B — plita pastga, blok
+    { t: 5.35, fn: () => scene.spawnMeteor(120, SPD) },                                 // C — keladi
+    { t: 6.1, fn: () => { scene.plateTargetY = 120; } },                               // plita tepaga (B blokdan keyin)
+  ];
+
+  let t = 0, done = false, idx = 0;
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
 
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
-    scene.particles.tick(dt);
-
-    let connected = false;
-    if (t < 2) { if (!alarmed && t > 0.4) { alarmed = true; playAlarm(); } }
-    else if (t < 3) { /* radar yonadi (sweep aylanmoqda) */ }
-    else {
-      connected = true;
-      const tg = scene.targets[0];
-      if (scene.found < 1 && tg) dist += (tg.dist - dist) * Math.min(dt * 2, 1);  // namuna nishonga moslash
-      else dist += (390 - dist) * Math.min(dt * 2, 1);                            // qulflagach chetga
-    }
-
-    if (!done && t > 7.4) { done = true; onSceneDone(); }
-    radarTick(scene, dt, t, { dist, connected, resetPulse: 0, onDetect: () => {}, onWin: () => {} });
+    while (idx < script.length && t >= script[idx].t) { script[idx].fn(); idx++; }
+    shieldTick(scene, dt, t, ctl);
+    if (!done && t > 8.6) { done = true; onSceneDone(); }
   });
 
   return () => {};
@@ -47,7 +54,7 @@ export default function RadarIntro({ onStart }) {
   const ctlRef = useRef({});
   const build = useMemo(() => (app) => buildIntroScene(app, ctlRef, () => setPhase('talk')), []);
   return (
-    <div className="absolute inset-0 z-30" style={{ background: '#02090b' }}>
+    <div className="absolute inset-0 z-30" style={{ background: '#02090c' }}>
       <PixiStage build={build} className="rounded-xl">
         {phase === 'scene' && (
           <div className="absolute top-3 right-3 pointer-events-auto">
@@ -59,7 +66,7 @@ export default function RadarIntro({ onStart }) {
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
-            <DialogueBox name="ELECTRA" role="Radar operatori" lines={LINES} actionLabel="📡 Radarni yoq" onAction={onStart} accent="#39ffd0" />
+            <DialogueBox name="ELECTRA" role="Qalqon operatori" lines={LINES} actionLabel="🛡️ Qalqonni yoq" onAction={onStart} accent="#39ffd0" />
           </div>
         )}
       </PixiStage>
