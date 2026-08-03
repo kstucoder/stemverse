@@ -234,6 +234,37 @@ export function startWind() {
   } catch (e) { return () => {}; }
 }
 
+export function playServo() {
+  // Servo motor "wrrr" — qisqa filtrlangan burilish tovushi
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(130, ctx.currentTime);
+    o.frequency.linearRampToValueAtTime(210, ctx.currentTime + 0.11);
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 850; f.Q.value = 7;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.13);
+    o.connect(f); f.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.15);
+  } catch (e) { /* silent */ }
+}
+
+export function playGeiger() {
+  // Geiger hisoblagich "tik" — o'tkir qisqa click
+  try {
+    const ctx = getContext();
+    const dur = 0.03;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3200;
+    const g = ctx.createGain(); g.gain.value = 0.06;
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
 export function playSizzle() {
   // Elektr chirsillashi — pasayuvchi bandpass shovqin (chaqmoq razryadi)
   try {

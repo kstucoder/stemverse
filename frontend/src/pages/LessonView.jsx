@@ -15,6 +15,7 @@ import ThereminIntro from '../components/Game/ThereminIntro';
 import TempGardenIntro from '../components/Game/TempGardenIntro';
 import RadarIntro from '../components/Game/RadarIntro';
 import ReactionIntro from '../components/Game/ReactionIntro';
+import RobotArmIntro from '../components/Game/RobotArmIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -35,6 +36,7 @@ const PREMIUM_INTRO = {
   temp_garden: TempGardenIntro,
   distance_radar: RadarIntro,
   reaction_champion: ReactionIntro,
+  robot_arm: RobotArmIntro,
 };
 
 export default function LessonView() {

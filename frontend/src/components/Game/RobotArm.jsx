@@ -1,218 +1,127 @@
-import { useEffect, useState, useRef } from 'react';
-import { Target, Move, RotateCcw } from 'lucide-react';
-import { C } from './gameHelpers';
+// 🦾 VOLTRA "Xavfli Yuk: Robot Qo'l" — servo robot qo'l (pick-and-place).
+// Digital Twin: 2 potensiometr = 2 bo'g'im (POT1->burchak, POT2->cho'zilish),
+// TUGMA -> griper. Xavfli idishni ushlab, qo'rg'oshin konteynerga joyla.
+// 3 idish muhrlansa -> hudud xavfsiz (onWin). Faqat Arduino ulanganda ishlaydi.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleArm, armTick } from './pixi/robotArmScene';
 import useGameStore from '../../stores/gameStore';
-
-const TARGETS = [
-  { x: 30, y: 40, size: 8, color: '#00ff88', label: 'A' },
-  { x: 60, y: 30, size: 8, color: '#ffdd00', label: 'B' },
-  { x: 45, y: 55, size: 8, color: '#ff00e5', label: 'C' },
-  { x: 20, y: 60, size: 8, color: '#00f5ff', label: 'D' },
-  { x: 70, y: 50, size: 8, color: '#ff6600', label: 'E' },
-];
+import { playServo, playGeiger, playClunk, playSeal, playWin, playError } from './gameAudio';
 
 export default function RobotArm() {
-  const { serialData, score, incrementScore } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const [baseAngle, setBaseAngle] = useState(90);
-  const [armAngle, setArmAngle] = useState(90);
-  const [gripperOpen, setGripperOpen] = useState(false);
-  const [targetsCollected, setTargetsCollected] = useState(0);
-  const [collected, setCollected] = useState(new Set());
-  const [currentTarget, setCurrentTarget] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [burst, setBurst] = useState(null);
+  const pot = useGameStore((s) => s.serialData.pot);
+  const pot2 = useGameStore((s) => s.serialData.pot2);
+  const btn = useGameStore((s) => s.serialData.btn);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
+
+  const [sealed, setSealed] = useState(0);
+  const [holding, setHolding] = useState(false);
+  const [status, setStatus] = useState('play');
   const winRef = useRef(false);
+  const resetRef = useRef(0);
+  const servoAcc = useRef(0);
 
-  // Win condition
+  const ctlRef = useRef({ a0: 512, a1: 512, btn: 0, connected: false, mode: 'play', resetPulse: 0 });
+  ctlRef.current.a0 = arduinoConnected ? (pot ?? 512) : 512;
+  ctlRef.current.a1 = arduinoConnected ? (pot2 ?? 512) : 512;
+  ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
+  ctlRef.current.connected = arduinoConnected;
+  ctlRef.current.resetPulse = resetRef.current;
+  ctlRef.current.onMove = () => { const now = performance.now(); if (now - servoAcc.current > 130) { servoAcc.current = now; playServo(); } };
+  ctlRef.current.onGrab = () => { playClunk(); setHolding(true); };
+  ctlRef.current.onDrop = () => { playError(); setHolding(false); };
+  ctlRef.current.onGeiger = () => playGeiger();
+  ctlRef.current.onSeal = (n) => { playSeal(); incrementScore(120); setSealed(n); setHolding(false); };
+  ctlRef.current.onWin = () => {
+    if (winRef.current) return; winRef.current = true; setStatus('won'); playWin();
+    const st = useGameStore.getState(); if (st.onWin) st.onWin(st.score + 100);
+  };
+
   useEffect(() => {
-    if (arduinoConnected && targetsCollected >= 3 && !winRef.current) {
-      winRef.current = true;
-      const store = useGameStore.getState();
-      if (store.onWin) store.onWin(score);
-    }
-  }, [targetsCollected, score]);
+    resetRef.current += 1; winRef.current = false;
+    setSealed(0); setHolding(false); setStatus('play');
+  }, [arduinoConnected]);
 
-  // Timer
-  useEffect(() => {
-    if (!arduinoConnected || timeLeft <= 0) return;
-    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, arduinoConnected]);
+  const restart = () => { resetRef.current += 1; winRef.current = false; setSealed(0); setHolding(false); setStatus('play'); };
 
-  // Read servo angles from the real potentiometer + ultrasonic sensor
-  useEffect(() => {
-    const newBase = Math.round(((serialData.pot || 0) / 1023) * 180);
-    setBaseAngle(Math.max(0, Math.min(180, newBase)));
+  const build = useCallback((app) => {
+    const scene = assembleArm(app);
+    let t = 0;
+    app.ticker.add((tk) => { const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt; armTick(scene, dt, t, ctlRef.current); });
+    return () => {};
+  }, []);
 
-    const distAngle = serialData.dist
-      ? Math.round((serialData.dist / 400) * 180)
-      : 90;
-    setArmAngle(Math.max(0, Math.min(180, distAngle)));
-  }, [serialData.pot, serialData.dist]);
-
-  // Collision check with target
-  useEffect(() => {
-    if (collected.has(currentTarget)) return;
-    const target = TARGETS[currentTarget];
-    if (!target) return;
-
-    // Simulate arm end position based on angles
-    const armX = 50 + Math.cos((baseAngle - 90) * Math.PI / 180) * (armAngle / 180) * 30;
-    const armY = 50 - Math.sin((armAngle) * Math.PI / 180) * 25;
-
-    const dx = armX - target.x;
-    const dy = armY - target.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist < target.size + 5 && serialData.btn === 1) {
-      // Gathered!
-      setCollected((prev) => new Set([...prev, currentTarget]));
-      setTargetsCollected((t) => t + 1);
-      setBurst({ id: Date.now(), x: target.x, y: target.y, color: target.color });
-      setTimeout(() => setBurst(null), 600);
-      setCurrentTarget((t) => (t + 1) % TARGETS.length);
-      incrementScore(100);
-    }
-  }, [baseAngle, armAngle, serialData.btn, currentTarget]);
-
-  const target = TARGETS[currentTarget];
-
-  // Calculate arm endpoint
-  const endX = 50 + Math.cos((baseAngle - 90) * Math.PI / 180) * (armAngle / 180) * 30;
-  const endY = 50 - Math.sin((armAngle) * Math.PI / 180) * 25;
+  const panel = { background: 'rgba(10,14,20,0.82)', border: '1px solid rgba(0,234,255,0.2)', borderRadius: 12, padding: '7px 14px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
+  const baseDeg = Math.round(((ctlRef.current.a0) / 1023) * 180);
+  const reachPct = Math.round(((ctlRef.current.a1) / 1023) * 100);
 
   return (
-    <div className="relative h-full min-h-[500px] rounded-2xl overflow-hidden p-6"
-      style={{ background: `linear-gradient(180deg, ${C.DARK} 0%, ${C.PANEL} 100%)` }}>
-      {/* Arduino disconnected overlay */}
-      {!arduinoConnected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-2xl z-10">
-          <p className="text-white text-xl font-game animate-pulse" style={{ fontFamily: 'Chakra Petch, monospace' }}>🔌 Arduino'ni ulang</p>
+    <PixiStage build={build} className="rounded-xl">
+      {/* yuqori-chap: burchak + cho'zilish */}
+      <div className="absolute top-3 left-3 flex gap-2">
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#00eaff', textShadow: '0 0 10px rgba(0,234,255,0.6)' }}>{baseDeg}°</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>BURCHAK</div>
         </div>
-      )}
-      {/* Grid background */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="w-full h-full" style={{
-          backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-        }} />
-      </div>
-
-      {/* Robot Arm Base */}
-      <div className="absolute bottom-[30%] left-1/2 -translate-x-1/2">
-        {/* Base */}
-        <div className="w-16 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: `linear-gradient(90deg, ${C.PANEL}, #334155)`, border: `1px solid ${C.LINE}` }}>
-          <RotateCcw className="w-4 h-4" style={{ color: C.CYAN }} />
-        </div>
-
-        {/* Arm segment 1 */}
-        <div className="relative origin-bottom-left transition-all duration-200"
-          style={{ transform: `rotate(${baseAngle - 135}deg)` }}>
-          <div className="w-24 h-3 rounded ml-8"
-            style={{ background: `linear-gradient(90deg, ${C.CYAN}, ${C.PURPLE})` }}>
-            {/* Joint */}
-            <div className="absolute -left-1 -top-1 w-5 h-5 rounded-full border-2"
-              style={{ background: C.DARK, borderColor: C.CYAN }} />
-          </div>
-
-          {/* Arm segment 2 */}
-          <div className="relative origin-bottom-left transition-all duration-200 ml-20"
-            style={{ transform: `rotate(${armAngle - 90}deg)` }}>
-            <div className="w-20 h-2.5 rounded"
-              style={{ background: `linear-gradient(90deg, ${C.PURPLE}, ${C.CYAN})` }}>
-              <div className="absolute -left-1 -top-1 w-4 h-4 rounded-full border-2"
-                style={{ background: C.DARK, borderColor: C.CYAN }} />
-            </div>
-
-            {/* Gripper */}
-            <div className="absolute -right-2 -top-2 transition-all duration-200">
-              <div className={`flex gap-1 ${gripperOpen ? 'w-6' : 'w-2'}`}>
-                <div className="w-1 h-6 rounded" style={{ background: C.GREEN }} />
-                <div className="w-1 h-6 rounded" style={{ background: C.GREEN }} />
-              </div>
-            </div>
-          </div>
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#6affe0', textShadow: '0 0 10px rgba(57,255,208,0.6)' }}>{reachPct}%</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>CHO'ZILISH</div>
         </div>
       </div>
 
-      {/* Targets */}
-      {TARGETS.map((t, i) => (
-        !collected.has(i) && (
-          <div key={i} className="absolute transition-all duration-300"
-            style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center animate-pulse-slow
-              ${i === currentTarget ? 'ring-2 ring-white' : ''}`}
-              style={{ backgroundColor: t.color, boxShadow: i === currentTarget ? `0 0 10px ${C.CYAN}` : 'none' }}>
-              <span className="text-xs font-bold" style={{ color: C.DARK }}>{t.label}</span>
-            </div>
-          </div>
-        )
-      ))}
+      {/* yuqori-o'ng: griper + muhrlangan */}
+      <div className="absolute top-3 right-3 flex gap-2">
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: holding ? '#6bff8a' : '#5a7a8a' }}>{holding ? '✊ USHLADI' : '✋ OCHIQ'}</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>GRIPER</div>
+        </div>
+        <div style={{ ...panel, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#39ff88', textShadow: '0 0 10px rgba(57,255,136,0.6)' }}>{sealed}/3</div>
+          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a8a' }}>MUHRLANDI</div>
+        </div>
+      </div>
 
-      {/* Collection burst */}
-      {burst && (
-        <div
-          key={burst.id}
-          className="absolute pointer-events-none"
-          style={{ left: `${burst.x}%`, top: `${burst.y}%`, transform: 'translate(-50%, -50%)' }}
-        >
-          <div className="w-12 h-12 rounded-full animate-ping" style={{ background: burst.color, opacity: 0.6 }} />
+      {/* pastki maslahat */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 340 }}>
+        <div style={{ fontSize: 10.5, color: '#8fc5dc' }}>
+          {status === 'won' ? '🦾 Barcha xavfli idish muhrlandi — hudud xavfsiz!'
+            : !arduinoConnected ? 'Platani ulang — 2 potensiometr bilan robot qo\'lni boshqar'
+              : holding ? '📦 Endi qo\'rg\'oshin konteyner ustiga olib borib, tugma bilan QO\'YIB YUBOR'
+                : '🎯 Griperni idish ustiga aniq keltirib, tugma bilan USHLA'}
+        </div>
+      </div>
+
+      {/* boshqaruv eslatmasi */}
+      {arduinoConnected && status === 'play' && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
+          {['POT1 → Burchak', 'POT2 → Cho\'zilish', 'TUGMA → Griper'].map((s) => (
+            <span key={s} style={{ fontSize: 9, color: '#8fc5dc', background: 'rgba(10,14,20,0.7)', border: '1px solid rgba(0,234,255,0.15)', borderRadius: 7, padding: '4px 9px', fontFamily: 'Chakra Petch, monospace' }}>{s}</span>
+          ))}
         </div>
       )}
 
-      {/* Arm Position Indicator */}
-      <div className="absolute transition-all duration-200 w-3 h-3 rounded-full"
-        style={{ left: `${endX}%`, top: `${endY}%`, transform: 'translate(-50%, -50%)',
-          background: C.GOLD, boxShadow: `0 0 15px ${C.GOLD}` }} />
+      {/* ulanmagan */}
+      {!arduinoConnected && status === 'play' && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(0,234,255,0.3)' }}>
+          <span style={{ fontSize: 11, color: '#00eaff' }}>🔌 Platani ulang — servo robot qo'lni boshqar</span>
+        </div>
+      )}
 
-      {/* HUD */}
-      <div className="absolute top-4 left-4 right-4 flex justify-between">
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>Burchak</p>
-          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{baseAngle}°</p>
-        </div>
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>Qo'l</p>
-          <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{armAngle}°</p>
-        </div>
-        <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-          <p className="text-xs" style={{ color: C.MUTED }}>Taymer</p>
-          <p className="text-lg" style={{
-            fontFamily: 'Chakra Petch, monospace',
-            color: timeLeft < 15 ? '#ef4444' : C.WHITE,
-            animation: timeLeft < 15 ? 'pulse 1s infinite' : 'none',
-          }}>
-            {timeLeft}s
-          </p>
-        </div>
-      </div>
-
-      {/* Bottom Stats */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className="flex justify-between items-center">
-          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-            <p className="text-xs" style={{ color: C.MUTED }}>Yig'ilgan</p>
-            <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{targetsCollected}/3</p>
-          </div>
-          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-            <p className="text-xs" style={{ color: C.MUTED }}>Ball</p>
-            <p className="text-white text-lg" style={{ fontFamily: 'Chakra Petch, monospace' }}>{score}</p>
-          </div>
-          <div className="rounded-xl px-4 py-2" style={{ background: C.GLASS, border: `1px solid ${C.LINE}`, borderRadius: 12 }}>
-            <p className="text-xs" style={{ color: C.MUTED }}>Keyingi</p>
-            <p className="text-lg" style={{ fontFamily: 'Chakra Petch, monospace', color: target?.color }}>{target?.label}</p>
+      {/* g'alaba overlay */}
+      {status === 'won' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" style={{ background: 'rgba(6,10,14,0.55)' }}>
+          <div style={{ ...panel, textAlign: 'center', padding: '22px 30px' }}>
+            <div style={{ fontSize: 34, marginBottom: 6 }}>🦾</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#39ff88', marginBottom: 4 }}>Hudud xavfsiz!</div>
+            <div style={{ fontSize: 11, color: '#8fc5dc', marginBottom: 14 }}>3 xavfli idish muhrlandi</div>
+            <button onClick={restart} className="px-5 py-2 rounded-lg" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 12, color: '#06120f', background: '#39ff88', border: 'none', cursor: 'pointer', fontWeight: 800 }}>
+              🔄 Qaytadan
+            </button>
           </div>
         </div>
-
-        {/* Controls hint */}
-        <div className="flex gap-2 mt-2 justify-center">
-          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>POT → Aylanish</span>
-          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>DIST → Qo'l</span>
-          <span className="text-xs px-2 py-1 rounded" style={{ color: C.MUTED, background: C.GLASS, border: `1px solid ${C.LINE}` }}>BTN → Olish</span>
-        </div>
-      </div>
-    </div>
+      )}
+    </PixiStage>
   );
 }

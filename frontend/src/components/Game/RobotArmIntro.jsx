@@ -1,0 +1,93 @@
+// RobotArmIntro — "Xavfli Yuk: Robot Qo'l" kinematik cutscene (asteroid sagasi).
+// Chuqurlikdagi xavfli modda idishlari topildi → odam yaqinlashadi, lekin radiatsiya
+// uni orqaga qaytaradi (qo'l tekkizib bo'lmaydi) → ROBOT QO'L aktivlashib namuna
+// sifatida bitta idishni olib konteynerga muhrlaydi (yakun emas) → Electra tayinlaydi.
+// Butun ketma-ketlik FRAME-RATE'DAN mustaqil (skript vaqt bo'yicha).
+import { useMemo, useRef, useState } from 'react';
+import { Container, Graphics } from 'pixi.js';
+import PixiStage from './pixi/PixiStage';
+import { assembleArm, armTick, PIVOT_Y, CANS, CONTAIN, TH_MIN, TH_MAX, R_MIN, R_MAX } from './pixi/robotArmScene';
+import DialogueBox from './DialogueBox';
+import { playServo, playGeiger, playClunk, playSeal, playAlarm } from './gameAudio';
+
+const LINES = [
+  { text: "Chuqurlikdan asteroid xavfli modda idishlari topildi — lekin ularga qo'l tekkizib bo'lmaydi, radiatsiya o'ldiradi!", emotion: 'worried' },
+  { text: "Yagona yo'l — masofadan boshqariladigan robot qo'l. 2 potensiometr ikkita bo'g'imni buradi, tugma esa griperni ochib-yopadi.", emotion: 'normal' },
+  { text: "Griperni idish ustiga aniq keltir, tugma bilan ushla, keyin qo'rg'oshin konteynerga olib borib qo'yib yubor.", emotion: 'normal' },
+  { text: "3 ta idishni xavfsiz joyla va hududni qutqar. Tayyormisan, operator?", emotion: 'excited' },
+];
+
+function buildIntroScene(app, ctlRef, onSceneDone) {
+  const scene = assembleArm(app);
+  scene.introTh = (TH_MIN + TH_MAX) / 2; scene.introR = (R_MIN + R_MAX) / 2; scene.introBtn = 0;
+
+  // odam figurasi (radiatsiyadan chekinadi)
+  const humanC = new Container(); humanC.x = 900; humanC.y = PIVOT_Y + 44; scene.root.addChild(humanC);
+  const h = new Graphics();
+  h.circle(0, -54, 10).fill(0x2a3a4c).stroke({ width: 1.5, color: 0x4a5a70 });
+  h.roundRect(-9, -44, 18, 32, 5).fill(0x233240).stroke({ width: 1.5, color: 0x415066 });
+  h.rect(-8, -12, 6, 16).fill(0x2a3a4c); h.rect(2, -12, 6, 16).fill(0x2a3a4c);
+  humanC.addChild(h);
+  const warn = new Graphics(); warn.poly([0, -82, 8, -68, -8, -68]).fill(0xff3b46); warn.rect(-1.4, -79, 2.8, 7).fill(0x1a0a0a).circle(0, -70, 1.4).fill(0x1a0a0a); warn.alpha = 0; humanC.addChild(warn);
+
+  const ctl = { a0: 512, a1: 512, btn: 0, connected: false, mode: 'intro', resetPulse: 0,
+    onMove: () => { const n = performance.now(); if (n - (ctl._sv || 0) > 130) { ctl._sv = n; playServo(); } },
+    onGrab: () => playClunk(), onSeal: () => playSeal(), onGeiger: () => playGeiger() };
+
+  const C0 = CANS[0];
+  const script = [
+    { t: 1.0, fn: () => playAlarm() },
+    { t: 3.4, fn: () => { scene.introTh = C0.th; scene.introR = C0.r; } },   // qo'l idish[0] ustiga
+    { t: 4.5, fn: () => { scene.introBtn = 1; } },                          // ushla (rising edge)
+    { t: 4.65, fn: () => { scene.introBtn = 0; } },
+    { t: 4.9, fn: () => { scene.introTh = CONTAIN.th; scene.introR = CONTAIN.r; } }, // konteynerga
+    { t: 6.1, fn: () => { scene.introBtn = 1; } },                          // qo'yib yubor -> muhrlash
+    { t: 6.25, fn: () => { scene.introBtn = 0; } },
+  ];
+
+  let t = 0, done = false, idx = 0;
+  ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
+
+  app.ticker.add((tk) => {
+    const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
+    while (idx < script.length && t >= script[idx].t) { script[idx].fn(); idx++; }
+
+    // odam: yaqinlashadi (1.0-2.2), ogohlantirish, chekinadi (2.3-3.3)
+    if (t < 2.2) humanC.x = 900 - (clamp01((t - 0.6) / 1.6)) * 250;
+    else if (t < 3.4) { humanC.x = 650 + clamp01((t - 2.3) / 1.1) * 420; }
+    warn.alpha = (t > 1.6 && t < 3.2) ? 0.5 + 0.5 * Math.sin(t * 12) : Math.max(0, warn.alpha - dt * 3);
+    humanC.visible = humanC.x < 1040;
+
+    armTick(scene, dt, t, ctl);
+    if (!done && t > 7.6) { done = true; onSceneDone(); }
+  });
+
+  return () => {};
+}
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+export default function RobotArmIntro({ onStart }) {
+  const [phase, setPhase] = useState('scene');
+  const ctlRef = useRef({});
+  const build = useMemo(() => (app) => buildIntroScene(app, ctlRef, () => setPhase('talk')), []);
+  return (
+    <div className="absolute inset-0 z-30" style={{ background: '#080a0e' }}>
+      <PixiStage build={build} className="rounded-xl">
+        {phase === 'scene' && (
+          <div className="absolute top-3 right-3 pointer-events-auto">
+            <button onClick={() => ctlRef.current.skip?.()} className="px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-wider"
+              style={{ fontFamily: 'Chakra Petch, monospace', color: '#94a3b8', background: 'rgba(11,17,32,0.7)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+              O'tkazib yuborish ▸▸
+            </button>
+          </div>
+        )}
+        {phase === 'talk' && (
+          <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
+            <DialogueBox name="ELECTRA" role="Robototexnik" lines={LINES} actionLabel="🦾 Robot qo'lni yoq" onAction={onStart} accent="#ffb020" />
+          </div>
+        )}
+      </PixiStage>
+    </div>
+  );
+}
