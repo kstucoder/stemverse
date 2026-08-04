@@ -317,6 +317,16 @@ const stories = {
     solution: '🦾 Robot qo\'l bilan yig\'ish',
     climax: 'Material xavfsiz! Laboratoriya qutqarildi!',
   },
+  smart_greenhouse: {
+    title: 'Aqlli Issiqxona',
+    hero: 'Sprout',
+    heroEmoji: '🌱',
+    role: 'Issiqxona muhandisi',
+    mission: '2 potensiometr bilan harorat va namlikni yashil zonada ushlab, ekinlarni yetishtiring va shaharni to\'ydiring!',
+    problem: '🥀 Dalalar qirov urgan — oziq yo\'q',
+    solution: '🌡️ Iqlim va sug\'orishni boshqarish',
+    climax: 'Hosil yetildi! Omon qolganlar uchun oziq tayyor!',
+  },
   piano_player: {
     title: 'Rezonans Mayog\'i',
     hero: 'Signal',

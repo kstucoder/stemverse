@@ -17,6 +17,7 @@ import RadarIntro from '../components/Game/RadarIntro';
 import ReactionIntro from '../components/Game/ReactionIntro';
 import RobotArmIntro from '../components/Game/RobotArmIntro';
 import PianoIntro from '../components/Game/PianoIntro';
+import GreenhouseIntro from '../components/Game/GreenhouseIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -39,6 +40,7 @@ const PREMIUM_INTRO = {
   reaction_champion: ReactionIntro,
   robot_arm: RobotArmIntro,
   piano_player: PianoIntro,
+  smart_greenhouse: GreenhouseIntro,
 };
 
 export default function LessonView() {

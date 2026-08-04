@@ -17,6 +17,7 @@ import ObstacleCourse from './ObstacleCourse';
 import IoTDashboard from './IoTDashboard';
 import RemoteSensor from './RemoteSensor';
 import SmartHome from './SmartHome';
+import SmartGreenhouse from './SmartGreenhouse';
 
 const GAMES = {
   energy_city: EnergyCity,
@@ -38,6 +39,7 @@ const GAMES = {
   iot_dashboard: IoTDashboard,
   remote_sensor: RemoteSensor,
   smart_home: SmartHome,
+  smart_greenhouse: SmartGreenhouse,
 };
 
 export function getGameComponent(gameType) {

@@ -269,6 +269,21 @@ export function playPowerDown() {
   } catch (e) { /* silent */ }
 }
 
+export function playSpray() {
+  // Purkagich tumani — qisqa "pss" shovqin (sug'orish)
+  try {
+    const ctx = getContext();
+    const dur = 0.35;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 4200;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.05, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+  } catch (e) { /* silent */ }
+}
+
 export function playBeacon() {
   // Rezonans mayog'i faollashuvi — pastdan yuqoriga ko'tariluvchi triada + yorqin chime
   const notes = [262, 330, 392, 523, 659];
