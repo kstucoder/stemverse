@@ -1,124 +1,153 @@
-// greenhouseScene — VOLTRA "Aqlli Issiqxona" PixiJS olami.
-// Sim (komponentda) hisoblaydi: temp, humid, growth, health, light, irrig, weather.
-// Bu yerda faqat RENDER: shisha issiqxona, kunduz/tun osmon, o'sadigan ekinlar
-// (so'lish bilan), purkagich tumani, qirov/issiqlik effekti, yomg'ir, tiklanayotgan
-// shahar foni (chiroqlari yoniq — 12-dars payoff).
+// greenhouseScene — VOLTRA "Aqlli Issiqxona" — YOPIQ VERTIKAL GIDROPONIK FERMA.
+// (8-darsdan farqli: u ochiq gulzor edi; bu — hi-tech ichki ferma: po'lat javonlar,
+//  magenta grow-light panellari, gidroponik tovoqlar, quvurlar, purkagichlar,
+//  ventilyatorlar, devor ekranlari va tashqariga qaraydigan deraza.)
+// Sim (komponentda): temp, humid, growth, health, light, irrig, weather -> RENDER.
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
-import { gradTexture, radialTexture, makeParticles, makeSkyline } from './cityScene';
+import { gradTexture, radialTexture, makeParticles } from './cityScene';
 
 export const LW = 1000, LH = 560;
-const GROUND = 470, N_CROPS = 5;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
+const SHELF_Y = [244, 338, 432];
+const CROP_XS = [388, 470, 552, 634, 716, 798];
 
-function drawPlant(g, growth, health, t, seed) {
+function drawLeafy(g, growth, health, t, seed) {
   g.clear();
-  const h = 16 + growth * 86;
-  const droop = (1 - health) * 0.6;
   const healthy = health > 0.45;
-  const stemCol = healthy ? 0x3f8a34 : 0x7a6a34;
-  const leafCol = healthy ? 0x4fae42 : 0x8a7a3a;
-  const sway = Math.sin(t * 1.4 + seed) * (3 + growth * 6) * (1 - droop * 0.6);
-  const topX = sway + droop * 22, topY = -h + droop * h * 0.35;
-  g.moveTo(0, 0).quadraticCurveTo(sway * 0.5, -h * 0.5, topX, topY).stroke({ width: 3 + growth * 2, color: stemCol });
-  const leafN = Math.max(1, Math.floor(1 + growth * 4));
-  for (let i = 0; i < leafN; i++) {
-    const k = (i + 1) / (leafN + 1);
-    const lx = lerp(0, topX, k), ly = lerp(0, topY, k);
-    const side = i % 2 === 0 ? 1 : -1;
-    g.ellipse(lx + side * (7 + growth * 5), ly, 6 + growth * 5, 3.5 + growth * 2).fill({ color: leafCol, alpha: healthy ? 0.95 : 0.7 });
+  const R = 5 + growth * 15;
+  const n = 4 + Math.floor(growth * 5);
+  const base = healthy ? 0x4fae42 : 0x9a8a3a, base2 = healthy ? 0x62c455 : 0xac9a4c;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.sin(t * 1.2 + seed) * 0.12;
+    const lx = Math.cos(a) * R * 0.55, ly = -Math.abs(Math.sin(a)) * R - growth * 3;
+    g.ellipse(lx, ly, 3.5 + growth * 3.5, 7 + growth * 7).fill({ color: i % 2 ? base : base2, alpha: healthy ? 0.95 : 0.68 });
   }
-  if (growth > 0.66 && healthy) { g.circle(topX, topY, 3.5 + growth * 3.5).fill(0xff5a4a).circle(topX - 1.5, topY - 1.5, 1.5).fill({ color: 0xffd0c0, alpha: 0.8 }); }
+  g.circle(0, 0, 2.5 + growth * 2).fill(0x2e2016);
+  if (growth > 0.72 && healthy) g.circle(0, -R * 0.55, 3 + growth * 2).fill(0xff6a4a);
 }
 
 export function assembleGreenhouse(app) {
-  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.5, bloomScale: 1.05, brightness: 1.0, blur: 5, quality: 4 })];
+  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.46, bloomScale: 1.08, brightness: 1.0, blur: 6, quality: 4 })];
   app.stage.filterArea = app.renderer.screen;
 
-  const skyC = new Container(); app.stage.addChild(skyC);
-  const skyDay = new Sprite(gradTexture(['#173a6a', '#3f7ab0', '#8fb8d8', '#dfe8d8'])); skyC.addChild(skyDay);
-  const skyNight = new Sprite(gradTexture(['#050a18', '#0a1230', '#10183a', '#141a2e'])); skyC.addChild(skyNight);
-  const starC = new Container(); skyC.addChild(starC); const stars = [];
-  for (let i = 0; i < 60; i++) { const g = new Graphics().circle(0, 0, 0.6 + Math.random()).fill(0xeaf3ff); starC.addChild(g); stars.push({ g, fx: Math.random(), fy: Math.random() * 0.4, b: 0.3 + Math.random() * 0.4, sp: 0.5 + Math.random() * 2, ph: Math.random() * 6.28 }); }
-  const sun = new Sprite(radialTexture('rgba(255,230,150,0.95)', 256)); sun.anchor.set(0.5); sun.width = sun.height = 120; skyC.addChild(sun);
-  const moon = new Sprite(radialTexture('rgba(200,215,255,0.7)', 256)); moon.anchor.set(0.5); moon.width = moon.height = 90; skyC.addChild(moon);
-
+  const bgC = new Container(); app.stage.addChild(bgC);
+  const bg = new Sprite(gradTexture(['#0a0e12', '#10161c', '#0c1116', '#080b0f'])); bgC.addChild(bg);
   const root = new Container(); app.stage.addChild(root);
 
-  // tiklanayotgan shahar foni (chiroqlari yoniq)
-  const cityBg = makeSkyline(90, 0x1a2438, 23); cityBg.alpha = 0.5; root.addChild(cityBg);
-  const cityLights = [];
-  for (let i = 0; i < 22; i++) { const g = new Graphics().rect(0, 0, 3, 4).fill(0xffd76a); g.x = 30 + Math.random() * 940; g.y = 360 + Math.random() * 80; g.alpha = 0.3 + Math.random() * 0.4; root.addChild(g); cityLights.push({ g, sp: 0.5 + Math.random() * 2, ph: Math.random() * 6.28, b: g.alpha }); }
+  // --- po'lat devor panellari + zovurlar ---
+  const wall = new Graphics();
+  for (let x = 30; x < LW; x += 120) wall.rect(x, 20, 100, LH - 100).fill({ color: 0x121a20, alpha: 0.5 }).rect(x, 20, 100, LH - 100).stroke({ width: 1, color: 0x243038, alpha: 0.4 });
+  for (let x = 30; x < LW; x += 120) for (let y = 40; y < LH - 90; y += 60) wall.circle(x + 6, y, 1.6).fill(0x2a3640);   // rivetlar
+  root.addChild(wall);
+  // pastki texnik zona
+  root.addChild(new Graphics().rect(0, LH - 74, LW, 74).fill(0x0b0f13).rect(0, LH - 74, LW, 3).fill({ color: 0x2a3640, alpha: 0.7 }));
 
-  // issiqxona: orqa yorug'lik + tuproq to'shagi
-  const houseGlow = new Sprite(radialTexture('rgba(140,220,160,0.18)', 512)); houseGlow.anchor.set(0.5, 1); houseGlow.width = 760; houseGlow.height = 420; houseGlow.x = LW / 2; houseGlow.y = GROUND + 40; houseGlow.blendMode = 'add'; root.addChild(houseGlow);
-  const soil = new Graphics();
-  soil.rect(150, GROUND, 700, 70).fill(0x2a1c12).rect(150, GROUND, 700, 6).fill(0x3a2818);
-  for (let i = 0; i < 40; i++) soil.circle(160 + Math.random() * 680, GROUND + 8 + Math.random() * 54, 1.5 + Math.random() * 2).fill({ color: 0x000000, alpha: 0.2 });
-  root.addChild(soil);
+  // --- tashqariga qaraydigan deraza (ob-havo/tun shu yerda ko'rinadi) ---
+  const WX = 44, WY = 62, WW = 250, WH = 150;
+  const windowC = new Container(); root.addChild(windowC);
+  const skyDay = new Sprite(gradTexture(['#245a8a', '#5a9ac0', '#a8c8d8'])); skyDay.x = WX; skyDay.y = WY; skyDay.width = WW; skyDay.height = WH; windowC.addChild(skyDay);
+  const skyNight = new Sprite(gradTexture(['#050a18', '#0a1230', '#141a2e'])); skyNight.x = WX; skyNight.y = WY; skyNight.width = WW; skyNight.height = WH; windowC.addChild(skyNight);
+  const winSun = new Sprite(radialTexture('rgba(255,230,150,0.9)', 256)); winSun.anchor.set(0.5); winSun.width = winSun.height = 90; winSun.x = WX + WW * 0.7; winSun.y = WY + WH * 0.4; windowC.addChild(winSun);
+  const winCity = new Graphics();
+  let cx = WX; while (cx < WX + WW) { const bw = 12 + Math.random() * 16, bh = 20 + Math.random() * 55; winCity.rect(cx, WY + WH - bh, bw, bh).fill(0x0c1622); if (Math.random() < 0.6) for (let k = 0; k < 3; k++) winCity.rect(cx + 2 + Math.random() * (bw - 5), WY + WH - bh + 4 + Math.random() * (bh - 8), 2, 2).fill({ color: 0xffd76a, alpha: 0.7 }); cx += bw + 3; }
+  windowC.addChild(winCity);
+  const winRainC = new Container(); windowC.addChild(winRainC); const winRain = [];
+  for (let i = 0; i < 40; i++) { const g = new Graphics().moveTo(0, 0).lineTo(-2, 8).stroke({ width: 1, color: 0x9ecbff, alpha: 0.5 }); g.x = WX + Math.random() * WW; g.y = WY + Math.random() * WH; winRainC.addChild(g); winRain.push(g); } winRainC.alpha = 0;
+  const winMask = new Graphics().rect(WX, WY, WW, WH).fill(0xffffff); root.addChild(winMask); windowC.mask = winMask;
+  const winFrame = new Graphics();
+  winFrame.rect(WX - 5, WY - 5, WW + 10, WH + 10).stroke({ width: 6, color: 0x2c3a44 });
+  winFrame.moveTo(WX + WW / 2, WY).lineTo(WX + WW / 2, WY + WH).moveTo(WX, WY + WH / 2).lineTo(WX + WW, WY + WH / 2).stroke({ width: 3, color: 0x2c3a44, alpha: 0.8 });
+  root.addChild(winFrame);
+  root.addChild(new Graphics().rect(WX - 5, WY + WH + 5, WW + 10, 4).fill(0x1a2229)); // tokcha
 
-  // ekinlar
-  const crops = [];
-  for (let i = 0; i < N_CROPS; i++) { const g = new Graphics(); const c = new Container(); c.x = 230 + i * 108; c.y = GROUND + 6; c.addChild(g); root.addChild(c); crops.push({ c, g, seed: Math.random() * 6.28 }); }
+  // --- devor ekranlari (dekorativ monitoring) ---
+  const panels = [];
+  [[WX + 20, WY + WH + 26], [WX + 130, WY + WH + 26]].forEach(([px, py], i) => {
+    root.addChild(new Graphics().roundRect(px, py, 96, 40, 5).fill(0x0a1016).roundRect(px, py, 96, 40, 5).stroke({ width: 1.5, color: i ? 0x2b7de0 : 0x39c06a, alpha: 0.6 }));
+    const bar = new Graphics(); root.addChild(bar); panels.push({ bar, px, py, col: i ? 0x2b7de0 : 0x39c06a });
+  });
 
-  // purkagich tumani + yomg'ir
+  // --- gidroponik javonlar (3 qavat) + grow-light + tovoq + ekinlar ---
+  const growLights = [], crops = [], nozzles = [];
+  SHELF_Y.forEach((sy, si) => {
+    // grow-light nurini (magenta) — javon ustida
+    const lg = new Sprite(radialTexture('rgba(255,60,150,0.85)', 256)); lg.anchor.set(0.5, 0); lg.width = 520; lg.height = 120; lg.x = 592; lg.y = sy - 60; lg.blendMode = 'add'; lg.alpha = 0.3; root.addChild(lg);
+    // light bar
+    root.addChild(new Graphics().roundRect(332, sy - 66, 520, 8, 3).fill(0x1a1420).roundRect(336, sy - 64, 512, 3, 2).fill({ color: 0xff3d8b, alpha: 0.9 }));
+    growLights.push(lg);
+    // javon beam + gidroponik tovoq (suv)
+    root.addChild(new Graphics().rect(330, sy + 8, 524, 10, ).fill(0x1c262e).rect(330, sy + 6, 524, 3).fill(0x2c3a44));
+    root.addChild(new Graphics().roundRect(348, sy - 2, 488, 10, 3).fill(0x123038).roundRect(348, sy - 2, 488, 4, 2).fill({ color: 0x2fa8c8, alpha: 0.5 }));  // suv tovog'i
+    // purkagich nozzle (o'rtada)
+    nozzles.push({ x: 592, y: sy - 58 });
+    // ekinlar
+    CROP_XS.forEach((x) => { const g = new Graphics(); const c = new Container(); c.x = x; c.y = sy; c.addChild(g); root.addChild(c); crops.push({ g, seed: Math.random() * 6.28 }); });
+  });
+
+  // yon quvurlar (gidroponik liniya)
+  const pipes = new Graphics();
+  pipes.moveTo(322, 180).lineTo(322, LH - 74).stroke({ width: 7, color: 0x1c262e });
+  pipes.moveTo(862, 180).lineTo(862, LH - 74).stroke({ width: 7, color: 0x1c262e });
+  SHELF_Y.forEach((sy) => { pipes.moveTo(322, sy + 12).lineTo(348, sy + 12).moveTo(862, sy + 12).lineTo(836, sy + 12).stroke({ width: 4, color: 0x243038 }); });
+  root.addChild(pipes);
+
+  // ventilyatorlar (iqlim) — aylanadi
+  const fans = [];
+  [[900, 150], [900, 420]].forEach(([fx, fy]) => {
+    const c = new Container(); c.x = fx; c.y = fy; root.addChild(c);
+    c.addChild(new Graphics().circle(0, 0, 26).fill(0x0c1218).circle(0, 0, 26).stroke({ width: 2, color: 0x2c3a44 }));
+    const blades = new Graphics(); for (let b = 0; b < 4; b++) { const a = b * Math.PI / 2; blades.ellipse(Math.cos(a) * 12, Math.sin(a) * 12, 5, 12).fill({ color: 0x3a4a56, alpha: 0.9 }); } c.addChild(blades);
+    fans.push(blades);
+  });
+
   const mist = makeParticles(root);
-  const rainC = new Container(); root.addChild(rainC); const rain = [];
-  for (let i = 0; i < 90; i++) { const g = new Graphics().moveTo(0, 0).lineTo(-2, 10).stroke({ width: 1, color: 0x9ecbff, alpha: 0.5 }); g.x = Math.random() * LW; g.y = Math.random() * LH; rainC.addChild(g); rain.push(g); } rainC.alpha = 0;
 
-  // shisha issiqxona ramkasi (old, yarim-shaffof) — ekinlar ustidan
-  const glass = new Graphics(); root.addChild(glass);
-  const HX0 = 150, HX1 = 850, HY = 150, HYb = GROUND + 70, HXm = 500;
-  glass.moveTo(HX0, HYb).lineTo(HX0, HY + 60).lineTo(HXm, HY).lineTo(HX1, HY + 60).lineTo(HX1, HYb).stroke({ width: 5, color: 0x8fb6c8, alpha: 0.5 });
-  glass.rect(HX0, HY + 60, HX1 - HX0, HYb - (HY + 60)).fill({ color: 0xafd8e8, alpha: 0.04 });
-  for (let x = HX0 + 100; x < HX1; x += 100) glass.moveTo(x, HY + 60 - (Math.abs(x - HXm) < 60 ? 40 : 0)).lineTo(x, HYb).stroke({ width: 1.5, color: 0x8fb6c8, alpha: 0.18 });
-  glass.moveTo(HX0, HY + 60).lineTo(HXm, HY).lineTo(HX1, HY + 60).stroke({ width: 1.5, color: 0x8fb6c8, alpha: 0.22 });
-  // kondensatsiya tomchilari
-  for (let i = 0; i < 30; i++) glass.circle(HX0 + 20 + Math.random() * (HX1 - HX0 - 40), HY + 80 + Math.random() * (HYb - HY - 120), 1 + Math.random() * 1.5).fill({ color: 0xd8f0ff, alpha: 0.15 });
-
-  // effekt overlaylari (qirov / issiqlik)
+  // effekt overlaylari
   const frost = new Graphics().rect(0, 0, 10, 10).fill(0xbfe0ff); frost.alpha = 0; frost.blendMode = 'add'; app.stage.addChild(frost);
-  const heat = new Graphics().rect(0, 0, 10, 10).fill(0xff8a3a); heat.alpha = 0; heat.blendMode = 'add'; app.stage.addChild(heat);
+  const heat = new Graphics().rect(0, 0, 10, 10).fill(0xff7a30); heat.alpha = 0; heat.blendMode = 'add'; app.stage.addChild(heat);
 
-  return { app, skyDay, skyNight, starC, stars, sun, moon, root, cityLights, houseGlow, crops, mist, rainC, rain, frost, heat };
+  return { app, bg, root, skyDay, skyNight, winSun, winRainC, winRain, panels, growLights, crops, nozzles, fans, mist, frost, heat };
 }
 
-// s = { temp, humid, growth, health, light, irrig, weather, connected }
+// s = { temp, humid, growth, health, light, irrig, weather }
 export function greenhouseTick(scene, dt, t, s) {
-  const { app, skyDay, skyNight, starC, stars, sun, moon, root, cityLights, houseGlow, crops, mist, rainC, rain, frost, heat } = scene;
+  const { app, bg, root, skyDay, skyNight, winSun, winRainC, winRain, panels, growLights, crops, nozzles, fans, mist, frost, heat } = scene;
   const w = app.screen.width, h = app.screen.height;
-  skyDay.width = w; skyDay.height = h; skyNight.width = w; skyNight.height = h;
+  bg.width = w; bg.height = h;
   const sc = Math.min(w / LW, h / LH);
   root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
   [frost, heat].forEach((o) => { o.width = w; o.height = h; });
 
-  // kun/tun
   const light = clamp(s.light ?? 0.6, 0, 1);
-  skyNight.alpha = 1 - light;
-  starC.alpha = 1 - light;
-  stars.forEach((st) => { st.g.x = st.fx * w; st.g.y = st.fy * h; st.g.alpha = st.b * (0.4 + 0.5 * Math.sin(t * st.sp + st.ph)); });
-  const ang = Math.PI * (1 - light);          // quyosh yoyi
-  sun.x = w / 2 + Math.cos(ang) * w * 0.4; sun.y = h * 0.72 - Math.sin(Math.PI * light) * h * 0.55; sun.alpha = clamp(light * 1.4, 0, 1);
-  moon.x = w / 2 - Math.cos(ang) * w * 0.4; moon.y = h * 0.72 - Math.sin(Math.PI * (1 - light)) * h * 0.5; moon.alpha = clamp((1 - light) * 1.2, 0, 1);
+  const temp = s.temp ?? 22, growth = clamp(s.growth ?? 0, 0, 1), health = clamp(s.health ?? 1, 0, 1);
 
-  cityLights.forEach((o) => { o.g.alpha = o.b * (0.6 + 0.4 * Math.sin(t * o.sp + o.ph)) * (0.4 + (1 - light) * 0.6); });
-  houseGlow.alpha = 0.12 + clamp(s.growth ?? 0, 0, 1) * 0.22 + clamp(s.health ?? 1, 0, 1) * 0.05;
+  // deraza: tun/kun + ob-havo
+  skyNight.alpha = 1 - light;
+  winSun.alpha = clamp(light * 1.3, 0, 1) * (s.weather === 'sun' ? 1 : 0.5);
+  const raining = s.weather === 'rain';
+  winRainC.alpha = lerp(winRainC.alpha, raining ? 0.85 : 0, Math.min(dt * 2, 1));
+  if (winRainC.alpha > 0.02) winRain.forEach((g) => { g.y += 160 * dt; g.x -= 30 * dt; if (g.y > 212) { g.y = 62; g.x = 44 + Math.random() * 250; } });
+
+  // grow-light rangi haroratga qarab (sovuq->ko'k, mo''tadil->magenta, issiq->amber)
+  growLights.forEach((lg, i) => { lg.tint = temp < 16 ? 0x6a86ff : temp > 28 ? 0xffab40 : 0xff3d8b; lg.alpha = 0.26 + 0.1 * Math.sin(t * 3 + i) + growth * 0.12; });
 
   // ekinlar
-  crops.forEach((cr, i) => { const gr = clamp((s.growth ?? 0) - i * 0.02, 0, 1); drawPlant(cr.g, gr, clamp(s.health ?? 1, 0, 1), t, cr.seed); });
+  crops.forEach((cr, i) => { const gr = clamp(growth - (i % CROP_XS.length) * 0.015, 0, 1); drawLeafy(cr.g, gr, health, t, cr.seed); });
 
-  // purkagich tumani (sug'orish yuqori bo'lsa)
-  if ((s.irrig ?? 0) > 0.35 && Math.random() < 0.6) mist.burst(230 + Math.random() * 540, 168, 0xd8f0ff, 1, 30);
+  // purkagich (sug'orish)
+  if ((s.irrig ?? 0) > 0.35 && Math.random() < 0.7) { const nz = nozzles[Math.floor(Math.random() * nozzles.length)]; mist.burst(nz.x + (Math.random() - 0.5) * 200, nz.y + 6, 0xd8f0ff, 1, 26); }
   mist.tick(dt);
 
-  // yomg'ir
-  const raining = s.weather === 'rain';
-  rainC.alpha = lerp(rainC.alpha, raining ? 0.8 : 0, Math.min(dt * 2, 1));
-  if (rainC.alpha > 0.02) rain.forEach((g) => { g.y += 520 * dt; g.x -= 90 * dt; if (g.y > LH) { g.y = -12; g.x = Math.random() * LW; } });
+  // ventilyatorlar — issiqda tez aylanadi
+  const fanSpd = 1.5 + clamp((temp - 20) / 12, 0, 1) * 8;
+  fans.forEach((b) => { b.rotation += fanSpd * dt; });
 
-  // qirov / issiqlik overlaylari
-  const temp = s.temp ?? 22;
-  frost.alpha = clamp((16 - temp) / 14, 0, 0.42) * (0.8 + 0.2 * Math.sin(t * 2));
-  heat.alpha = clamp((temp - 28) / 14, 0, 0.36) * (0.8 + 0.2 * Math.sin(t * 5));
+  // devor ekranlari (temp/humid bar)
+  panels.forEach((p, i) => { const v = i === 0 ? clamp((temp - 8) / 28, 0, 1) : clamp((s.humid ?? 50) / 100, 0, 1); p.bar.clear(); p.bar.rect(p.px + 8, p.py + 30 - 22 * v, 80, 22 * v).fill({ color: p.col, alpha: 0.5 }); p.bar.moveTo(p.px + 8, p.py + 30).lineTo(p.px + 88, p.py + 30).stroke({ width: 1, color: p.col, alpha: 0.4 }); });
+
+  // qirov / issiqlik
+  frost.alpha = clamp((16 - temp) / 14, 0, 0.4) * (0.8 + 0.2 * Math.sin(t * 2));
+  heat.alpha = clamp((temp - 28) / 14, 0, 0.34) * (0.8 + 0.2 * Math.sin(t * 5));
 }
