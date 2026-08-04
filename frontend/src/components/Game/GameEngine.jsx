@@ -15,6 +15,7 @@ import DockingAssistant from './DockingAssistant';
 import MotionAlarm from './MotionAlarm';
 import MusicVisualizer from './MusicVisualizer';
 import ObstacleCourse from './ObstacleCourse';
+import MeteorDefense from './MeteorDefense';
 import IoTDashboard from './IoTDashboard';
 import RemoteSensor from './RemoteSensor';
 import SmartHome from './SmartHome';
@@ -35,7 +36,7 @@ const GAMES = {
   parking_assistant: DockingAssistant,
   motion_alarm: MotionAlarm,
   music_visualizer: MusicVisualizer,
-  obstacle_course: ObstacleCourse,
+  obstacle_course: MeteorDefense,
   secret_code: SecretCodeDoor,
   iot_dashboard: IoTDashboard,
   remote_sensor: RemoteSensor,
