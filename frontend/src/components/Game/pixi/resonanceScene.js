@@ -62,6 +62,24 @@ function makeBuilding2(x, base, w, h, ruined) {
   return { c, wins, resp };
 }
 
+// tashlab ketilgan mashina — chiroqlari yoniq, lekin ichida hech kim yo'q
+function makeCar(x, y, dir, col, cabinCol, ang) {
+  const c = new Container(); c.x = x; c.y = y; c.rotation = ang; c.scale.x = dir;
+  const hl = new Sprite(radialTexture('rgba(255,240,185,0.9)', 128)); hl.anchor.set(0.05, 0.5); hl.width = 96; hl.height = 30; hl.x = 26; hl.y = -1; hl.blendMode = 'add'; hl.alpha = 0.5; c.addChild(hl);
+  const tailGlow = new Sprite(radialTexture('rgba(255,60,40,0.8)', 128)); tailGlow.anchor.set(0.5); tailGlow.width = tailGlow.height = 22; tailGlow.x = -30; tailGlow.y = -3; tailGlow.blendMode = 'add'; tailGlow.alpha = 0.6; c.addChild(tailGlow);
+  const g = new Graphics();
+  g.ellipse(0, 8, 30, 5).fill({ color: 0x000000, alpha: 0.35 });                   // soya
+  g.roundRect(-30, -12, 60, 16, 6).fill(col).stroke({ width: 1, color: 0x000000, alpha: 0.3 });
+  g.roundRect(-16, -21, 32, 11, 4).fill(cabinCol);                                  // kabina
+  g.roundRect(-13, -19, 12, 7, 2).fill(0x0c1420); g.roundRect(2, -19, 11, 7, 2).fill(0x0c1420); // oynalar
+  g.circle(29, -2, 2.6).fill(0xfff2c0);                                             // faralar
+  g.circle(-29, -3, 2.2).fill(0xff5a3a);                                            // stop chirog'i
+  g.circle(-17, 5, 5).fill(0x0a0a0e).circle(-17, 5, 2).fill(0x222);                 // g'ildiraklar
+  g.circle(17, 5, 5).fill(0x0a0a0e).circle(17, 5, 2).fill(0x222);
+  c.addChild(g);
+  return { c, hl, base: 0.5, sp: 3 + Math.random() * 4, ph: Math.random() * 6.28, flick: Math.random() < 0.35 ? 0.06 : 0 };
+}
+
 export function assembleResonance(app) {
   app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.42, bloomScale: 1.12, brightness: 1.0, blur: 6, quality: 4 })];
   app.stage.filterArea = app.renderer.screen;
@@ -100,6 +118,27 @@ export function assembleResonance(app) {
     if (Math.random() < 0.5) { rubble.moveTo(bx - 6, CBASE); for (let k = 0; k < 5; k++) rubble.lineTo(bx + Math.random() * bw, CBASE - Math.random() * 15); rubble.lineTo(bx + bw + 6, CBASE).fill({ color: 0x0c0914, alpha: 0.9 }); }
     bx += bw + 6 + Math.random() * 14;
   }
+  // --- ko'cha (bo'm-bo'sh) ---
+  const road = new Graphics();
+  road.rect(-60, CBASE + 4, LW + 120, LH - CBASE).fill(0x0d0b13);
+  road.rect(-60, CBASE + 4, LW + 120, 3).fill({ color: 0x2a2438, alpha: 0.7 });        // trotuar chekkasi
+  for (let x = -40; x < LW + 40; x += 70) road.rect(x, CBASE + 40, 34, 4).fill({ color: 0xffd23f, alpha: 0.12 }); // yo'l chiziqlari
+  root.addChild(road);
+  // ko'cha chiroqlari (yoniq)
+  const lamps = [110, 470, 830];
+  lamps.forEach((lx) => {
+    const glow = new Sprite(radialTexture('rgba(255,214,120,0.8)', 256)); glow.anchor.set(0.5, 0); glow.width = 120; glow.height = 150; glow.x = lx; glow.y = CBASE - 44; glow.blendMode = 'add'; glow.alpha = 0.28; root.addChild(glow);
+    const pole = new Graphics(); pole.rect(lx - 1.5, CBASE - 60, 3, 60).fill(0x1a1622); pole.rect(lx - 1.5, CBASE - 60, 22, 3).fill(0x1a1622); pole.circle(lx + 20, CBASE - 58, 3).fill(0xffe6a0); root.addChild(pole);
+  });
+  // notekis to'xtab qolgan mashinalar (chiroqlari yoniq, ichida hech kim yo'q)
+  const carSpecs = [
+    [140, CBASE + 26, 1, 0x3a4a66, 0x243247, 0.05], [300, CBASE + 46, -1, 0x5a3540, 0x3a232a, -0.14],
+    [470, CBASE + 22, 1, 0x4a4a52, 0x2e2e36, 0.02], [560, CBASE + 52, -1, 0x385046, 0x223229, 0.22],
+    [700, CBASE + 30, -1, 0x53463a, 0x322a22, -0.06], [830, CBASE + 50, 1, 0x3a3a5a, 0x24243a, 0.4],
+    [910, CBASE + 24, 1, 0x4a3550, 0x2e2036, -0.09],
+  ];
+  const cars = carSpecs.map((s) => { const car = makeCar(...s); root.addChild(car.c); return car; });
+
   // tutun/tuman (vayronalar ustidan suzadi)
   const haze = [];
   for (let i = 0; i < 3; i++) { const s = new Sprite(radialTexture('rgba(170,150,175,0.13)', 512)); s.anchor.set(0.5); s.width = 480 + i * 180; s.height = 140; s.x = Math.random() * LW; s.y = 350 + i * 26; s.blendMode = 'add'; root.addChild(s); haze.push({ s, sp: 8 + i * 6, y0: s.y }); }
@@ -130,7 +169,7 @@ export function assembleResonance(app) {
 
   // zaryad ko'rsatkichi (minora yonida) — root ustida emas, HUD React'da; bu yerda faqat minora glow
   return {
-    app, sky, glowH, starC, stars, root, cityWins, respWin, haze, rays, tower, tBody, towerCore, beam, orb,
+    app, sky, glowH, starC, stars, root, cityWins, respWin, haze, rays, cars, tower, tBody, towerCore, beam, orb,
     laneG, noteC, strikeG, resonators, particles,
     notes: [], spawnAcc: 0, spawnIdx: 0, charge: 0, target: 100, hits: 0, combo: 0, won: false,
     lastBtn: 0, beamA: 0, lastReset: 0,
@@ -142,7 +181,7 @@ export function assembleResonance(app) {
 
 // ctl = { btn, connected, mode:'play'|'intro', resetPulse, onHit, onMiss, onWrong, onWin }
 export function resonanceTick(scene, dt, t, ctl) {
-  const { app, sky, glowH, starC, stars, root, cityWins, respWin, haze, rays, towerCore, beam, orb, laneG, strikeG, resonators, notes, particles } = scene;
+  const { app, sky, glowH, starC, stars, root, cityWins, respWin, haze, rays, cars, towerCore, beam, orb, laneG, strikeG, resonators, notes, particles } = scene;
   const w = app.screen.width, h = app.screen.height;
   sky.width = w; sky.height = h;
   glowH.x = w / 2; glowH.y = h; glowH.width = w * 1.2; glowH.height = h * 0.6;
@@ -212,6 +251,8 @@ export function resonanceTick(scene, dt, t, ctl) {
   // tutun drifti + nur pulsatsiyasi
   haze.forEach((o) => { o.s.x -= o.sp * dt; if (o.s.x < -300) o.s.x = LW + 300; o.s.y = o.y0 + Math.sin(t * 0.4 + o.sp) * 8; });
   rays.forEach((s, i) => { s.alpha = 0.09 + 0.05 * Math.sin(t * 0.6 + i); });
+  // tashlab ketilgan mashina faralari miltillaydi (ba'zilari uzuq-uzuq)
+  cars.forEach((c) => { c.hl.alpha = c.base * (0.72 + 0.28 * Math.sin(t * c.sp + c.ph)) * (c.flick && Math.random() < c.flick ? 0.35 : 1); });
   if (scene.won) { scene.beamA = Math.min(1, scene.beamA + dt * 2); if (Math.random() < 0.3) particles.burst(500, 96, 0x9fe8ff, 3, 200); }
   beam.alpha = scene.beamA * (0.7 + 0.3 * Math.sin(t * 12));
   beam.width = 70 + scene.beamA * 50;
