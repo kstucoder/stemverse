@@ -18,6 +18,7 @@ import ReactionIntro from '../components/Game/ReactionIntro';
 import RobotArmIntro from '../components/Game/RobotArmIntro';
 import PianoIntro from '../components/Game/PianoIntro';
 import GreenhouseIntro from '../components/Game/GreenhouseIntro';
+import DockIntro from '../components/Game/DockIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -41,6 +42,7 @@ const PREMIUM_INTRO = {
   robot_arm: RobotArmIntro,
   piano_player: PianoIntro,
   smart_greenhouse: GreenhouseIntro,
+  parking_assistant: DockIntro,
 };
 
 export default function LessonView() {

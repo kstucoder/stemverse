@@ -11,6 +11,7 @@ import ColorMixer from './ColorMixer';
 import SecretCodeDoor from './SecretCodeDoor';
 import PianoPlayer from './PianoPlayer';
 import ParkingAssistant from './ParkingAssistant';
+import DockingAssistant from './DockingAssistant';
 import MotionAlarm from './MotionAlarm';
 import MusicVisualizer from './MusicVisualizer';
 import ObstacleCourse from './ObstacleCourse';
@@ -31,7 +32,7 @@ const GAMES = {
   reaction_champion: ReactionChampion,
   color_mixer: ColorMixer,
   piano_player: PianoPlayer,
-  parking_assistant: ParkingAssistant,
+  parking_assistant: DockingAssistant,
   motion_alarm: MotionAlarm,
   music_visualizer: MusicVisualizer,
   obstacle_course: ObstacleCourse,
