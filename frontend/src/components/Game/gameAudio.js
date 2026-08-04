@@ -234,6 +234,41 @@ export function startWind() {
   } catch (e) { return () => {}; }
 }
 
+export function playPowerUp() {
+  // Quvvat ko'tarilishi — pastdan yuqoriga gurillovchi hum (ishga tushish urinishi)
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(80, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(420, ctx.currentTime + 0.9);
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(280, ctx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(2200, ctx.currentTime + 0.9);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.55);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.1);
+    o.connect(f); f.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 1.15);
+  } catch (e) { /* silent */ }
+}
+
+export function playPowerDown() {
+  // Quvvat so'nishi — yuqoridan pastga tushuvchi hum (muvaffaqiyatsiz ishga tushish)
+  try {
+    const ctx = getContext();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(360, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(58, ctx.currentTime + 1.1);
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(1700, ctx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(170, ctx.currentTime + 1.1);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.15);
+    o.connect(f); f.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 1.2);
+  } catch (e) { /* silent */ }
+}
+
 export function playBeacon() {
   // Rezonans mayog'i faollashuvi — pastdan yuqoriga ko'tariluvchi triada + yorqin chime
   const notes = [262, 330, 392, 523, 659];
