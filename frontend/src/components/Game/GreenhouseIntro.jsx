@@ -34,7 +34,7 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
 
     // --- scripted voqelik ---
     s.light = clamp01(0.12 + (t - 0.4) / 3.4) * 0.85;           // tong ko'tariladi
-    s.weather = t < 2.2 ? 'cold' : 'calm';
+    s.weather = t < 1.4 ? 'storm' : t < 2.6 ? 'cold' : 'clear'; // tashqarida falokat -> tinchiydi
     s.temp = lerp(8, 22, smooth(clamp01((t - 2.2) / 1.8)));      // iqlim isitiladi -> zonaga
     s.humid = lerp(28, 58, smooth(clamp01((t - 2.5) / 1.8)));
     s.growth = lerp(0.03, 0.42, smooth(clamp01((t - 2.5) / 2.4)));
