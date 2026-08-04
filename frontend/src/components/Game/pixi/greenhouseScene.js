@@ -107,24 +107,31 @@ export function assembleGreenhouse(app) {
   });
 
   const mist = makeParticles(root);
-  const frost = new Graphics().rect(0, 0, 10, 10).fill(0xbfe0ff); frost.alpha = 0; frost.blendMode = 'add'; app.stage.addChild(frost);
-  const heat = new Graphics().rect(0, 0, 10, 10).fill(0xff7a30); heat.alpha = 0; heat.blendMode = 'add'; app.stage.addChild(heat);
+  // === ichki iqlim effektlari (8-darsdek: real sensor zonadan chiqsa sezilib turadi) ===
+  const wAmb = new Graphics().rect(0, 0, 10, 10).fill(0xffffff); wAmb.alpha = 0; app.stage.addChild(wAmb);   // ob-havo ichki ambiyensi
+  const cold = new Graphics().rect(0, 0, 10, 10).fill(0x9fd0ff); cold.alpha = 0; app.stage.addChild(cold);    // sovuq (ko'k muz)
+  const dry = new Graphics().rect(0, 0, 10, 10).fill(0xc9a55a); dry.alpha = 0; app.stage.addChild(dry);       // quruq (chang)
+  const wet = new Graphics().rect(0, 0, 10, 10).fill(0x8fc0e0); wet.alpha = 0; app.stage.addChild(wet);       // nam (kondensatsiya)
+  const heat = new Graphics().rect(0, 0, 10, 10).fill(0xff7a30); heat.alpha = 0; heat.blendMode = 'add'; app.stage.addChild(heat);  // issiq
   const flash = new Graphics().rect(0, 0, 10, 10).fill(0xdfe8ff); flash.alpha = 0; flash.blendMode = 'add'; app.stage.addChild(flash);
+  // ichki muz kristallari (sovuqda tushadi) + nam tuman
+  const frostP = makeParticles(root);
+  const fog = new Sprite(radialTexture('rgba(200,220,235,0.5)', 512)); fog.anchor.set(0.5); fog.width = 760; fog.height = 320; fog.x = 560; fog.y = 330; fog.blendMode = 'add'; fog.alpha = 0; root.addChild(fog);
 
-  return { app, bg, root, winNight, redGlow, smoke, wStorm, wAsh, wCold, wHeat, wLines, wDots, panels, growLights, crops, nozzles, fans, mist, frost, heat, flash, lightAcc: 0 };
+  return { app, bg, root, winNight, redGlow, smoke, wStorm, wAsh, wCold, wHeat, wLines, wDots, panels, growLights, crops, nozzles, fans, mist, wAmb, cold, dry, wet, heat, flash, frostP, fog, lightAcc: 0, frostAcc: 0 };
 }
 
 // s = { temp, humid, growth, health, light, irrig, weather }
 export function greenhouseTick(scene, dt, t, s) {
-  const { app, bg, root, winNight, redGlow, smoke, wStorm, wAsh, wCold, wHeat, wLines, wDots, panels, growLights, crops, nozzles, fans, mist, frost, heat, flash } = scene;
+  const { app, bg, root, winNight, redGlow, smoke, wStorm, wAsh, wCold, wHeat, wLines, wDots, panels, growLights, crops, nozzles, fans, mist, wAmb, cold, dry, wet, heat, flash, frostP, fog } = scene;
   const w = app.screen.width, h = app.screen.height;
   bg.width = w; bg.height = h;
   const sc = Math.min(w / LW, h / LH);
   root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
-  [frost, heat, flash].forEach((o) => { o.width = w; o.height = h; });
+  [wAmb, cold, dry, wet, heat, flash].forEach((o) => { o.width = w; o.height = h; });
 
   const light = clamp(s.light ?? 0.6, 0, 1);
-  const temp = s.temp ?? 22, growth = clamp(s.growth ?? 0, 0, 1), health = clamp(s.health ?? 1, 0, 1);
+  const temp = s.temp ?? 22, humid = s.humid ?? 58, growth = clamp(s.growth ?? 0, 0, 1), health = clamp(s.health ?? 1, 0, 1);
   const wx = s.weather || 'clear';
 
   // deraza: tun + falokat shu'lasi + tutun
@@ -167,7 +174,19 @@ export function greenhouseTick(scene, dt, t, s) {
   // devor ekranlari
   panels.forEach((p, i) => { const v = i === 0 ? clamp((temp - 8) / 28, 0, 1) : clamp((s.humid ?? 50) / 100, 0, 1); p.bar.clear(); p.bar.rect(p.px + 8, p.py + 30 - 22 * v, 80, 22 * v).fill({ color: p.col, alpha: 0.5 }); p.bar.moveTo(p.px + 8, p.py + 30).lineTo(p.px + 88, p.py + 30).stroke({ width: 1, color: p.col, alpha: 0.4 }); });
 
-  // qirov / issiqlik (haqiqiy haroratga qarab)
-  frost.alpha = clamp((16 - temp) / 14, 0, 0.4) * (0.8 + 0.2 * Math.sin(t * 2));
-  heat.alpha = clamp((temp - 28) / 14, 0, 0.34) * (0.8 + 0.2 * Math.sin(t * 5));
+  // === ICHKI IQLIM EFFEKTI (8-darsdek): real sensor YASHIL zonadan chiqsa sezilib
+  //     turadi va Arduino orqali zonaga qaytarilmaguncha yo'qolmaydi ===
+  cold.alpha = clamp((18 - temp) / 13, 0, 0.5) * (0.85 + 0.15 * Math.sin(t * 2));   // sovuq (<18°C)
+  heat.alpha = clamp((temp - 26) / 13, 0, 0.42) * (0.85 + 0.15 * Math.sin(t * 5));  // issiq (>26°C)
+  dry.alpha = clamp((45 - humid) / 38, 0, 0.34);                                     // quruq (<45%)
+  wet.alpha = clamp((humid - 70) / 38, 0, 0.36);                                     // nam (>70%)
+  fog.alpha = clamp((humid - 70) / 38, 0, 0.42) * (0.7 + 0.3 * Math.sin(t * 0.8)); fog.x = 560 + Math.sin(t * 0.3) * 40;
+  // sovuqda ichkarida muz kristallari tushadi
+  scene.frostAcc = (scene.frostAcc || 0) + dt;
+  if (temp < 15 && scene.frostAcc > 0.12) { scene.frostAcc = 0; frostP.burst(330 + Math.random() * 520, 120 + Math.random() * 300, 0xdff0ff, 1, 12); }
+  frostP.tick(dt);
+  // ob-havoning ichkaridagi ambiyensi (mo''tadil ta'sir) — falokat ichkarida ham sezilsin
+  const ambCol = wx === 'storm' ? 0x24405a : wx === 'ash' ? 0x5a3418 : wx === 'cold' ? 0x2a4a7a : wx === 'heat' ? 0x7a3a10 : 0xffffff;
+  wAmb.tint = ambCol;
+  wAmb.alpha = lerp(wAmb.alpha, wx === 'clear' ? 0 : 0.13, Math.min(dt * 2, 1));
 }
