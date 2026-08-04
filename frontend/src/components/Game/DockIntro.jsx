@@ -1,44 +1,41 @@
-// DockIntro — "Ta'minot Doklash" kinematik cutscene (asteroid sagasi davomi).
-// Baza oziq-ovqat yetishtira boshladi (13), endi ta'minot podlari kelmoqda — lekin
-// avtomatik doklash ishdan chiqqan. Namuna: pod yaqinlashib, yashil zonada to'xtab
-// doklanadi (yakun emas) -> Electra doklash operatorini tayinlaydi. FRAME-RATE mustaqil.
+// DockIntro — "Ta'minot Doklash" (rotary enkoder) kinematik cutscene.
+// Ta'minot podlari keldi, avto-doklash ishdan chiqqan -> namuna: kalit aylanuvchi
+// slotga tekislanib mahkamlanadi (yakun emas) -> Electra doklash operatorini tayinlaydi.
 import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleDock, dockTick, GAP_MAX } from './pixi/dockScene';
+import { assembleDock, dockTick, TOL, angleDiff } from './pixi/dockScene';
 import DialogueBox from './DialogueBox';
 import { playBlip, playSeal } from './gameAudio';
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const zoneOf = (d) => d > 45 ? 'far' : d > 17 ? 'slow' : d >= 7 ? 'sweet' : d >= 4 ? 'danger' : 'crash';
+const wrap = (a) => ((a % 360) + 360) % 360;
 
 const LINES = [
   { text: "Ta'minot podlari yetib keldi — oziq, suv, ehtiyot qismlar. Lekin avtomatik doklash tizimi falokatdan ishdan chiqqan.", emotion: 'worried' },
-  { text: "Ularni QO'LDA doklash kerak. Ultrasonik sensor pod bilan dok orasidagi masofani o'lchaydi.", emotion: 'normal' },
-  { text: "Podni sekin yaqinlashtir. YASHIL zonaga kirganda 1 soniya ushlab tur — qisqichlar yopilib doklaydi. Juda tez borsang — to'qnashuv!", emotion: 'normal' },
+  { text: "Ularni QO'LDA doklaymiz. Rotary enkoder ulash kalitini buradi — uni dokning aylanuvchi SLOTiga tekisla.", emotion: 'normal' },
+  { text: "Kalit yashil slotga to'g'ri kelganda — tugmani bos, qisqichlar yopilib podni mahkamlaydi.", emotion: 'normal' },
   { text: "5 ta ta'minot podini dokla va bazani to'la ta'minla. Tayyormisan, operator?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleDock(app);
-  let t = 0, done = false, beepAcc = 0, docked = false;
+  let t = 0, done = false, collar = 120, target = 40, beepAcc = 0, lockPulse = 0, docked = 0;
+  const lockTimes = [2.4, 4.2]; let li = 0;
 
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
 
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
-    // scripted masofa: uzoqdan yaqinlashadi -> yashil zonada to'xtaydi
-    let dist;
-    if (t < 1.0) dist = 80;
-    else if (t < 4.0) dist = 80 - ((t - 1.0) / 3.0) * 68;   // 80 -> 12
-    else dist = 11;                                          // sweet'da turadi
-    const zone = zoneOf(dist);
-    const gap = clamp((dist - 4) / 76, 0, 1) * GAP_MAX;
-    let holdFrac = 0;
-    if (t >= 4.0) { holdFrac = clamp((t - 4.0) / 1.0, 0, 1); if (!docked && holdFrac >= 1) { docked = true; playSeal(); } }
-    if (['slow', 'sweet', 'danger'].includes(zone) && t < 4.9) { beepAcc += dt; const iv = zone === 'sweet' ? 0.2 : 0.4; if (beepAcc > iv) { beepAcc = 0; playBlip(zone === 'sweet' ? 1100 : 760); } }
+    target = wrap(40 + t * 22);                              // slot aylanadi
+    // kalit slotga yetib oladi (chase)
+    let d = ((target - collar + 540) % 360) - 180;
+    collar = wrap(collar + Math.sign(d) * Math.min(Math.abs(d), 150 * dt));
+    const diff = angleDiff(collar, target), aligned = diff < TOL;
+    if (li < lockTimes.length && t >= lockTimes[li]) { if (aligned) { lockPulse = 1; docked++; playSeal(); li++; } }
+    lockPulse = Math.max(0, lockPulse - dt * 1.6);
+    if (aligned && t < 5) { beepAcc += dt; if (beepAcc > 0.14) { beepAcc = 0; playBlip(1400); } }
 
-    dockTick(scene, dt, t, { gap, zone, holdFrac, docked: docked ? 1 : undefined, connected: true, flash: docked && holdFrac >= 1 ? 0.4 : 0, flashCol: 0x39e06a });
-    if (!done && t > 5.6) { done = true; onSceneDone(); }
+    dockTick(scene, dt, t, { collarAngle: collar, targetAngle: target, aligned, lockPulse, docked, connected: true, flash: lockPulse > 0.5 ? 0.4 : 0, flashCol: 0x39e06a });
+    if (!done && t > 5.4) { done = true; onSceneDone(); }
   });
 
   return () => {};
@@ -61,7 +58,7 @@ export default function DockIntro({ onStart }) {
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
-            <DialogueBox name="ELECTRA" role="Doklash operatori" lines={LINES} actionLabel="🛰️ Doklashni boshla" onAction={onStart} accent="#2b6cc0" />
+            <DialogueBox name="ELECTRA" role="Doklash operatori" lines={LINES} actionLabel="🛰️ Doklashni boshla" onAction={onStart} accent="#00c8e0" />
           </div>
         )}
       </PixiStage>

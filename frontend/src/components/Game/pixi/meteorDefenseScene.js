@@ -82,9 +82,9 @@ export function meteorTick(scene, dt, t, ctl) {
 
   if (ctl.resetPulse !== undefined && ctl.resetPulse !== scene.lastReset) { scene.lastReset = ctl.resetPulse; scene.reset(); }
 
-  // nishon (POT) yoki ulanmagan idle sweep
+  // nishon: JOYSTIK burchagi (aimAngle) yoki ulanmagan idle sweep
   let aimT;
-  if (ctl.connected) aimT = (clamp(ctl.potAim ?? 512, 0, 1023) / 1023 - 0.5) * 120;   // -60..+60 deg
+  if (ctl.connected) aimT = clamp(ctl.aimAngle ?? 0, -80, 80);
   else aimT = Math.sin(t * 0.6) * 45;
   scene.aim = lerp(scene.aim, aimT, Math.min(dt * 10, 1));
   barrel.rotation = scene.aim * D2R;

@@ -8,7 +8,8 @@ import useGameStore from '../../stores/gameStore';
 import { playZap, playScore, playCrash, playWin, playHollow } from './gameAudio';
 
 export default function MeteorDefense() {
-  const pot = useGameStore((s) => s.serialData.pot);
+  const jx = useGameStore((s) => s.serialData.jx);
+  const jy = useGameStore((s) => s.serialData.jy);
   const btn = useGameStore((s) => s.serialData.btn);
   const score = useGameStore((s) => s.score);
   const incrementScore = useGameStore((s) => s.incrementScore);
@@ -18,8 +19,13 @@ export default function MeteorDefense() {
   const [status, setStatus] = useState('play');
   const winRef = useRef(false), loseRef = useRef(false), resetRef = useRef(0);
 
-  const ctlRef = useRef({ potAim: 512, btn: 0, connected: false, mode: 'play', resetPulse: 0 });
-  ctlRef.current.potAim = arduinoConnected ? (pot ?? 512) : 512;
+  // joystik -> nishon burchagi (markazdan chetlanish yo'nalishi)
+  const dx = (arduinoConnected ? (jx ?? 512) : 512) - 512;
+  const dy = (arduinoConnected ? (jy ?? 512) : 512) - 512;
+  const aimAngle = Math.hypot(dx, dy) > 40 ? Math.atan2(dx, -dy) * 180 / Math.PI : 0;
+
+  const ctlRef = useRef({ aimAngle: 0, btn: 0, connected: false, mode: 'play', resetPulse: 0 });
+  ctlRef.current.aimAngle = aimAngle;
   ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
   ctlRef.current.connected = arduinoConnected;
   ctlRef.current.resetPulse = resetRef.current;
@@ -69,12 +75,12 @@ export default function MeteorDefense() {
         <div style={{ fontSize: 11, color: '#8fdccb' }}>
           {status === 'won' ? '☄️ Meteor to\'dasi qaytarildi — baza saqlab qolindi!'
             : status === 'lost' ? '💥 Baza qalqoni yo\'q bo\'ldi — qaytadan urin!'
-              : !arduinoConnected ? 'Platani ulang — POT nishonlaydi, TUGMA otadi'
-                : '🎯 POT bilan nishonla, TUGMA bilan meteorni ot'}
+              : !arduinoConnected ? 'Platani ulang — JOYSTIK nishonlaydi, TUGMA otadi'
+                : '🎯 Joystikni meteor tomon yo\'nalt, tugma bilan ot'}
         </div>
         {arduinoConnected && status === 'play' && (
           <div className="flex gap-2 justify-center mt-1.5">
-            <span style={{ fontSize: 9, color: '#8fdccb', background: 'rgba(6,10,20,0.7)', border: '1px solid rgba(57,255,208,0.2)', borderRadius: 6, padding: '3px 8px' }}>POT → Nishon 🎯</span>
+            <span style={{ fontSize: 9, color: '#8fdccb', background: 'rgba(6,10,20,0.7)', border: '1px solid rgba(57,255,208,0.2)', borderRadius: 6, padding: '3px 8px' }}>🕹️ JOYSTIK → Nishon</span>
             <span style={{ fontSize: 9, color: '#8fdccb', background: 'rgba(6,10,20,0.7)', border: '1px solid rgba(57,255,208,0.2)', borderRadius: 6, padding: '3px 8px' }}>TUGMA → Ot ⚡</span>
           </div>
         )}

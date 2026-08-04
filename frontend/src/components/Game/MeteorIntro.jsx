@@ -16,7 +16,7 @@ const LINES = [
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleMeteorDefense(app);
-  const ctl = { potAim: 512, btn: 0, connected: true, mode: 'intro', resetPulse: 0, onFire: () => playZap() };
+  const ctl = { aimAngle: 0, btn: 0, connected: true, mode: 'intro', resetPulse: 0, onFire: () => playZap() };
   let t = 0, done = false, fireT = 0, spawnT = 0.6, alarmed = false;
 
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
@@ -24,8 +24,8 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
     if (!alarmed && t > 0.4) { alarmed = true; playAlarm(); }
-    // to'p nishonni supuradi va otadi
-    ctl.potAim = 512 + Math.sin(t * 1.6) * 320;
+    // to'p (joystik) nishonni supuradi va otadi
+    ctl.aimAngle = Math.sin(t * 1.6) * 62;
     fireT -= dt; ctl.btn = 0;
     if (fireT <= 0 && t > 1.0) { fireT = 0.34; ctl.btn = 1; }
     // meteorlar tushadi

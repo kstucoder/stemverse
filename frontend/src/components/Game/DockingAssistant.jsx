@@ -1,33 +1,34 @@
-// 🛰️ VOLTRA "Ta'minot Doklash" — ultrasonik masofa bilan aniq doklash.
-// Digital Twin: HC-SR04 masofa = pod ↔ dok oralig'i. Podni YASHIL zonaga keltirib
-// bir lahza ushlab tur -> doklanadi. Juda yaqin -> to'qnashuv. 5 dok -> g'alaba.
+// 🛰️ VOLTRA "Ta'minot Doklash" — ROTARY ENKODER bilan aylanma tekislash.
+// Digital Twin: enkoder = ulash kalitini buradi. Dokning aylanuvchi SLOTiga kalitni
+// tekisla (YASHIL), tugma bilan MAHKAMLA -> doklanadi. 5 dok -> baza ta'minlandi.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
-import { assembleDock, dockTick, GAP_MAX } from './pixi/dockScene';
+import { assembleDock, dockTick, TOL, angleDiff } from './pixi/dockScene';
 import useGameStore from '../../stores/gameStore';
-import { playBlip, playSeal, playCrash, playWin } from './gameAudio';
+import { playBlip, playSeal, playError, playWin } from './gameAudio';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const lerp = (a, b, k) => a + (b - a) * k;
-const zoneOf = (d) => d > 45 ? 'far' : d > 17 ? 'slow' : d >= 7 ? 'sweet' : d >= 4 ? 'danger' : 'crash';
+const wrap = (a) => ((a % 360) + 360) % 360;
 
 export default function DockingAssistant() {
-  const serialDist = useGameStore((s) => s.serialData.dist);
+  const enc = useGameStore((s) => s.serialData.enc);
+  const btn = useGameStore((s) => s.serialData.btn);
   const score = useGameStore((s) => s.score);
   const incrementScore = useGameStore((s) => s.incrementScore);
   const arduinoConnected = useGameStore((s) => s.arduinoConnected);
 
-  const [hud, setHud] = useState({ dist: 80, zone: 'far', docked: 0 });
+  const [hud, setHud] = useState({ docked: 0, aligned: false, diff: 180 });
   const [status, setStatus] = useState('play');
   const winRef = useRef(false), resetRef = useRef(0);
 
-  const ctlRef = useRef({ dist: 80, connected: false, resetPulse: 0 });
-  ctlRef.current.dist = arduinoConnected ? clamp(serialDist ?? 80, 0, 200) : 80;
+  const ctlRef = useRef({ enc: 0, btn: 0, connected: false, resetPulse: 0 });
+  ctlRef.current.enc = arduinoConnected ? wrap(enc ?? 0) : 0;
+  ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
   ctlRef.current.connected = arduinoConnected;
   ctlRef.current.resetPulse = resetRef.current;
-  ctlRef.current.onBeep = (z) => playBlip(z === 'danger' ? 1600 : z === 'sweet' ? 1100 : 760);
+  ctlRef.current.onBeep = (near) => playBlip(700 + near * 900);
   ctlRef.current.onDock = () => { playSeal(); incrementScore(80); };
-  ctlRef.current.onCrash = () => { playCrash(); useGameStore.getState().triggerShake(14); };
+  ctlRef.current.onFail = () => playError();
   ctlRef.current.onWin = () => { if (winRef.current) return; winRef.current = true; setStatus('won'); playWin(); const st = useGameStore.getState(); if (st.onWin) st.onWin(st.score + 120); };
 
   useEffect(() => { resetRef.current += 1; winRef.current = false; setStatus('play'); }, [arduinoConnected]);
@@ -35,73 +36,73 @@ export default function DockingAssistant() {
 
   const build = useCallback((app) => {
     const scene = assembleDock(app);
-    const sim = { dist: 80, gap: GAP_MAX, docked: 0, holdT: 0, armed: true, flash: 0, flashCol: 0xffffff, beepAcc: 0, lastReset: 0 };
+    const sim = { collar: 0, target: 40, tSpeed: 24, tTimer: 3, docked: 0, lockPulse: 0, flash: 0, flashCol: 0xffffff, beepAcc: 0, lastBtn: 0, lastReset: 0 };
     let t = 0, hudAcc = 0;
     app.ticker.add((tk) => {
       const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
       const c = ctlRef.current;
-      if (c.resetPulse !== sim.lastReset) { sim.lastReset = c.resetPulse; Object.assign(sim, { dist: 80, gap: GAP_MAX, docked: 0, holdT: 0, armed: true, flash: 0, beepAcc: 0 }); }
+      if (c.resetPulse !== sim.lastReset) { sim.lastReset = c.resetPulse; Object.assign(sim, { collar: 0, target: 40, tSpeed: 24, tTimer: 3, docked: 0, lockPulse: 0, flash: 0, beepAcc: 0 }); }
 
-      const targetDist = c.connected ? c.dist : 80;
-      sim.dist = lerp(sim.dist, targetDist, Math.min(dt * 8, 1));
-      const d = sim.dist;
-      const gap = clamp((d - 4) / 76, 0, 1) * GAP_MAX;
-      sim.gap = lerp(sim.gap, gap, Math.min(dt * 10, 1));
-      let zone = c.connected ? zoneOf(d) : 'idle';
+      // kalit burchagi (enkoder) yoki demo aylanish
+      sim.collar = c.connected ? c.enc : wrap(sim.collar + 30 * dt);
+      // slot (target) aylanadi — chaqqonlik dok soniga qarab oshadi
+      sim.tTimer -= dt; if (sim.tTimer <= 0) { sim.tTimer = 2 + Math.random() * 2.5; sim.tSpeed = (Math.random() < 0.5 ? -1 : 1) * (22 + sim.docked * 5 + Math.random() * 14); }
+      sim.target = wrap(sim.target + sim.tSpeed * dt);
 
-      if (c.connected && !winRef.current) {
-        if (zone === 'sweet' && sim.armed) { sim.holdT += dt; if (sim.holdT >= 1.0) { sim.docked++; sim.armed = false; sim.holdT = 0; sim.flash = 0.6; sim.flashCol = 0x39e06a; c.onDock?.(); if (sim.docked >= 5) c.onWin?.(); } }
-        else if (zone !== 'sweet') sim.holdT = Math.max(0, sim.holdT - dt * 1.5);
-        if (zone === 'crash' && sim.armed) { sim.flash = 0.7; sim.flashCol = 0xff3b46; sim.holdT = 0; sim.beepAcc += dt; if (sim.beepAcc > 0.4) { sim.beepAcc = 0; c.onCrash?.(); } }
-        else if (!sim.armed && d > 45) sim.armed = true;
-        if (['slow', 'sweet', 'danger'].includes(zone)) { sim.beepAcc += dt; const iv = zone === 'danger' ? 0.1 : zone === 'sweet' ? 0.2 : clamp(d / 90, 0.25, 0.55); if (sim.beepAcc > iv) { sim.beepAcc = 0; c.onBeep?.(zone); } }
+      const diff = angleDiff(sim.collar, sim.target);
+      const aligned = diff < TOL;
+      const active = c.connected && !winRef.current;
+
+      if (active) {
+        // tugma rising edge -> mahkamlash
+        if (c.btn && !sim.lastBtn) {
+          if (aligned) { sim.docked++; sim.lockPulse = 1; sim.flash = 0.5; sim.flashCol = 0x39e06a; sim.target = wrap(sim.target + 100 + Math.random() * 160); sim.tSpeed = (Math.random() < 0.5 ? -1 : 1) * (26 + sim.docked * 5); c.onDock?.(); if (sim.docked >= 5) c.onWin?.(); }
+          else { sim.flash = 0.3; sim.flashCol = 0xff3b46; c.onFail?.(); }
+        }
+        // tekislash beep (yaqinlashsa tez, tuner kabi)
+        sim.beepAcc += dt; const near = clamp(1 - diff / 90, 0, 1); const iv = aligned ? 0.14 : 0.6 - near * 0.4;
+        if (sim.beepAcc > iv) { sim.beepAcc = 0; c.onBeep?.(near); }
       }
+      sim.lastBtn = c.btn;
+      sim.lockPulse = Math.max(0, sim.lockPulse - dt * 1.6);
       sim.flash = Math.max(0, sim.flash - dt * 2);
 
-      dockTick(scene, dt, t, { gap: sim.gap, zone, holdFrac: sim.holdT, docked: sim.armed ? undefined : sim.docked, connected: c.connected, flash: sim.flash, flashCol: sim.flashCol });
-      hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; setHud({ dist: Math.round(sim.dist), zone, docked: sim.docked }); }
+      dockTick(scene, dt, t, { collarAngle: sim.collar, targetAngle: sim.target, aligned, lockPulse: sim.lockPulse, docked: sim.docked, connected: c.connected, flash: sim.flash, flashCol: sim.flashCol });
+      hudAcc += dt; if (hudAcc > 0.1) { hudAcc = 0; setHud({ docked: sim.docked, aligned, diff: Math.round(diff) }); }
     });
     return () => {};
   }, []);
 
-  const panel = { background: 'rgba(8,14,24,0.82)', border: '1px solid rgba(43,108,192,0.28)', borderRadius: 12, padding: '7px 13px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
-  const zc = hud.zone === 'sweet' ? '#39e06a' : hud.zone === 'slow' ? '#ffc21a' : (hud.zone === 'danger' || hud.zone === 'crash') ? '#ff3b46' : '#7fa8d8';
-  const zt = hud.zone === 'sweet' ? '✅ TO\'XTA — doklanmoqda' : hud.zone === 'slow' ? '🟡 Sekin yaqinlash' : hud.zone === 'danger' ? '🔴 Juda yaqin!' : hud.zone === 'crash' ? '💥 To\'qnashuv!' : '➡️ Yaqinlash';
-  const prox = clamp(1 - (hud.dist - 4) / 76, 0, 1);
+  const panel = { background: 'rgba(8,14,24,0.82)', border: '1px solid rgba(0,234,255,0.25)', borderRadius: 12, padding: '7px 13px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
+  const zc = hud.aligned ? '#39e06a' : '#00c8e0';
 
   return (
     <PixiStage build={build} className="rounded-xl">
-      <div className="absolute top-3 left-3 flex gap-2">
-        <div style={{ ...panel, textAlign: 'center' }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: zc, textShadow: `0 0 10px ${zc}70` }}>{hud.dist}<span style={{ fontSize: 10 }}>sm</span></div>
-          <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a9a' }}>MASOFA</div>
-        </div>
+      <div className="absolute top-3 left-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: zc }}>{hud.aligned ? '✅ TEKIS' : `${hud.diff}°`}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a9a' }}>TEKISLASH</div>
       </div>
       <div className="absolute top-3 right-3" style={{ ...panel, textAlign: 'center' }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: '#39e06a', textShadow: '0 0 10px rgba(57,224,106,0.6)' }}>{hud.docked}/5</div>
         <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a9a' }}>DOKLANDI</div>
       </div>
 
-      {/* yaqinlik bari */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2" style={{ ...panel, width: 240 }}>
-        <div style={{ height: 9, borderRadius: 5, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${Math.round(prox * 100)}%`, background: zc, transition: 'width 0.1s', boxShadow: `0 0 8px ${zc}` }} />
-        </div>
-      </div>
-
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 320 }}>
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 330 }}>
         <div style={{ fontSize: 11, color: zc, fontWeight: 700 }}>
           {status === 'won' ? '🛰️ Barcha ta\'minot doklandi — baza to\'la ta\'minlandi!'
-            : !arduinoConnected ? 'Platani ulang — ultrasonik sensor pod masofasini beradi' : zt}
+            : !arduinoConnected ? 'Platani ulang — enkoder kalitni buradi' : hud.aligned ? '🟢 TEKIS! Tugmani bos — MAHKAMLA' : '🔄 Enkoderni burab kalitni SLOTga tekisla'}
         </div>
         {arduinoConnected && status === 'play' && (
-          <div style={{ fontSize: 9, color: '#8fb4d8', marginTop: 4 }}>Qo'lni sensorga yaqinlashtir/uzoqlashtir → podni YASHIL zonada 1s ushla</div>
+          <div className="flex gap-2 justify-center mt-1.5">
+            <span style={{ fontSize: 9, color: '#8fb4d8', background: 'rgba(8,14,24,0.7)', border: '1px solid rgba(0,234,255,0.2)', borderRadius: 6, padding: '3px 8px' }}>🔄 ENKODER → Burчак</span>
+            <span style={{ fontSize: 9, color: '#8fb4d8', background: 'rgba(8,14,24,0.7)', border: '1px solid rgba(0,234,255,0.2)', borderRadius: 6, padding: '3px 8px' }}>TUGMA → Mahkamla</span>
+          </div>
         )}
       </div>
 
       {!arduinoConnected && status === 'play' && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(43,108,192,0.4)' }}>
-          <span style={{ fontSize: 12, color: '#2b6cc0' }}>📡 Platani ulang — ta'minot podini dokla</span>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(0,234,255,0.4)' }}>
+          <span style={{ fontSize: 12, color: '#00eaff' }}>🔄 Platani ulang — enkoder bilan kalitni tekisla</span>
         </div>
       )}
 
