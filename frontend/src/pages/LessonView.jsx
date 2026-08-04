@@ -20,6 +20,7 @@ import PianoIntro from '../components/Game/PianoIntro';
 import GreenhouseIntro from '../components/Game/GreenhouseIntro';
 import DockIntro from '../components/Game/DockIntro';
 import MeteorIntro from '../components/Game/MeteorIntro';
+import SecurityIntro from '../components/Game/SecurityIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -45,6 +46,7 @@ const PREMIUM_INTRO = {
   smart_greenhouse: GreenhouseIntro,
   parking_assistant: DockIntro,
   obstacle_course: MeteorIntro,
+  motion_alarm: SecurityIntro,
 };
 
 export default function LessonView() {
