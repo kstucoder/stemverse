@@ -19,13 +19,13 @@ export default function MeteorDefense() {
   const [status, setStatus] = useState('play');
   const winRef = useRef(false), loseRef = useRef(false), resetRef = useRef(0);
 
-  // joystik -> nishon burchagi (markazdan chetlanish yo'nalishi)
-  const dx = (arduinoConnected ? (jx ?? 512) : 512) - 512;
-  const dy = (arduinoConnected ? (jy ?? 512) : 512) - 512;
-  const aimAngle = Math.hypot(dx, dy) > 40 ? Math.atan2(dx, -dy) * 180 / Math.PI : 0;
-
   const ctlRef = useRef({ aimAngle: 0, btn: 0, connected: false, mode: 'play', resetPulse: 0 });
-  ctlRef.current.aimAngle = aimAngle;
+  // joystik -> to'liq 360° nishon burchagi (markazdan chetlanish yo'nalishi; deadzone)
+  {
+    const dx = (arduinoConnected ? (jx ?? 512) : 512) - 512;
+    const dy = (arduinoConnected ? (jy ?? 512) : 512) - 512;
+    if (Math.hypot(dx, dy) > 60) ctlRef.current.aimAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+  }
   ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
   ctlRef.current.connected = arduinoConnected;
   ctlRef.current.resetPulse = resetRef.current;

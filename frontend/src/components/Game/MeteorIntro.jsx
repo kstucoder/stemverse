@@ -24,12 +24,12 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
     if (!alarmed && t > 0.4) { alarmed = true; playAlarm(); }
-    // to'p (joystik) nishonni supuradi va otadi
-    ctl.aimAngle = Math.sin(t * 1.6) * 62;
+    // to'p (joystik) 360° aylanib nishonlaydi va otadi
+    ctl.aimAngle = (t * 85) % 360;
     fireT -= dt; ctl.btn = 0;
-    if (fireT <= 0 && t > 1.0) { fireT = 0.34; ctl.btn = 1; }
-    // meteorlar tushadi
-    spawnT -= dt; if (spawnT <= 0 && t < 5.0) { spawnT = 0.7 + Math.random() * 0.4; scene.spawnMeteor(120 + Math.random() * 760, 95 + Math.random() * 40); }
+    if (fireT <= 0 && t > 1.0) { fireT = 0.3; ctl.btn = 1; }
+    // meteorlar har tomondan yopiriladi
+    spawnT -= dt; if (spawnT <= 0 && t < 5.0) { spawnT = 0.6 + Math.random() * 0.4; scene.spawnMeteor(Math.random() * Math.PI * 2, 55 + Math.random() * 35); }
 
     meteorTick(scene, dt, t, ctl);
     if (!done && t > 5.8) { done = true; onSceneDone(); }
