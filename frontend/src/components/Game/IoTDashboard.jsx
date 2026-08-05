@@ -1,138 +1,93 @@
-import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawGlassPanel } from './gameHelpers';
+// 📡 VOLTRA "Telemetriya Uplinki" — ESP8266 WiFi UPLINK (yangi element: simsiz aloqa).
+// Realistik missiya-boshqaruv: POT uplink antennasini flot sun'iy yo'ldoshiga nishonlaydi,
+// signal LOCK bo'lganda BTN bilan data-paket uzat. 5 paket -> uplink o'rnatildi.
+import { useCallback, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleUplink, uplinkTick } from './pixi/uplinkScene';
 import useGameStore from '../../stores/gameStore';
-import { playButton } from './gameAudio';
+import { playScore, playWin, playClick } from './gameAudio';
+
+const TARGET = 5;
 
 export default function IoTDashboard() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const winRef = useRef(false);
-  const dataLog = useRef([]);
-  const targetTimer = useRef(0);
-  const prevTargetsHit = useRef(0);
+  const pot = useGameStore((s) => s.serialData.pot);
+  const btn = useGameStore((s) => s.serialData.btn);
+  const temp = useGameStore((s) => s.serialData.temp);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
 
-  const draw = useCallback((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, ['#050510', '#0a0a2a', '#050510']);
+  const [hud, setHud] = useState({ packets: 0, signal: 0, locked: false });
+  const [status, setStatus] = useState('play');
+  const winRef = useRef(false), resetRef = useRef(0);
 
-    const pot = serialData.pot || 0;
-    const btn = serialData.btn || 0;
-    const dist = serialData.dist || 0;
-    const temp = serialData.temp || 0;
+  const ctlRef = useRef({ pot: 512, btn: 0, temp: 40, connected: false, mode: 'play', resetPulse: 0 });
+  ctlRef.current.pot = arduinoConnected ? (pot ?? 512) : 512;
+  ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
+  ctlRef.current.temp = temp ?? 40;
+  ctlRef.current.connected = arduinoConnected;
+  ctlRef.current.resetPulse = resetRef.current;
+  ctlRef.current.onTransmit = () => { playScore(); playClick(); incrementScore(80); };
+  ctlRef.current.onWin = () => { if (winRef.current) return; winRef.current = true; setStatus('won'); playWin(); const st = useGameStore.getState(); if (st.onWin) st.onWin(st.score + 400); };
 
-    dataLog.current.push({ pot, btn, dist, temp, time: t });
-    if (dataLog.current.length > 100) dataLog.current.shift();
+  const build = useCallback((app) => {
+    const scene = assembleUplink(app);
+    let t = 0, acc = 0;
+    app.ticker.add((tk) => { const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt; uplinkTick(scene, dt, t, ctlRef.current); acc += dt; if (acc > 0.08) { acc = 0; setHud({ packets: scene.packets, signal: scene.signal, locked: scene.locked }); } });
+    return () => {};
+  }, []);
 
-    // Dashboard grid
-    const gauges = [
-      { label: 'POT', value: pot, max: 1023, unit: '', color: C.CYAN, x: 30, y: 30 },
-      { label: 'BTN', value: btn, max: 1, unit: '', color: C.PINK, x: 220, y: 30 },
-      { label: 'DIST', value: dist, max: 400, unit: 'cm', color: C.GREEN, x: 30, y: 170 },
-      { label: 'TEMP', value: temp, max: 50, unit: '°C', color: C.GOLD, x: 220, y: 170 },
-    ];
-
-    gauges.forEach(g => {
-      drawGlassPanel(ctx, g.x, g.y, 170, 120, 10);
-
-      ctx.fillStyle = g.color;
-      ctx.font = 'bold 36px Chakra Petch, monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(g.value + g.unit, g.x + 15, g.y + 45);
-
-      ctx.fillStyle = C.MUTED;
-      ctx.font = '10px Chakra Petch, monospace';
-      ctx.fillText('📡 ' + g.label, g.x + 15, g.y + 18);
-
-      // Gauge bar
-      const pct = g.value / g.max;
-      ctx.fillStyle = C.DARK;
-      ctx.beginPath();
-      ctx.roundRect(g.x + 15, g.y + 65, 140, 8, 4);
-      ctx.fill();
-      ctx.fillStyle = g.color;
-      ctx.beginPath();
-      ctx.roundRect(g.x + 15, g.y + 65, 140 * pct, 8, 4);
-      ctx.fill();
-    });
-
-    // Live chart
-    drawGlassPanel(ctx, 30, 310, w - 60, 120, 10);
-
-    ctx.fillStyle = C.MUTED;
-    ctx.font = '10px Chakra Petch, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText("📈 Jonli Ma'lumot", 45, 332);
-
-    // Draw lines
-    const colors = [C.CYAN, C.PINK, C.GREEN, C.GOLD];
-    const fields = ['pot', 'btn', 'dist', 'temp'];
-    const maxValues = [1023, 1, 400, 50];
-
-    fields.forEach((field, fi) => {
-      ctx.strokeStyle = colors[fi];
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      const data = dataLog.current;
-      for (let i = 0; i < data.length; i++) {
-        const x = 45 + (i / 100) * (w - 110);
-        const y = 390 - (data[i][field] / maxValues[fi]) * 30;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    });
-
-    // WiFi indicator
-    ctx.fillStyle = arduinoConnected ? C.GREEN : '#ef4444';
-    ctx.shadowColor = arduinoConnected ? C.GREEN : '#ef4444';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(w - 40, 20, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = C.WHITE;
-    ctx.font = '9px Chakra Petch, monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(arduinoConnected ? '📶 ESP8266 Ulangan' : '⚠️ Arduino ulanmagan', w - 55, 23);
-
-    // Firebase indicator
-    ctx.fillStyle = 'rgba(255,193,7,0.2)';
-    ctx.beginPath();
-    ctx.roundRect(w - 160, 35, 140, 20, 5);
-    ctx.fill();
-    ctx.fillStyle = '#ffc107';
-    ctx.font = '9px Chakra Petch, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('🔥 Firebase Sinx: FAOLLASHTIRILDI', w - 90, 48);
-
-    // Win: the demo Arduino code only actually transmits POT over serial, so
-    // the win condition is driven by what's real — hold the potentiometer
-    // above 800 for ~5 seconds (5 "targets", one per second held).
-    if (pot > 800) targetTimer.current += 0.016;
-    else targetTimer.current = Math.max(0, targetTimer.current - 0.02);
-    const targetsHit = Math.min(5, Math.floor(targetTimer.current));
-    if (targetsHit > prevTargetsHit.current) playButton();
-    prevTargetsHit.current = targetsHit;
-    ctx.fillStyle = C.CYAN;
-    ctx.font = '11px Chakra Petch, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(`🎯 POT'ni 800+ da ${5}s ushlab turing: ${targetsHit}/5`, w / 2, 300);
-    if (arduinoConnected && targetsHit >= 5 && !winRef.current && winConditions) {
-      winRef.current = true;
-      incrementScore(400);
-      if (onWin) onWin(score + 400);
-    }
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-  }, [serialData.pot, serialData.btn, serialData.dist, serialData.temp, score, winConditions, onWin, incrementScore]);
+  const restart = () => { resetRef.current += 1; winRef.current = false; setStatus('play'); };
+  const panel = { background: 'rgba(8,14,20,0.84)', border: '1px solid rgba(106,176,255,0.3)', borderRadius: 12, padding: '7px 13px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
+  const bracket = { position: 'absolute', width: 26, height: 26, borderColor: 'rgba(106,176,255,0.5)', pointerEvents: 'none' };
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">Score</p>
-        <p className="font-game text-white text-lg">{score}</p>
+    <PixiStage build={build} className="rounded-xl">
+      <div style={{ ...bracket, top: 10, left: 10, borderLeft: '2px solid', borderTop: '2px solid' }} />
+      <div style={{ ...bracket, top: 10, right: 10, borderRight: '2px solid', borderTop: '2px solid' }} />
+      <div style={{ ...bracket, bottom: 10, left: 10, borderLeft: '2px solid', borderBottom: '2px solid' }} />
+      <div style={{ ...bracket, bottom: 10, right: 10, borderRight: '2px solid', borderBottom: '2px solid' }} />
+
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 10, color: '#9fc8ff', letterSpacing: '0.14em' }}>
+        <span className="animate-pulse" style={{ color: '#39ff88' }}>▲ UPLINK</span>
+        <span>MISSION-CTRL 18</span>
+        <span style={{ color: arduinoConnected ? '#6ab0ff' : '#8a8a8a' }}>{arduinoConnected ? 'WiFi: CONNECTED' : 'WiFi: OFFLINE'}</span>
       </div>
-    </GameCanvas>
+
+      <div className="absolute top-10 left-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#6ab0ff' }}>{hud.packets}/{TARGET}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a9a' }}>PAKET UZATILDI</div>
+      </div>
+      <div className="absolute top-10 right-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: hud.locked ? '#39ff88' : '#ffb020' }}>{Math.round(hud.signal * 100)}%</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a7a9a' }}>{hud.locked ? 'SIGNAL LOCK' : 'SIGNAL'}</div>
+      </div>
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 380 }}>
+        <div style={{ fontSize: 10.5, color: '#a9d0ff' }}>
+          {status === 'won' ? '📡 Uplink o\'rnatildi — telemetriya flotga stream bo\'lyapti!'
+            : !arduinoConnected ? 'Platani ulang — ESP8266 WiFi uplink antennasini boshqaring'
+              : hud.locked ? '🟢 SIGNAL LOCK! Tugmani bosib data-paketni UZAT'
+                : '🛰️ POT bilan antennani sun\'iy yo\'ldoshga nishonla — signalni ushla'}
+        </div>
+      </div>
+
+      {!arduinoConnected && status === 'play' && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(106,176,255,0.4)' }}>
+          <span style={{ fontSize: 12, color: '#6ab0ff' }}>🔌 Platani ulang — WiFi orqali flotga telemetriya uzat</span>
+        </div>
+      )}
+
+      {status === 'won' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" style={{ background: 'rgba(4,10,16,0.55)' }}>
+          <div style={{ ...panel, textAlign: 'center', padding: '22px 30px' }}>
+            <div style={{ fontSize: 34, marginBottom: 6 }}>📡</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#6ab0ff', marginBottom: 4 }}>Uplink o'rnatildi!</div>
+            <div style={{ fontSize: 11, color: '#a9d0ff', marginBottom: 14 }}>{TARGET} telemetriya paketi flotga yetdi</div>
+            <button onClick={restart} className="px-5 py-2 rounded-lg" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 12, color: '#04101c', background: '#6ab0ff', border: 'none', cursor: 'pointer', fontWeight: 800 }}>🔄 Qaytadan</button>
+          </div>
+        </div>
+      )}
+    </PixiStage>
   );
 }

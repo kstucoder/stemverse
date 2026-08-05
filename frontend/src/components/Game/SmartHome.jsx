@@ -1,150 +1,97 @@
-import { useRef, useCallback } from 'react';
-import GameCanvas from './GameCanvas'; import { C, drawGradientBackground, drawVignette, drawScanlines, drawProgressBar, drawGlassPanel, ParticleSystem } from './gameHelpers';
+// 🏔️ VOLTRA "Aqlli Baza" — FINAL BOSS — RELAY MODULI (yangi element: quvvat kalitlash).
+// Realistik baza kesimi: 5 quyi-tizim (REAKTOR, HAYOT-TA'MINOTI, YORUG'LIK, TERMAL, SHLYUZ).
+// POT bilan quvvatni oynaga sozla, band YASHIL bo'lganda BTN bilan relayni ULA -> xona yonadi.
+// 5 tizim ham onlayn -> BAZA TO'LIQ ISHGA TUSHDI (missiya yakuni).
+import { useCallback, useRef, useState } from 'react';
+import PixiStage from './pixi/PixiStage';
+import { assembleBase, baseTick } from './pixi/baseScene';
 import useGameStore from '../../stores/gameStore';
-import { playButton, playError } from './gameAudio';
+import { playScore, playWin, playClick } from './gameAudio';
+
+const TARGET = 5;
+const SYS = ['REAKTOR', "HAYOT-TA'MINOTI", "YORUG'LIK", 'TERMAL', 'SHLYUZ'];
 
 export default function SmartHome() {
-  const { serialData, score, incrementScore, winConditions, onWin } = useGameStore();
-  const arduinoConnected = useGameStore(s => s.arduinoConnected);
-  const particles = useRef(new ParticleSystem());
-  const winRef = useRef(false);
-  const devices = useRef({
-    lights: false, ac: false, door: false, alarm: false
-  });
-  const prevBtn = useRef(0);
-  const prevOverheat = useRef(false);
+  const pot = useGameStore((s) => s.serialData.pot);
+  const btn = useGameStore((s) => s.serialData.btn);
+  const temp = useGameStore((s) => s.serialData.temp);
+  const score = useGameStore((s) => s.score);
+  const incrementScore = useGameStore((s) => s.incrementScore);
+  const arduinoConnected = useGameStore((s) => s.arduinoConnected);
 
-  const draw = useCallback((ctx, w, h, t) => {
-    ctx.clearRect(0, 0, w, h);
-    drawGradientBackground(ctx, w, h, [C.DARK, C.PANEL, C.DARK]);
+  const [hud, setHud] = useState({ online: 0, active: 0, inBand: false });
+  const [status, setStatus] = useState('play');
+  const winRef = useRef(false), resetRef = useRef(0);
 
-    // The taught Arduino code for this lesson reports pot/btn/temp on one
-    // combined line — there is no ultrasonic reading in the example, so the
-    // "door" status uses the real button instead of a sensor that's never
-    // actually transmitted.
-    const btn = serialData.btn || 0;
-    const pot = serialData.pot || 512;
-    const temp = serialData.temp || 22;
+  const ctlRef = useRef({ pot: 512, btn: 0, temp: 22, connected: false, mode: 'play', resetPulse: 0 });
+  ctlRef.current.pot = arduinoConnected ? (pot ?? 512) : 512;
+  ctlRef.current.btn = arduinoConnected ? (btn ? 1 : 0) : 0;
+  ctlRef.current.temp = temp ?? 22;
+  ctlRef.current.connected = arduinoConnected;
+  ctlRef.current.resetPulse = resetRef.current;
+  ctlRef.current.onNear = () => playClick();
+  ctlRef.current.onEngage = () => { playScore(); playClick(); incrementScore(120); useGameStore.getState().triggerShake?.(8); };
+  ctlRef.current.onWin = () => { if (winRef.current) return; winRef.current = true; setStatus('won'); playWin(); useGameStore.getState().triggerShake?.(16); const st = useGameStore.getState(); if (st.onWin) st.onWin(st.score + 500); };
 
-    // House floor plan
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(w * 0.1, h * 0.05, w * 0.8, h * 0.55);
+  const build = useCallback((app) => {
+    const scene = assembleBase(app);
+    let t = 0, acc = 0;
+    app.ticker.add((tk) => { const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt; baseTick(scene, dt, t, ctlRef.current); acc += dt; if (acc > 0.08) { acc = 0; setHud({ online: scene.online, active: scene.activeIdx, inBand: scene.inBand }); } });
+    return () => {};
+  }, []);
 
-    // Roof
-    ctx.beginPath();
-    ctx.moveTo(w * 0.05, h * 0.05);
-    ctx.lineTo(w * 0.5, h * 0.02);
-    ctx.lineTo(w * 0.95, h * 0.05);
-    ctx.strokeStyle = '#475569';
-    ctx.stroke();
-
-    // Rooms
-    const rooms = [
-      { x: w * 0.12, y: h * 0.1, w: w * 0.25, h: h * 0.22, name: 'Living Room', icon: '🛋️' },
-      { x: w * 0.4, y: h * 0.1, w: w * 0.25, h: h * 0.22, name: 'Kitchen', icon: '🍳' },
-      { x: w * 0.68, y: h * 0.1, w: w * 0.22, h: h * 0.22, name: 'Bedroom', icon: '🛏️' },
-      { x: w * 0.12, y: h * 0.35, w: w * 0.35, h: h * 0.23, name: 'Garage', icon: '🚗' },
-      { x: w * 0.5, y: h * 0.35, w: w * 0.4, h: h * 0.23, name: 'Office', icon: '💻' },
-    ];
-
-    rooms.forEach(room => {
-      ctx.fillStyle = C.PANEL;
-      ctx.beginPath();
-      ctx.roundRect(room.x, room.y, room.w, room.h, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(room.x, room.y, room.w, room.h, 4);
-      ctx.stroke();
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '22px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(room.icon, room.x + room.w / 2, room.y + room.h / 2 + 5);
-      ctx.font = '9px sans-serif';
-      ctx.fillText(room.name, room.x + room.w / 2, room.y + room.h / 2 + 25);
-    });
-
-    // Device controls
-    const toggleLight = btn === 1;
-    const acTemp = Math.round((pot / 1023) * 10 + 18);
-
-    devices.current.lights = toggleLight;
-    devices.current.ac = temp > 25;
-    devices.current.door = toggleLight;
-
-    if (btn === 1 && prevBtn.current === 0) playButton();
-    prevBtn.current = btn;
-    const overheat = temp > 28;
-    if (overheat && !prevOverheat.current) playError();
-    prevOverheat.current = overheat;
-
-    // Status indicators
-    const status = [
-      { label: '💡 Chiroqlar', active: devices.current.lights, x: w * 0.12, y: h * 0.65 },
-      { label: '❄️ Konditsioner ' + acTemp + '°C', active: devices.current.ac, x: w * 0.35, y: h * 0.65 },
-      { label: '🚪 Eshik', active: devices.current.door, x: w * 0.58, y: h * 0.65 },
-      { label: '🔔 Signal', active: temp > 28, x: w * 0.78, y: h * 0.65 },
-    ];
-
-    status.forEach((s, i) => {
-      ctx.fillStyle = s.active ? C.GREEN : C.PANEL;
-      ctx.shadowColor = s.active ? C.GREEN : 'transparent';
-      ctx.shadowBlur = s.active ? 10 : 0;
-      ctx.beginPath();
-      ctx.roundRect(s.x, s.y, 80, 28, 6);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = s.active ? C.DARK : '#64748b';
-      ctx.font = '9px Chakra Petch, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(s.label, s.x + 40, s.y + 18);
-    });
-
-    // Energy meter
-    const energy = (devices.current.lights ? 30 : 0) + (devices.current.ac ? 50 : 0) + (devices.current.door ? 10 : 0);
-    drawProgressBar(ctx, w * 0.12, h * 0.75, w * 0.76, 18, energy / 100,
-      energy > 60 ? '#ef4444' : energy > 30 ? C.GOLD : C.GREEN);
-    ctx.fillStyle = C.WHITE;
-    ctx.font = '10px Chakra Petch, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚡ Energiya: ' + energy + '%', w / 2, h * 0.77 + 12);
-
-    // Firebase connection
-    ctx.fillStyle = 'rgba(255,193,7,0.15)';
-    ctx.beginPath();
-    ctx.roundRect(w * 0.12, h * 0.85, w * 0.76, 22, 6);
-    ctx.fill();
-    ctx.fillStyle = '#ffc107';
-    ctx.font = '9px Chakra Petch, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('🔥 ESP32 + Firebase — Aqlli Uy Boshqaruvi | Real-time bulut sinxronlash', w / 2, h * 0.85 + 15);
-
-    // Particles
-    if (devices.current.lights) particles.current.emit(w * 0.5, h * 0.5, C.GOLD, 1, 20);
-    particles.current.update(0.016);
-    particles.current.draw(ctx);
-
-    // Vignette + scanlines
-    drawVignette(ctx, w, h);
-    drawScanlines(ctx, w, h);
-
-    // Win: manage energy efficiently
-    if (arduinoConnected && energy > 20 && energy < 60 && temp < 28 && !winRef.current && winConditions) {
-      winRef.current = true;
-      incrementScore(500);
-      if (onWin) onWin(score + 500);
-    }
-  }, [serialData.btn, serialData.pot, serialData.temp, score, winConditions, onWin, incrementScore]);
+  const restart = () => { resetRef.current += 1; winRef.current = false; setStatus('play'); };
+  const panel = { background: 'rgba(6,12,18,0.85)', border: '1px solid rgba(107,255,176,0.28)', borderRadius: 12, padding: '7px 13px', backdropFilter: 'blur(8px)', fontFamily: 'Chakra Petch, monospace' };
+  const bracket = { position: 'absolute', width: 26, height: 26, borderColor: 'rgba(107,255,176,0.5)', pointerEvents: 'none' };
 
   return (
-    <GameCanvas draw={draw} className="rounded-2xl">
-      <div className="absolute bottom-4 right-4 glass rounded-xl px-4 py-2">
-        <p className="text-xs text-dark-400">Score</p>
-        <p className="font-game text-white text-lg">{score}</p>
+    <PixiStage build={build} className="rounded-xl">
+      <div style={{ ...bracket, top: 10, left: 10, borderLeft: '2px solid', borderTop: '2px solid' }} />
+      <div style={{ ...bracket, top: 10, right: 10, borderRight: '2px solid', borderTop: '2px solid' }} />
+      <div style={{ ...bracket, bottom: 10, left: 10, borderLeft: '2px solid', borderBottom: '2px solid' }} />
+      <div style={{ ...bracket, bottom: 10, right: 10, borderRight: '2px solid', borderBottom: '2px solid' }} />
+
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-2" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 10, color: '#8fffc0', letterSpacing: '0.14em' }}>
+        <span className="animate-pulse" style={{ color: '#ffd23a' }}>★ FINAL</span>
+        <span>BASE-CORE 20</span>
+        <span style={{ color: arduinoConnected ? '#6bffb0' : '#8a8a8a' }}>{arduinoConnected ? 'RELAY: ARMED' : 'RELAY: OFFLINE'}</span>
       </div>
-    </GameCanvas>
+
+      <div className="absolute top-10 left-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#6bffb0' }}>{hud.online}/{TARGET}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a8a70' }}>TIZIM ONLAYN</div>
+      </div>
+      <div className="absolute top-10 right-3" style={{ ...panel, textAlign: 'center' }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: hud.inBand ? '#39ff88' : '#ffd23a' }}>{SYS[hud.active]}</div>
+        <div style={{ fontSize: 8, letterSpacing: '0.12em', color: '#5a8a70' }}>ULANMOQDA</div>
+      </div>
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 400 }}>
+        <div style={{ fontSize: 10.5, color: '#a9f0cc' }}>
+          {status === 'won' ? '🏔️ BAZA TO\'LIQ ISHGA TUSHDI — barcha tizimlar onlayn!'
+            : !arduinoConnected ? 'Platani ulang — ESP32 + relay moduli baza tizimlarini boshqaradi'
+              : hud.inBand ? `🟢 QUVVAT MOS! Tugmani bosib ${SYS[hud.active]} relayini ULA`
+                : `⚡ POT bilan quvvatni SARIQ oynaga sozla — ${SYS[hud.active]} tizimi uchun`}
+        </div>
+      </div>
+
+      {!arduinoConnected && status === 'play' && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ ...panel, border: '1px solid rgba(107,255,176,0.4)' }}>
+          <span style={{ fontSize: 12, color: '#6bffb0' }}>🔌 Platani ulang — relay moduli bilan butun bazani ishga tushir</span>
+        </div>
+      )}
+
+      {status === 'won' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" style={{ background: 'rgba(3,8,6,0.6)' }}>
+          <div style={{ ...panel, textAlign: 'center', padding: '26px 34px', border: '1px solid rgba(255,210,58,0.4)' }}>
+            <div style={{ fontSize: 40, marginBottom: 6 }}>🏆</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#ffd23a', marginBottom: 4 }}>BAZA ONLAYN!</div>
+            <div style={{ fontSize: 12, color: '#a9f0cc', marginBottom: 4 }}>Barcha 5 tizim ishga tushdi — missiya yakunlandi.</div>
+            <div style={{ fontSize: 10, color: '#7ac0a0', marginBottom: 14 }}>Bosh Muhandis darajasiga yetding, qo'mondon! 👑</div>
+            <button onClick={restart} className="px-5 py-2 rounded-lg" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 12, color: '#0a1408', background: '#6bffb0', border: 'none', cursor: 'pointer', fontWeight: 800 }}>🔄 Qaytadan</button>
+          </div>
+        </div>
+      )}
+    </PixiStage>
   );
 }
