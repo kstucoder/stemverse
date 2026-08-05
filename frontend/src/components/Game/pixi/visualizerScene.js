@@ -8,8 +8,8 @@ import { AdvancedBloomFilter } from 'pixi-filters';
 import { radialTexture, makeParticles } from './cityScene';
 
 export const LW = 1000, LH = 560;
+export const FMIN = 120, FMAX = 1200; // chastota diapazoni (Hz)
 const HZ = 286;                      // ufq chizig'i
-const FMIN = 120, FMAX = 1200;       // chastota diapazoni (Hz)
 const BX1 = 130, BX2 = 870, BY = 492; // sozlash paneli geometriyasi
 const NBARS = 54, WAVES = 3, HOLD = 1.1;
 const TOL_BY_WAVE = [60, 46, 36];    // qulflash tolerantligi (Hz) — qiyinlashadi
