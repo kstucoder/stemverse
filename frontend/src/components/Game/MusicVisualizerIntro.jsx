@@ -1,30 +1,21 @@
-// MusicVisualizerIntro — "Frekans Sozlash" KO'P-ROLLI kinematik ssenariy.
-// Syujet: chuqur-kosmos relesi VOLTRA-7 efirida dushman GLITCH signalni bo'g'moqda.
-// Rollar: NOVA (qo'mondon), GLITCH (bosqinchi), ECHO (AI analizator), RIX (bosh muhandis).
-// Orqa fonda synthwave signal-tuning demo ishlaydi (marker avto homing -> qulflash).
+// MusicVisualizerIntro — "Frekans Sozlash" kinematik cutscene (asteroid bazasi sagasi davomi).
+// Voqea davomi: dronlarni qaytarding (16-dars), lekin ular ketishda uzoq aloqa antennasini
+// ishdan chiqarib, chastotani buzib ketishdi -> flot bilan aloqa uzildi. Endi antennani
+// QO'LDA sozlab (potensiometr), flotning mayoq chastotasiga moslab 3 signalni qulflaymiz.
+// Orqa fonda synthwave signal-tuning demo ishlaydi. FRAME-RATE mustaqil.
 import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleVisualizer, visualizerTick, FMIN, FMAX } from './pixi/visualizerScene';
-import MultiDialogueBox from './MultiDialogueBox';
-import { playScore, playClick, playError } from './gameAudio';
+import DialogueBox from './DialogueBox';
+import { playScore, playClick } from './gameAudio';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-const CAST = {
-  nova: { name: 'NOVA', role: "Missiya qo'mondoni", accent: '#ff2d95', variant: 'nova', side: 'left' },
-  glitch: { name: 'GLITCH', role: 'Signal bosqinchisi', accent: '#a24bff', variant: 'glitch', side: 'right' },
-  echo: { name: 'ECHO', role: 'AI signal analizatori', accent: '#00e5ff', variant: 'echo', side: 'left' },
-  rix: { name: 'RIX', role: 'Bosh muhandis', accent: '#39ff88', variant: 'rix', side: 'left' },
-};
-
 const LINES = [
-  { speaker: 'nova', text: "Chuqur-kosmos relesi VOLTRA-7. Yer bilan yagona aloqamiz shu minoradan o'tadi. Ammo efirda begona signal paydo bo'ldi...", emotion: 'worried' },
-  { speaker: 'glitch', text: "Bu chastota endi MENIKI. Ovozingni shovqinga aylantiraman — hech kim eshitmaydi. Ha-ha!", emotion: 'angry' },
-  { speaker: 'nova', text: "Uni bo'sh qo'ymaymiz! Muhandis — konsolga o't. Signalni tozalab, aloqani tiklashimiz shart.", emotion: 'excited' },
-  { speaker: 'echo', text: "Konsolda potensiometr bor. Uni bursang — tovush chastotasi o'zgaradi; spektrdagi cho'qqi sening signaling.", emotion: 'normal' },
-  { speaker: 'echo', text: "Ekranda SARIQ target chastota bandi chiqadi. Cho'qqini o'shanga MOSLAB, bir zum USHLAB tur — signal QULFLANADI.", emotion: 'normal' },
-  { speaker: 'rix', text: "Har tiklangan to'lqinda band torayadi — GLITCH kuchayadi. 3 ta toza signalni qulflasang, efir tozalanadi.", emotion: 'excited' },
-  { speaker: 'rix', text: "Konsol seniki, muhandis. Efirni tozala!", emotion: 'excited' },
+  { text: "Perimetrni saqlab qolding — dronlar chekindi. Ammo ular ketishdan oldin uzoq aloqa antennamizni ishdan chiqarib, chastotani buzib ketishdi. Flot bilan aloqamiz uzildi.", emotion: 'worried' },
+  { text: "Antennani QO'LDA sozlashimiz kerak. Potensiometrni bur — qabul chastotasi o'zgaradi, spektrdagi cho'qqi bizning signalimiz.", emotion: 'normal' },
+  { text: "Ekranda SARIQ target chiqadi — bu flotning mayoq chastotasi. Cho'qqini o'shanga moslab, bir zum USHLAB tur — signal qulflanadi. Har to'lqinda band torayadi.", emotion: 'normal' },
+  { text: "3 ta signalni qulflab, flot bilan aloqani tikla — yordam yo'lga chiqsin! Tayyormisan, aloqachi?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
@@ -33,10 +24,10 @@ function buildIntroScene(app, ctlRef, onSceneDone) {
   let t = 0, done = false, endedAt = 0;
 
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
-  ctlRef.current.glitch = () => { scene.flashT = 0.5; playError(); };
 
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
+    // demo: markerni flot mayoq chastotasiga sekin homing qildirish
     if (t > 0.9) { const tp = clamp(((scene.targetFreq - FMIN) / (FMAX - FMIN)) * 1023, 0, 1023); ctl.pot += (tp - ctl.pot) * Math.min(1, dt * 1.7); }
     visualizerTick(scene, dt, t, ctl);
     if (scene.wave >= 1 && !endedAt) endedAt = t;
@@ -63,7 +54,7 @@ export default function MusicVisualizerIntro({ onStart }) {
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">
-            <MultiDialogueBox cast={CAST} lines={LINES} actionLabel="🎚️ Konsolni ol" onAction={onStart} />
+            <DialogueBox name="ELECTRA" role="Aloqa muhandisi" lines={LINES} actionLabel="📡 Antennani sozla" onAction={onStart} accent="#00e5ff" />
           </div>
         )}
       </PixiStage>

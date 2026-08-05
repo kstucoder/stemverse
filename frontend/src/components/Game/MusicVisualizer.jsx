@@ -86,10 +86,10 @@ export default function MusicVisualizer() {
       {/* pastki ko'rsatma */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2" style={{ ...panel, textAlign: 'center', minWidth: 360 }}>
         <div style={{ fontSize: 10.5, color: '#c9a9ef' }}>
-          {status === 'won' ? '🏆 Barcha signallar sozlandi — vizualizator sinxron!'
-            : !arduinoConnected ? 'Platani ulang — potensiometr bilan chastotani sozlang'
+          {status === 'won' ? '📡 Flot bilan aloqa tiklandi — yordam yo\'lda!'
+            : !arduinoConnected ? 'Platani ulang — antennani potensiometr bilan sozlang'
               : hud.inBand ? '🟢 MOS! Ushlab tur — signal qulflanmoqda...'
-                : '🎚️ Potni burab spektr cho\'qqisini SARIQ target bandga moslang'}
+                : '🎚️ Potni burab cho\'qqini SARIQ mayoq chastotasiga moslang'}
         </div>
       </div>
 
@@ -102,9 +102,9 @@ export default function MusicVisualizer() {
       {status === 'won' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" style={{ background: 'rgba(8,2,20,0.55)' }}>
           <div style={{ ...panel, textAlign: 'center', padding: '22px 30px' }}>
-            <div style={{ fontSize: 34, marginBottom: 6 }}>🎛️</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#39ff88', marginBottom: 4 }}>Signal sozlandi!</div>
-            <div style={{ fontSize: 11, color: '#c9a9ef', marginBottom: 14 }}>{WAVES} to'lqin muvaffaqiyatli qulflandi</div>
+            <div style={{ fontSize: 34, marginBottom: 6 }}>📡</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#39ff88', marginBottom: 4 }}>Aloqa tiklandi!</div>
+            <div style={{ fontSize: 11, color: '#c9a9ef', marginBottom: 14 }}>{WAVES} signal qulflandi — flot javob berdi</div>
             <button onClick={restart} className="px-5 py-2 rounded-lg" style={{ fontFamily: 'Chakra Petch, monospace', fontSize: 12, color: '#0a0620', background: '#00e5ff', border: 'none', cursor: 'pointer', fontWeight: 800 }}>🔄 Qaytadan</button>
           </div>
         </div>
