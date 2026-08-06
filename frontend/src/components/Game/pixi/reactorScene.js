@@ -22,6 +22,11 @@ function radialVignette(size = 512) {
   const g = c.createRadialGradient(size / 2, size / 2, size * 0.34, size / 2, size / 2, size * 0.64);
   g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(6,2,2,0.92)'); c.fillStyle = g; c.fillRect(0, 0, size, size); return Texture.from(cv);
 }
+// radiatsiya trefoil belgisi
+function trefoil(g, x, y, r, col) {
+  for (let k = 0; k < 3; k++) { const a = k * (2 * Math.PI / 3) - Math.PI / 2; g.moveTo(x, y).arc(x, y, r, a - 0.52, a + 0.52).lineTo(x, y).fill({ color: col, alpha: 0.55 }); }
+  g.circle(x, y, r * 0.3).fill(0x0a0e14); g.circle(x, y, r * 0.16).fill({ color: col, alpha: 0.6 });
+}
 
 export function assembleReactor(app) {
   app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.46, bloomScale: 1.2, brightness: 1.02, blur: 6, quality: 5 })];
@@ -31,13 +36,53 @@ export function assembleReactor(app) {
   const sky = new Sprite(gradTexture(['#08050a', '#0e0812', '#120a12', '#0c0810'])); skyC.addChild(sky);
   const root = new Container(); app.stage.addChild(root);
 
-  // ===== REAKTOR KAMERASI (shisha germetik) =====
+  // ===== REAKTOR ZALI (arxitektura: devor, shift-truss, yon jihoz) =====
+  const hall = new Graphics();
+  hall.rect(0, 0, LW, LH).fill(0x0a0d13);
+  for (let x = 0; x < LW; x += 90) hall.moveTo(x, 40).lineTo(x, 372).stroke({ width: 1, color: 0x111b26, alpha: 0.5 });
+  for (let y = 90; y < 372; y += 84) hall.moveTo(0, y).lineTo(LW, y).stroke({ width: 1, color: 0x111b26, alpha: 0.4 });
+  // shift truss + osma chiroqlar
+  hall.rect(0, 0, LW, 42).fill(0x0c1119);
+  for (let x = -30; x < LW; x += 60) hall.moveTo(x, 4).lineTo(x + 30, 40).lineTo(x + 60, 4).stroke({ width: 2, color: 0x1c2733 });
+  hall.rect(0, 40, LW, 4).fill(0x1c2733);
+  for (const lx of [150, 350, 650, 850]) { hall.rect(lx - 16, 42, 32, 5, 2).fill(0x141b22); hall.rect(lx - 12, 47, 24, 2).fill({ color: 0xbfe6ff, alpha: 0.25 }); }
+  // yon jihoz shkaflari (chap/o'ng) + cable tray + radiatsiya belgisi
+  for (const bx of [40, 706]) {
+    hall.roundRect(bx, 58, 54, 302, 4).fill(0x0e141c).stroke({ width: 1.5, color: 0x243441 });
+    for (let y = 74; y < 348; y += 30) { hall.roundRect(bx + 6, y, 42, 22, 2).fill(0x0a1016).stroke({ width: 1, color: 0x1c2733 }); hall.circle(bx + 44, y + 4, 1.6).fill(0x2a5a3a); }
+    hall.rect(bx + 22, 58, 10, 302).fill({ color: 0x0a0f16, alpha: 0.5 });   // cable tray soyasi
+    trefoil(hall, bx + 27, 300, 15, 0xffb020);
+  }
+  // pol hazard chevron chizig'i (zal tubida)
+  for (let x = 0; x < LW; x += 26) hall.poly([x, 356, x + 12, 356, x + 4, 368, x - 8, 368]).fill({ color: x % 52 === 0 ? 0xffb020 : 0x14140c, alpha: 0.45 });
+  root.addChild(hall);
+  // zal yorlig'lari
+  const plc1 = new Text({ text: 'REACTOR CORE  //  CLASS-IV CONTAINMENT', style: { fontFamily: 'Chakra Petch, monospace', fontSize: 10, fill: 0x33485a, letterSpacing: 2 } }); plc1.anchor.set(0.5, 0); plc1.x = CX; plc1.y = 46; plc1.alpha = 0.7; root.addChild(plc1);
+  const plc2 = new Text({ text: '⚠ HIGH ENERGY', style: { fontFamily: 'Chakra Petch, monospace', fontSize: 9, fill: 0xffb020, letterSpacing: 1 } }); plc2.anchor.set(0.5); plc2.x = 67; plc2.y = 328; plc2.alpha = 0.6; root.addChild(plc2);
+  const plc3 = new Text({ text: '⚠ HIGH ENERGY', style: { fontFamily: 'Chakra Petch, monospace', fontSize: 9, fill: 0xffb020, letterSpacing: 1 } }); plc3.anchor.set(0.5); plc3.x = 733; plc3.y = 328; plc3.alpha = 0.6; root.addChild(plc3);
+  // aylanuvchi ogohlantirish mayoqlari (yuqori burchaklar)
+  const beacons = [];
+  [[110, 70], [890, 70]].forEach(([x, y]) => { const c = new Container(); c.x = x; c.y = y; const cone = new Graphics().poly([0, 0, -50, 150, 50, 150]).fill({ color: 0xffb020, alpha: 0.12 }); cone.blendMode = 'add'; c.addChild(cone); const src = new Sprite(radialTexture('rgba(255,180,40,0.9)', 128)); src.anchor.set(0.5); src.width = src.height = 22; src.blendMode = 'add'; c.addChild(src); const hous = new Graphics().roundRect(-9, -9, 18, 15, 3).fill(0x1a1408).stroke({ width: 1, color: 0x3a2f10 }); c.addChild(hous); root.addChild(c); beacons.push({ c, cone, src }); });
+
+  // ===== REAKTOR KAMERASI (qalin germetik oyna / blast-door) =====
   const chamber = new Graphics();
   chamber.roundRect(300, 60, 400, 300, 16).fill(0x060a10).stroke({ width: 4, color: 0x1e2c38 });
   chamber.roundRect(300, 60, 400, 300, 16).stroke({ width: 1.5, color: 0x33485a });
   // sovutish quvurlari (kameraga kiruvchi)
   for (const sx of [300, 700]) { chamber.rect(sx === 300 ? 250 : 700, 120, 50, 14, 4).fill(0x1a2530).stroke({ width: 1, color: 0x2e3f4d }); chamber.rect(sx === 300 ? 250 : 700, 250, 50, 14, 4).fill(0x1a2530).stroke({ width: 1, color: 0x2e3f4d }); }
   root.addChild(chamber);
+  // qalin blast-door romi + burchak boltlari
+  const frame = new Graphics();
+  frame.roundRect(288, 48, 424, 324, 18).stroke({ width: 10, color: 0x141b22 });
+  frame.roundRect(288, 48, 424, 324, 18).stroke({ width: 2, color: 0x2e3f4d });
+  for (const [bx, by] of [[300, 60], [700, 60], [300, 360], [700, 360]]) { frame.circle(bx, by, 6).fill(0x0e141a).stroke({ width: 1.5, color: 0x3a4a58 }); frame.circle(bx - 1.5, by - 1.5, 2).fill(0x556676); }
+  frame.rect(300, 52, 400, 4).fill({ color: 0x3a4a58, alpha: 0.4 });   // yuqori yorug' qirra
+  root.addChild(frame);
+  // shisha aksi (diagonal chiziqlar)
+  const glass = new Graphics();
+  glass.poly([320, 64, 380, 64, 300, 356, 300, 300]).fill({ color: 0x9fd0ff, alpha: 0.04 });
+  glass.moveTo(340, 64).lineTo(310, 356).moveTo(360, 64).lineTo(330, 356).stroke({ width: 1, color: 0xbfe6ff, alpha: 0.05 });
+  root.addChild(glass);
   // koolant oqimi (quvurlarda)
   const coolG = new Graphics(); root.addChild(coolG);
 
@@ -51,6 +96,9 @@ export function assembleReactor(app) {
   const arcs = new Graphics(); arcs.blendMode = 'add'; root.addChild(arcs);   // plazma yoylari
   const core = new Graphics(); root.addChild(core);          // dinamik yadro
   const coreSpark = new Sprite(radialTexture('rgba(200,230,255,0.95)', 128)); coreSpark.anchor.set(0.5); coreSpark.x = CX; coreSpark.y = CY; coreSpark.width = coreSpark.height = 60; coreSpark.blendMode = 'add'; root.addChild(coreSpark);
+  // kamera tubidan bug' chiqishi
+  const steam = [];
+  for (const sx of [360, 500, 640]) { const s = new Sprite(radialTexture('rgba(200,220,255,0.45)', 256)); s.anchor.set(0.5, 1); s.x = sx; s.y = 360; s.width = 56; s.height = 84; s.blendMode = 'add'; s.alpha = 0; root.addChild(s); steam.push({ s, ph: rnd(0, 6.28) }); }
 
   // ogohlantirish strob chiroqlari (yon devor)
   const strobes = [];
@@ -64,6 +112,9 @@ export function assembleReactor(app) {
   root.addChild(console_);
   // yadro nurining konsol yuzasidagi aksi
   const floorRefl = new Sprite(radialTexture('rgba(90,160,255,0.6)', 256)); floorRefl.anchor.set(0.5); floorRefl.x = CX; floorRefl.y = 402; floorRefl.width = 380; floorRefl.height = 56; floorRefl.blendMode = 'add'; floorRefl.alpha = 0; root.addChild(floorRefl);
+  // ignition: butun zalni yorituvchi porlash + kengayuvchi zarba halqasi
+  const hallFlood = new Sprite(radialTexture('rgba(170,215,255,0.7)', 512)); hallFlood.anchor.set(0.5); hallFlood.x = CX; hallFlood.y = CY; hallFlood.width = LW * 1.6; hallFlood.height = LH * 1.6; hallFlood.blendMode = 'add'; hallFlood.alpha = 0; root.addChild(hallFlood);
+  const shock = new Graphics(); shock.blendMode = 'add'; root.addChild(shock);
 
   // KOD DISPLEY (chapda) — bosqich + kirilayotgan kod
   const disp = new Graphics(); root.addChild(disp);
@@ -96,7 +147,7 @@ export function assembleReactor(app) {
   const flash = new Graphics().rect(0, 0, 10, 10).fill(0xffffff); flash.alpha = 0; flash.blendMode = 'add'; app.stage.addChild(flash);
 
   const scene = {
-    app, sky, root, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash,
+    app, sky, root, hall, beacons, steam, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, hallFlood, shock, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash,
     stage: 0, code: [], cursor: 0, prevKey: 'NONE', pressed: null, pressT: 0,
     won: false, ignite: 0, spin: 0, errT: 0, okT: 0, lastReset: 0, cineT: 0, cineGlow: 0,
     newCode() { this.code = Array.from({ length: CODELEN }, () => String(Math.floor(rnd(0, 10)))); this.cursor = 0; },
@@ -126,7 +177,7 @@ function registerDigit(scene, d, ctl) {
 
 // ctl = { key, connected, mode, resetPulse, onDigit, onError, onStage, onWin }
 export function reactorTick(scene, dt, t, ctl) {
-  const { app, sky, root, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash } = scene;
+  const { app, sky, root, beacons, steam, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, hallFlood, shock, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash } = scene;
   const w = app.screen.width, h = app.screen.height;
   sky.width = w; sky.height = h;
   const sc = Math.min(w / LW, h / LH); root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
@@ -173,6 +224,12 @@ export function reactorTick(scene, dt, t, ctl) {
   arcs.clear();
   const act = lvl + cg + (scene.ignite > 0 ? 1 : 0);
   if (act > 0.25) for (let a = 0; a < 3; a++) { const ang = rnd(0, Math.PI * 2); let px = CX, py = CY; arcs.moveTo(px, py); for (let s = 0; s < 4; s++) { px += Math.cos(ang) * (coreR * 0.6) + rnd(-7, 7); py += Math.sin(ang) * (coreR * 0.6) + rnd(-7, 7); arcs.lineTo(px, py); } arcs.stroke({ width: 1.2, color: 0xbfe6ff, alpha: 0.35 * Math.min(1, act) }); }
+  // mayoqlar + bug' + zal yoritish + zarba halqasi
+  beacons.forEach((b, i) => { b.c.rotation += dt * (scene.ignite > 0 ? 6 : 1.4) * (i ? -1 : 1); const on = Math.sin(t * (scene.ignite > 0 ? 12 : 3) + i * 2) > 0; b.src.alpha = on ? 0.9 : 0.2; b.cone.alpha = 0.07 + (on ? 0.08 : 0); });
+  steam.forEach((stm, i) => { const heat = clamp(lvl + cg + (scene.ignite > 0 ? 1 : 0), 0, 1); stm.s.alpha = heat * (0.1 + 0.12 * (0.5 + 0.5 * Math.sin(t * 1.5 + stm.ph))); stm.s.y = 360 - ((t * 20 + i * 30) % 60); stm.s.scale.set(1 + 0.4 * Math.sin(t + stm.ph)); });
+  hallFlood.alpha = (scene.ignite > 0 ? clamp(scene.ignite, 0, 1) * 0.6 : 0) + lvl * 0.05;
+  shock.clear();
+  if (scene.ignite > 0.02 && scene.ignite < 1.6) { const rr = scene.ignite * 620, ff = 1 - scene.ignite / 1.6; shock.circle(CX, CY, rr).stroke({ width: 8 * ff, color: 0xffffff, alpha: 0.5 * ff }); shock.circle(CX, CY, rr * 0.7).stroke({ width: 4, color: 0xbfe6ff, alpha: 0.3 * ff }); }
 
   // koolant oqimi (bosqichga qarab tezlashadi)
   coolG.clear();
