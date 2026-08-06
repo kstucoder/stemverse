@@ -4,7 +4,7 @@
 // Ekranda ishga tushirish KODI ko'rsatiladi — keypad'da to'g'ri raqamlarni ketma-ket kirit.
 // Har bosqich reaktorni bir pog'ona jonlantiradi. 5 bosqich -> REAKTOR GUMBURLAB YONADI (missiya yakuni).
 // Saga finali: korpus germetik (19) — endi bosh reaktorni yoqib, butun bazani jonlantiramiz.
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
 import { gradTexture, radialTexture, makeParticles } from './cityScene';
 
@@ -45,6 +45,10 @@ export function assembleReactor(app) {
   const coreGlow = new Sprite(radialTexture('rgba(120,180,255,0.6)', 512)); coreGlow.anchor.set(0.5); coreGlow.x = CX; coreGlow.y = CY; coreGlow.width = coreGlow.height = 320; coreGlow.blendMode = 'add'; coreGlow.alpha = 0.12; root.addChild(coreGlow);
   const rings = [];
   for (let i = 0; i < 3; i++) { const r = new Graphics(); const rad = 96 - i * 22; r.ellipse(0, 0, rad, rad * (0.4 + i * 0.12)).stroke({ width: 3 - i * 0.5, color: [0x2e6ab0, 0x3a7ac0, 0x4a8ad0][i] }); r.x = CX; r.y = CY; root.addChild(r); rings.push(r); }
+  // magnit ushlab turuvchi g'altaklar (yadro yon tomonlarida)
+  const coils = new Graphics(); coils.x = CX; coils.y = CY; root.addChild(coils);
+  for (const sx of [-74, 74]) { for (let cy = -46; cy <= 46; cy += 15) coils.ellipse(sx, cy, 15, 6).fill(0x0e1c2a).stroke({ width: 2, color: 0x2e4d6a }); coils.rect(sx - 2, -50, 4, 100).fill({ color: 0x1a2f45, alpha: 0.5 }); }
+  const arcs = new Graphics(); arcs.blendMode = 'add'; root.addChild(arcs);   // plazma yoylari
   const core = new Graphics(); root.addChild(core);          // dinamik yadro
   const coreSpark = new Sprite(radialTexture('rgba(200,230,255,0.95)', 128)); coreSpark.anchor.set(0.5); coreSpark.x = CX; coreSpark.y = CY; coreSpark.width = coreSpark.height = 60; coreSpark.blendMode = 'add'; root.addChild(coreSpark);
 
@@ -58,6 +62,8 @@ export function assembleReactor(app) {
   console_.rect(0, 372, LW, 3).fill({ color: 0x2a3a48, alpha: 0.6 });
   console_.poly([40, 380, LW - 40, 380, LW - 12, LH, 12, LH]).fill(0x11171f).stroke({ width: 1.5, color: 0x243441 });
   root.addChild(console_);
+  // yadro nurining konsol yuzasidagi aksi
+  const floorRefl = new Sprite(radialTexture('rgba(90,160,255,0.6)', 256)); floorRefl.anchor.set(0.5); floorRefl.x = CX; floorRefl.y = 402; floorRefl.width = 380; floorRefl.height = 56; floorRefl.blendMode = 'add'; floorRefl.alpha = 0; root.addChild(floorRefl);
 
   // KOD DISPLEY (chapda) — bosqich + kirilayotgan kod
   const disp = new Graphics(); root.addChild(disp);
@@ -77,14 +83,20 @@ export function assembleReactor(app) {
     const x = KX0 + cc * KC, y = KY0 + r * KC;
     keyLabels.roundRect(x, y, KC - 8, KC - 8, 5).fill(0x1e2732).stroke({ width: 1, color: 0x39485a });
     keyLabels.roundRect(x + 3, y + 3, KC - 14, 6, 3).fill({ color: 0xffffff, alpha: 0.05 });
+    const lbl = new Text({ text: KEYS[r][cc], style: { fontFamily: 'Chakra Petch, monospace', fontSize: 16, fontWeight: '700', fill: 0x9fbcd2 } });
+    lbl.anchor.set(0.5); lbl.x = x + (KC - 8) / 2; lbl.y = y + (KC - 8) / 2; root.addChild(lbl);
   }
+  // kod displey raqamlari + sarlavha
+  const codeText = [];
+  for (let i = 0; i < CODELEN; i++) { const tx = new Text({ text: '0', style: { fontFamily: 'Orbitron, monospace', fontSize: 20, fontWeight: '800', fill: 0x1e4a34 } }); tx.anchor.set(0.5); tx.x = 250 + i * 56 + 22; tx.y = 467; root.addChild(tx); codeText.push(tx); }
+  const seqT = new Text({ text: 'IGNITION SEQUENCE', style: { fontFamily: 'Chakra Petch, monospace', fontSize: 9, fill: 0x39ff88, letterSpacing: 2 } }); seqT.x = 224; seqT.y = 434; seqT.alpha = 0.7; root.addChild(seqT);
 
   const particles = makeParticles(root);
   const vign = new Sprite(radialVignette()); vign.alpha = 0.64; app.stage.addChild(vign);
   const flash = new Graphics().rect(0, 0, 10, 10).fill(0xffffff); flash.alpha = 0; flash.blendMode = 'add'; app.stage.addChild(flash);
 
   const scene = {
-    app, sky, root, coolG, coreGlow, rings, core, coreSpark, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, particles, vign, flash,
+    app, sky, root, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash,
     stage: 0, code: [], cursor: 0, prevKey: 'NONE', pressed: null, pressT: 0,
     won: false, ignite: 0, spin: 0, errT: 0, okT: 0, lastReset: 0, cineT: 0, cineGlow: 0,
     newCode() { this.code = Array.from({ length: CODELEN }, () => String(Math.floor(rnd(0, 10)))); this.cursor = 0; },
@@ -114,7 +126,7 @@ function registerDigit(scene, d, ctl) {
 
 // ctl = { key, connected, mode, resetPulse, onDigit, onError, onStage, onWin }
 export function reactorTick(scene, dt, t, ctl) {
-  const { app, sky, root, coolG, coreGlow, rings, core, coreSpark, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, particles, vign, flash } = scene;
+  const { app, sky, root, coolG, coreGlow, rings, coils, arcs, core, coreSpark, floorRefl, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, codeText, particles, vign, flash } = scene;
   const w = app.screen.width, h = app.screen.height;
   sky.width = w; sky.height = h;
   const sc = Math.min(w / LW, h / LH); root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
@@ -155,6 +167,12 @@ export function reactorTick(scene, dt, t, ctl) {
   coreGlow.alpha = 0.1 + lvl * 0.4 + cg * 0.4 + (scene.ignite > 0 ? scene.ignite * 0.5 : 0); coreGlow.scale.set(1 + lvl * 0.3 + cg * 0.25 + (scene.ignite > 0 ? scene.ignite : 0));
   coreSpark.alpha = 0.25 + lvl * 0.5 + cg * 0.4; coreSpark.scale.set(1 + 0.3 * Math.sin(t * 12));
   if (scene.ignite > 0 && scene.ignite < 0.5 && Math.random() < 0.5) particles.burst(CX, CY, 0x9fe0ff, 10, 320);
+  // magnit g'altak + pol aksi + plazma yoylari
+  coils.alpha = 0.5 + lvl * 0.35 + cg * 0.4;
+  floorRefl.alpha = 0.08 + lvl * 0.3 + cg * 0.3 + (scene.ignite > 0 ? scene.ignite * 0.4 : 0);
+  arcs.clear();
+  const act = lvl + cg + (scene.ignite > 0 ? 1 : 0);
+  if (act > 0.25) for (let a = 0; a < 3; a++) { const ang = rnd(0, Math.PI * 2); let px = CX, py = CY; arcs.moveTo(px, py); for (let s = 0; s < 4; s++) { px += Math.cos(ang) * (coreR * 0.6) + rnd(-7, 7); py += Math.sin(ang) * (coreR * 0.6) + rnd(-7, 7); arcs.lineTo(px, py); } arcs.stroke({ width: 1.2, color: 0xbfe6ff, alpha: 0.35 * Math.min(1, act) }); }
 
   // koolant oqimi (bosqichga qarab tezlashadi)
   coolG.clear();
@@ -176,6 +194,7 @@ export function reactorTick(scene, dt, t, ctl) {
     disp.roundRect(x, y, 44, 30, 4).fill(entered ? 0x0e3a24 : 0x0a1a12).stroke({ width: 1.5, color: entered ? 0x39ff88 : (i === scene.cursor ? 0xffd23a : 0x1e4a34) });
   }
   dispGlow.alpha = 0.1 + scene.okT * 0.4;
+  codeText.forEach((tx, i) => { tx.text = String(scene.code[i] ?? ''); const entered = i < scene.cursor; tx.style.fill = entered ? 0x39ff88 : (scene.errT > 0 ? 0xff5a3a : (i === scene.cursor ? 0xffd23a : 0x2a6a4a)); });
 
   // ===== ASBOBLAR (RPM/HARORAT strelkalari) =====
   gauges.clear();

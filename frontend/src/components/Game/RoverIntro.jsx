@@ -35,12 +35,21 @@ export default function RoverIntro({ onStart }) {
     <div className="absolute inset-0 z-30" style={{ background: '#05080c' }}>
       <PixiStage build={build} className="rounded-xl">
         {phase === 'scene' && (
-          <div className="absolute top-3 right-3 pointer-events-auto">
-            <button onClick={() => ctlRef.current.skip?.()} className="px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-wider"
-              style={{ fontFamily: 'Chakra Petch, monospace', color: '#a9f0cc', background: 'rgba(10,14,18,0.7)', border: '1px solid rgba(107,255,176,0.25)', cursor: 'pointer' }}>
-              O'tkazib yuborish ▸▸
-            </button>
-          </div>
+          <>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '8%', background: '#000', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '11%', background: '#000', pointerEvents: 'none' }} />
+            <div className="absolute left-4 flex items-center gap-2" style={{ top: '9%', fontFamily: 'Chakra Petch, monospace', fontSize: 10, letterSpacing: '0.16em', color: '#a9f0cc' }}>
+              <span className="animate-pulse" style={{ color: '#ff3b46' }}>● REC</span>
+              <span>HULL-CAM 07</span>
+              <span style={{ color: '#ff5a3a' }}>⚠ HULL BREACH</span>
+            </div>
+            <div className="absolute right-4 pointer-events-auto" style={{ top: '9%' }}>
+              <button onClick={() => ctlRef.current.skip?.()} className="px-4 py-1.5 rounded-lg text-[10px] uppercase tracking-wider"
+                style={{ fontFamily: 'Chakra Petch, monospace', color: '#a9f0cc', background: 'rgba(10,14,18,0.7)', border: '1px solid rgba(107,255,176,0.25)', cursor: 'pointer' }}>
+                O'tkazib yuborish ▸▸
+              </button>
+            </div>
+          </>
         )}
         {phase === 'talk' && (
           <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-auto animate-slide-up">

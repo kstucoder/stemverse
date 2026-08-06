@@ -40,15 +40,22 @@ function makeArray(parent) {
   // panel bloki (arm uchida)
   const panel = new Container(); panel.y = -100; c.addChild(panel);
   const pg = new Graphics();
-  // ramka
-  pg.roundRect(-92, -30, 184, 60, 4).fill(0x0c1420).stroke({ width: 2, color: 0x3a4a5a });
-  // 6x2 fotoelement katak (to'q ko'k, ingichka setka)
+  // alyuminiy ramka + bevel (yorug' yuqori/chap qirra, to'q past/o'ng)
+  pg.roundRect(-94, -32, 188, 64, 5).fill(0x0a1018).stroke({ width: 2, color: 0x3a4a5a });
+  pg.moveTo(-94, -32).lineTo(94, -32).stroke({ width: 1.5, color: 0x62788c, alpha: 0.7 });
+  pg.moveTo(-94, -32).lineTo(-94, 32).stroke({ width: 1.5, color: 0x4a5c6e, alpha: 0.6 });
+  pg.moveTo(94, -32).lineTo(94, 32).stroke({ width: 1.5, color: 0x080d14, alpha: 0.85 });
+  pg.moveTo(-94, 32).lineTo(94, 32).stroke({ width: 1.5, color: 0x080d14, alpha: 0.85 });
+  // 6x2 mono-Si fotoelement katak (burchak kesimlari, busbar, fingerlar)
   for (let r = 0; r < 2; r++) for (let col = 0; col < 6; col++) {
     const x = -88 + col * 30, y = -26 + r * 28;
-    pg.roundRect(x, y, 27, 25, 2).fill(0x123a6a).stroke({ width: 0.8, color: 0x1f5a9a });
-    pg.moveTo(x + 13, y).lineTo(x + 13, y + 25).stroke({ width: 0.5, color: 0x1a4a80, alpha: 0.7 });
-    for (let g = y + 4; g < y + 25; g += 5) pg.moveTo(x, g).lineTo(x + 27, g).stroke({ width: 0.4, color: 0x1a4a80, alpha: 0.5 });
+    pg.roundRect(x, y, 27, 25, 2).fill(0x0e3566).stroke({ width: 0.8, color: 0x1f5a9a });
+    pg.moveTo(x, y + 3).lineTo(x + 3, y).moveTo(x + 24, y).lineTo(x + 27, y + 3).moveTo(x, y + 22).lineTo(x + 3, y + 25).moveTo(x + 24, y + 25).lineTo(x + 27, y + 22).stroke({ width: 0.7, color: 0x081426 });
+    pg.moveTo(x + 9, y).lineTo(x + 9, y + 25).moveTo(x + 18, y).lineTo(x + 18, y + 25).stroke({ width: 1, color: 0x9fb0c0, alpha: 0.45 }); // busbar (kumush)
+    for (let g = y + 4; g < y + 25; g += 4) pg.moveTo(x, g).lineTo(x + 27, g).stroke({ width: 0.4, color: 0x2a6aaa, alpha: 0.4 }); // fingerlar
   }
+  pg.roundRect(-11, 30, 22, 9, 2).fill(0x14202c).stroke({ width: 1, color: 0x2a3a48 });   // junction box
+  pg.circle(-6, 34, 1.4).fill(0x3a4a58).circle(6, 34, 1.4).fill(0x3a4a58);
   panel.addChild(pg);
   const shine = new Graphics(); panel.addChild(shine);                 // quyosh aksi (glint)
   const glint = new Sprite(radialTexture('rgba(255,245,200,0.9)', 128)); glint.anchor.set(0.5); glint.width = glint.height = 70; glint.blendMode = 'add'; glint.alpha = 0; panel.addChild(glint);
@@ -81,6 +88,7 @@ export function assembleSolar(app) {
   // QUYOSH (korona + disk + lens-flare)
   const sunGlow = new Sprite(radialTexture('rgba(255,180,90,0.5)', 512)); sunGlow.anchor.set(0.5); sunGlow.width = sunGlow.height = 380; sunGlow.blendMode = 'add'; root.addChild(sunGlow);
   const sun = new Sprite(sunTexture()); sun.anchor.set(0.5); sun.width = sun.height = 120; root.addChild(sun);
+  const flareStreak = new Sprite(radialTexture('rgba(255,224,170,0.85)', 256)); flareStreak.anchor.set(0.5); flareStreak.width = 540; flareStreak.height = 7; flareStreak.blendMode = 'add'; root.addChild(flareStreak); // anamorfik streak
   const flare = new Graphics(); flare.blendMode = 'add'; root.addChild(flare);
 
   // BAZA (mid-fon, zaryad oshgani sayin yonadi)
@@ -106,6 +114,13 @@ export function assembleSolar(app) {
   for (let i = 0; i < 26; i++) { const rx = rnd(0, LW), ry = rnd(GROUND + 14, LH - 16); ground.ellipse(rx, ry, rnd(5, 16), rnd(2, 6)).fill({ color: 0x0e0a08, alpha: 0.85 }); ground.ellipse(rx - 2, ry - 2, rnd(3, 9), rnd(1, 3)).fill({ color: 0x241812, alpha: 0.6 }); }
   root.addChild(ground);
   const dust = []; for (let i = 0; i < 4; i++) { const d = new Sprite(radialTexture('rgba(150,110,80,0.12)', 256)); d.anchor.set(0.5); d.width = rnd(240, 400); d.height = rnd(50, 90); d.x = rnd(0, LW); d.y = rnd(GROUND, LH - 20); d.blendMode = 'add'; root.addChild(d); dust.push({ s: d, sp: rnd(6, 15) }); }
+  // oldingi plan yirik toshlari (chuqurlik + rim yorug')
+  const fg = new Graphics();
+  fg.moveTo(0, LH).lineTo(0, 516).lineTo(52, 506).lineTo(78, LH).fill(0x080604);
+  fg.moveTo(0, 516).lineTo(52, 506).stroke({ width: 2, color: 0x3a2a1a, alpha: 0.5 });
+  fg.moveTo(LW, LH).lineTo(LW, 512).lineTo(LW - 66, 502).lineTo(LW - 96, LH).fill(0x080604);
+  fg.moveTo(LW, 512).lineTo(LW - 66, 502).stroke({ width: 2, color: 0x3a2a1a, alpha: 0.5 });
+  root.addChild(fg);
 
   // quvvat kabeli (paneldan bazaga)
   const cable = new Graphics(); root.addChild(cable);
@@ -128,7 +143,7 @@ export function assembleSolar(app) {
   const flash = new Graphics().rect(0, 0, 10, 10).fill(0xffffff); flash.alpha = 0; flash.blendMode = 'add'; app.stage.addChild(flash);
 
   const scene = {
-    app, sky, root, twinkle, sunGlow, sun, flare, baseWindows, baseGlow, dust, cable, array, particles, coilLeds, meterG, alignG, drv, vign, flash,
+    app, sky, root, twinkle, sunGlow, sun, flare, flareStreak, baseWindows, baseGlow, dust, cable, array, particles, coilLeds, meterG, alignG, drv, vign, flash,
     charge: 0.06, alignment: 0, panelA: -Math.PI / 2 + 0.18, dispA: -Math.PI / 2 + 0.18, sunA: -Math.PI / 2, sunX: 500, sunY: 120,
     milestone: 0, won: false, sunT: rnd(0, 6), lastReset: 0, flashT: 0, cineT: 0,
     reset() { this.charge = 0.06; this.milestone = 0; this.won = false; this.sunT = rnd(0, 6); this.cineT = 0; },
@@ -138,7 +153,7 @@ export function assembleSolar(app) {
 
 // ctl = { pot, connected, mode, resetPulse, onCharge, onWin, onNear }
 export function solarTick(scene, dt, t, ctl) {
-  const { app, sky, root, twinkle, sunGlow, sun, flare, baseWindows, baseGlow, dust, cable, array, particles, coilLeds, meterG, alignG, vign, flash } = scene;
+  const { app, sky, root, twinkle, sunGlow, sun, flare, flareStreak, baseWindows, baseGlow, dust, cable, array, particles, coilLeds, meterG, alignG, vign, flash } = scene;
   const w = app.screen.width, h = app.screen.height;
   sky.width = w; sky.height = h;
   const sc = Math.min(w / LW, h / LH); root.scale.set(sc); root.x = (w - LW * sc) / 2; root.y = (h - LH * sc) / 2;
@@ -150,6 +165,7 @@ export function solarTick(scene, dt, t, ctl) {
   scene.sunX = 500 + Math.sin(scene.sunT) * 330; scene.sunY = 128 - Math.cos(scene.sunT) * 34;
   sun.x = sunGlow.x = scene.sunX; sun.y = sunGlow.y = scene.sunY; sun.scale.set((120 / 256) * (1 + 0.02 * Math.sin(t * 3)));
   sunGlow.alpha = 0.45 + 0.1 * Math.sin(t * 2);
+  flareStreak.x = scene.sunX; flareStreak.y = scene.sunY; flareStreak.alpha = 0.28 + 0.14 * Math.sin(t * 2.5); flareStreak.height = 6 + 3 * Math.sin(t * 5);
   // lens-flare nurlari
   flare.clear(); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + t * 0.1; const ln = 60 + 30 * Math.sin(t * 3 + i); flare.moveTo(scene.sunX, scene.sunY).lineTo(scene.sunX + Math.cos(a) * ln, scene.sunY + Math.sin(a) * ln).stroke({ width: 1, color: 0xffe6a0, alpha: 0.12 }); }
   twinkle.forEach((o) => { o.s.alpha = o.base * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * o.sp + o.ph))); });

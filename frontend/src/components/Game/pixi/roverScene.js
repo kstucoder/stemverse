@@ -3,7 +3,7 @@
 // meteor/jang shikastlari (yoriq + gaz chiqishi + uchqun). IR PULT tugmalari (▲▼◄►) bilan gusenitsali
 // ta'mirlash roverini korpus bo'ylab yurit; shikast ustiga borib OK bilan payvandla. 5 shikast -> korpus butun.
 // Saga davomi: reaktor quvvatlangach (18), meteorlardan shikastlangan tashqi korpusni ta'mirlaymiz.
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
 import { gradTexture, radialTexture, makeParticles } from './cityScene';
 
@@ -22,6 +22,7 @@ function radialVignette(size = 512) {
 // ===== SHIKAST NUQTASI (yoriq + gaz + payvand yamog'i) =====
 function makeDamage(parent, x, y) {
   const c = new Container(); c.x = x; c.y = y; parent.addChild(c);
+  const molten = new Sprite(radialTexture('rgba(255,120,40,0.8)', 128)); molten.anchor.set(0.5); molten.y = -2; molten.width = molten.height = 34; molten.blendMode = 'add'; molten.alpha = 0; c.addChild(molten);
   const vent = new Sprite(radialTexture('rgba(120,200,255,0.5)', 128)); vent.anchor.set(0.5); vent.y = -6; vent.width = vent.height = 46; vent.blendMode = 'add'; c.addChild(vent);
   const crack = new Graphics();
   crack.moveTo(-18, 4).lineTo(-6, -8).lineTo(2, 2).lineTo(12, -10).lineTo(20, 2).stroke({ width: 3, color: 0x1a0e08 });
@@ -34,7 +35,7 @@ function makeDamage(parent, x, y) {
   for (let i = -16; i <= 16; i += 8) patch.circle(i, -8, 1.4).fill(0x1a2028).circle(i, 8, 1.4).fill(0x1a2028);   // mixlar
   patch.moveTo(-18, 0).lineTo(18, 0).stroke({ width: 2, color: 0xffb060, alpha: 0.5 });                          // payvand chizig'i
   patch.alpha = 0; c.addChild(patch);
-  return { c, vent, crack, ring, patch, x, y, fixed: false };
+  return { c, molten, vent, crack, ring, patch, x, y, fixed: false };
 }
 
 // ===== TA'MIRLASH ROVERI (gusenitsa + korpus + payvand qo'li) =====
@@ -51,6 +52,8 @@ function makeRover(parent) {
   g.rect(-14, -18, 18, 5, 1).fill({ color: 0x9fd8ff, alpha: 0.8 });   // oyna
   g.rect(-22, -4, 44, 3).fill({ color: 0x0e141a, alpha: 0.8 });       // detal chizig'i
   g.circle(18, -14, 2).fill(0x39ff88);                                // status LED
+  g.moveTo(-8, -20).lineTo(-8, -32).stroke({ width: 1.5, color: 0x3a4a58 }); g.circle(-8, -33, 2).fill(0x9fd0ff);   // antenna
+  for (let sx = -20; sx < 20; sx += 8) g.poly([sx, 8, sx + 3, 8, sx - 1, 11, sx - 4, 11]).fill({ color: 0xffb020, alpha: 0.4 });   // caution stripe
   c.addChild(g);
   // payvand qo'l (buriladi)
   const arm = new Container(); arm.x = 14; arm.y = -4; c.addChild(arm);
@@ -89,9 +92,27 @@ export function assembleRover(app) {
   for (let x = 60; x < 970; x += 60) hull.circle(x, 155, 3).fill(0x0e141a);
   // ogohlantirish chevron chiziq
   for (let x = 0; x < LW; x += 30) hull.poly([x, LH - 26, x + 14, LH - 26, x + 6, LH - 12, x - 8, LH - 12]).fill({ color: x % 60 === 0 ? 0xffb020 : 0x1a1a12, alpha: 0.5 });
-  // eskirish dog'lari
+  // panel bevel qirralari (3D chuqurlik: yorug' ich yuqori-chap, to'q past-o'ng)
+  for (let x = 40; x < LW; x += 120) for (let y = 132; y < LH; y += 90) {
+    hull.moveTo(x + 5, y + 85).lineTo(x + 5, y + 5).lineTo(x + 115, y + 5).stroke({ width: 1, color: 0x33485a, alpha: 0.4 });
+    hull.moveTo(x + 115, y + 5).lineTo(x + 115, y + 85).lineTo(x + 5, y + 85).stroke({ width: 1, color: 0x06090e, alpha: 0.6 });
+  }
+  // ogohlantirish plakatlari (sariq-qora chiziq)
+  for (const [px, py] of [[176, 296], [566, 196]]) { hull.rect(px, py, 42, 15, 2).fill(0x120f08); for (let s = 0; s < 44; s += 8) hull.poly([px + s, py, px + s + 4, py, px + s - 4, py + 15, px + s - 8, py + 15]).fill({ color: 0xffb020, alpha: 0.65 }); hull.rect(px, py, 42, 15, 2).stroke({ width: 1, color: 0x2a2a1a }); }
+  // texnik lyuk (bolt + tutqich)
+  hull.roundRect(356, 298, 72, 56, 5).fill(0x18222c).stroke({ width: 2, color: 0x33485a });
+  for (const [bx, by] of [[366, 308], [418, 308], [366, 344], [418, 344]]) { hull.circle(bx, by, 3).fill(0x0a1016); hull.circle(bx - 0.7, by - 0.7, 1.2).fill(0x4a5c6e); }
+  hull.roundRect(384, 322, 16, 6, 3).fill(0x2a3a48).stroke({ width: 0.8, color: 0x4a5c6e });
+  // vertikal quvur + valve g'ildiraklar
+  hull.rect(882, 158, 11, 344, 4).fill(0x1a2530).stroke({ width: 1, color: 0x2e3f4d });
+  hull.rect(884, 158, 3, 344).fill({ color: 0x3a4a58, alpha: 0.4 });
+  for (let vy = 214; vy < 486; vy += 92) { hull.circle(887, vy, 9).stroke({ width: 2, color: 0x3a4a58 }); hull.moveTo(878, vy).lineTo(896, vy).moveTo(887, vy - 9).lineTo(887, vy + 9).stroke({ width: 1.5, color: 0x2a3a48 }); hull.circle(887, vy, 2).fill(0x0e141a); }
+  // eskirish dog'lari + oqim izlari
   for (let i = 0; i < 14; i++) { const sx = rnd(0, LW), sy = rnd(160, LH - 30); hull.ellipse(sx, sy, rnd(20, 60), rnd(8, 20)).fill({ color: 0x0c1116, alpha: 0.25 }); }
+  for (let i = 0; i < 8; i++) { const sx = rnd(60, LW - 60); hull.rect(sx, rnd(190, 300), 2, rnd(30, 70)).fill({ color: 0x0a0f14, alpha: 0.3 }); }
   root.addChild(hull);
+  const stencil = new Text({ text: 'VOLTRA // HULL SECTOR-7', style: { fontFamily: 'Chakra Petch, monospace', fontSize: 12, fill: 0x3a4a58, letterSpacing: 3 } });
+  stencil.x = 58; stencil.y = 174; stencil.alpha = 0.5; root.addChild(stencil);
   // statik zovur bug'i
   const ventBg = new Sprite(radialTexture('rgba(100,140,180,0.08)', 512)); ventBg.anchor.set(0.5); ventBg.x = 700; ventBg.y = 300; ventBg.width = 400; ventBg.height = 200; ventBg.blendMode = 'add'; root.addChild(ventBg);
 
@@ -192,11 +213,12 @@ export function roverTick(scene, dt, t, ctl) {
 
   // shikastlarni yangilash (animatsiya + tuzatilgan holat)
   damages.forEach((d, i) => {
-    if (d.fixed) { d.patch.alpha = Math.min(1, d.patch.alpha + dt * 3); d.crack.alpha = Math.max(0, d.crack.alpha - dt * 3); d.vent.alpha = Math.max(0, d.vent.alpha - dt * 3); d.ring.clear(); return; }
+    if (d.fixed) { d.patch.alpha = Math.min(1, d.patch.alpha + dt * 3); d.crack.alpha = Math.max(0, d.crack.alpha - dt * 3); d.vent.alpha = Math.max(0, d.vent.alpha - dt * 3); d.molten.alpha = Math.max(0, d.molten.alpha - dt * 3); d.ring.clear(); return; }
     const rv = scene.reveal[i];
     d.crack.alpha = rv;
-    if (rv < 0.05) { d.vent.alpha = 0; d.ring.clear(); return; }   // hali shikastlanmagan (intro boshida)
+    if (rv < 0.05) { d.vent.alpha = 0; d.molten.alpha = 0; d.ring.clear(); return; }   // hali shikastlanmagan (intro boshida)
     d.vent.alpha = (0.35 + 0.25 * Math.sin(t * 3 + i)) * rv; d.vent.scale.set(1 + 0.15 * Math.sin(t * 4 + i));
+    d.molten.alpha = rv * (0.35 + 0.2 * Math.sin(t * 5 + i)); d.molten.scale.set(1 + 0.12 * Math.sin(t * 6 + i));
     if (Math.random() < 0.02) particles.burst(d.x, d.y - 6, 0x9fd0ff, 2, 60);
     d.ring.clear();
     const active = i === scene.nearIdx;
