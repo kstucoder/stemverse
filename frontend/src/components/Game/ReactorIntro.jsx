@@ -5,25 +5,24 @@ import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleReactor, reactorTick } from './pixi/reactorScene';
 import DialogueBox from './DialogueBox';
-import { playScore, playClick } from './gameAudio';
 
+// Electra faqat reaktor ishga tushmagach gapiradi — muammoni va yechimni tushuntiradi.
 const LINES = [
-  { text: "Mana shu daqiqa uchun ishladik, qo'mondon. Reaktor quvvatlangan, korpus germetik — baza ishga tushishga tayyor.", emotion: 'excited' },
-  { text: "Oxirgi qadam eng muhimi: bosh reaktorni yoqish. Buning uchun 4x4 klaviaturada ishga tushirish KODINI kiritamiz.", emotion: 'normal' },
-  { text: "Ekranda har bosqichda kod chiqadi. Uni keypad'da AYNAN ketma-ket ter — har to'g'ri kod reaktorni bir pog'ona jonlantiradi. Xato bo'lsa — kod qaytadan.", emotion: 'normal' },
-  { text: "5 bosqichni ham kiritib, reaktorni gumburlatib yoq — butun baza jonlanadi! Bu — final. Tayyormisan, Bosh Muhandis?", emotion: 'excited' },
+  { text: "Mana shu daqiqa uchun ishladik, qo'mondon — quvvat, korpus, hammasi tayyor. Bosh reaktorni yoqamiz...", emotion: 'excited' },
+  { text: "Ko'rdingmi? Yadro yonmoqchi bo'ldi-yu, o'chib qoldi — avto-start ishlamadi. Reaktor xavfsizlik qulfida: kodsiz yonmaydi.", emotion: 'worried' },
+  { text: "Uni faqat QO'LDA yoqamiz — 4x4 klaviaturada ishga tushirish KODINI kiritib. Ekranda har bosqichda kod chiqadi.", emotion: 'normal' },
+  { text: "Kodni keypad'da AYNAN ketma-ket ter — har to'g'ri kod reaktorni bir pog'ona jonlantiradi, xato bo'lsa qaytadan. 5 bosqichni yoq! Platani ulaganingda boshlaymiz. Tayyormisan, Bosh Muhandis?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleReactor(app);
-  const ctl = { key: 'NONE', connected: false, mode: 'intro', resetPulse: 0, onDigit: () => playClick(), onStage: () => playScore() };
-  let t = 0, done = false, endedAt = 0;
+  const ctl = { key: 'NONE', connected: false, mode: 'intro', resetPulse: 0 };   // FAQAT muvaffaqiyatsiz-start kinematikasi
+  let t = 0, done = false;
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
-    reactorTick(scene, dt, t, ctl);   // ulanmagan + intro -> demo kodni avto-teradi, reaktor jonlanadi
-    if (scene.stage >= 2 && !endedAt) endedAt = t;
-    if (!done && ((endedAt && t > endedAt + 0.9) || t > 11)) { done = true; onSceneDone(); }
+    reactorTick(scene, dt, t, ctl);   // yadro miltillab o'chadi (o'yin o'ynalmaydi)
+    if (!done && t > 6.4) { done = true; onSceneDone(); }
   });
   return () => {};
 }

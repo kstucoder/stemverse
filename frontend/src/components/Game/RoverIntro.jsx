@@ -5,25 +5,24 @@ import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleRover, roverTick } from './pixi/roverScene';
 import DialogueBox from './DialogueBox';
-import { playScore, playZap } from './gameAudio';
 
+// Electra faqat meteor zarbasidan KEYIN gapiradi — muammoni va yechimni tushuntiradi.
 const LINES = [
-  { text: "Reaktor quvvatlandi — ammo tashqi korpusda meteor va jang izlari qoldi: yoriqlar, gaz sizmoqda. Bazamiz germetik emas.", emotion: 'worried' },
-  { text: "Tashqariga chiqib bo'lmaydi. Buning uchun IR masofadan boshqaruv pultli ta'mirlash roverini ishga soldim.", emotion: 'normal' },
-  { text: "Pultning ▲▼◄► tugmalari bilan roverni korpus bo'ylab yurit. Shikast ustiga borganda OK ni bosib ushlab tur — payvand qo'li teshikni yopadi.", emotion: 'normal' },
-  { text: "5 ta shikastni ham payvandlab, korpusni germetik qil! Tayyormisan, ta'mir operatori?", emotion: 'excited' },
+  { text: "Ko'rdingmi?! Meteor yomg'iri bazamiz tashqi korpusiga urildi — bir necha joyda yoriq ochildi, gaz sizib chiqmoqda. Korpus germetikligi buzildi!", emotion: 'worried' },
+  { text: "Tashqariga chiqib bo'lmaydi — juda xavfli. Shuning uchun IR masofadan boshqaruv pultli ta'mirlash roveri bor.", emotion: 'normal' },
+  { text: "Pultning ▲▼◄► tugmalari bilan roverni korpus bo'ylab yurit. YASHIL belgilangan shikast ustiga borganda OK ni bosib ushlab tur — payvand qo'li teshikni yopadi.", emotion: 'normal' },
+  { text: "5 ta shikastni ham payvandlab, korpusni yana germetik qil! Platani ulaganingda roverni qo'lga olasan. Tayyormisan, ta'mir operatori?", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleRover(app);
-  const ctl = { ir: 'NONE', connected: false, mode: 'intro', resetPulse: 0, onWeld: () => { playScore(); playZap(); }, onNear: () => {} };
-  let t = 0, done = false, endedAt = 0;
+  const ctl = { ir: 'NONE', connected: false, mode: 'intro', resetPulse: 0 };   // FAQAT meteor zarbasi kinematikasi
+  let t = 0, done = false;
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
-    roverTick(scene, dt, t, ctl);   // ulanmagan + intro -> avto-pilot rover shikastlarni tuzatadi
-    if (scene.fixed >= 2 && !endedAt) endedAt = t;
-    if (!done && ((endedAt && t > endedAt + 0.8) || t > 11)) { done = true; onSceneDone(); }
+    roverTick(scene, dt, t, ctl);   // meteorlar korpusni shikastlaydi (o'yin o'ynalmaydi)
+    if (!done && t > 6.6) { done = true; onSceneDone(); }
   });
   return () => {};
 }

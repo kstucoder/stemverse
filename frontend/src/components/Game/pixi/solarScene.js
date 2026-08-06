@@ -129,9 +129,9 @@ export function assembleSolar(app) {
 
   const scene = {
     app, sky, root, twinkle, sunGlow, sun, flare, baseWindows, baseGlow, dust, cable, array, particles, coilLeds, meterG, alignG, drv, vign, flash,
-    charge: 0, alignment: 0, panelA: (A_MIN + A_MAX) / 2, dispA: (A_MIN + A_MAX) / 2, sunA: -Math.PI / 2, sunX: 500, sunY: 120,
-    milestone: 0, won: false, sunT: rnd(0, 6), lastReset: 0, flashT: 0, demoT: 0,
-    reset() { this.charge = 0; this.milestone = 0; this.won = false; this.sunT = rnd(0, 6); },
+    charge: 0.06, alignment: 0, panelA: -Math.PI / 2 + 0.18, dispA: -Math.PI / 2 + 0.18, sunA: -Math.PI / 2, sunX: 500, sunY: 120,
+    milestone: 0, won: false, sunT: rnd(0, 6), lastReset: 0, flashT: 0, cineT: 0,
+    reset() { this.charge = 0.06; this.milestone = 0; this.won = false; this.sunT = rnd(0, 6); this.cineT = 0; },
   };
   return scene;
 }
@@ -158,10 +158,12 @@ export function solarTick(scene, dt, t, ctl) {
   // quyoshning pivotga nisbatan kerakli burchagi
   scene.sunA = clamp(Math.atan2(scene.sunY - PVY, scene.sunX - PVX), A_MIN, A_MAX);
 
-  // panel burchagi: POT (ulangan) yoki demo (quyoshni kuzatadi)
-  const playing = (ctl.connected && !scene.won) || ctl.mode === 'intro';
-  if (ctl.connected) scene.panelA = lerp(A_MIN, A_MAX, clamp((ctl.pot ?? 512) / 1023, 0, 1));
-  else { scene.demoT += dt; scene.panelA += (scene.sunA + 0.04 * Math.sin(scene.demoT * 2) - scene.panelA) * Math.min(1, dt * 2.2); }
+  // panel burchagi: FAQAT ulangan plata boshqaradi; aks holda BO'SHASHGAN holat (nishonlanmaydi)
+  const isIntro = ctl.mode === 'intro';
+  const playing = ctl.connected && !isIntro && !scene.won;
+  const REST_A = -Math.PI / 2 + 0.18;   // panel osilib qolgan (quyoshga qaratilmagan)
+  if (playing) scene.panelA = lerp(A_MIN, A_MAX, clamp((ctl.pot ?? 512) / 1023, 0, 1));
+  else scene.panelA += (REST_A - scene.panelA) * Math.min(1, dt * 1.4);
 
   // STEPPER: dispA panelA tomon QADAMBA-QADAM (aniq, diskret) keladi
   const STEP = 0.035;                       // bitta qadam (rad)
@@ -182,12 +184,19 @@ export function solarTick(scene, dt, t, ctl) {
   array.glint.alpha = power * 0.9; array.glint.x = lerp(-70, 70, (scene.sunX - (PVX - 200)) / 400);
   array.shine.clear(); if (power > 0.3) array.shine.rect(-92, -30, 184, 60).fill({ color: 0xfff2c0, alpha: power * 0.12 });
 
-  // ZARYAD
+  // ZARYAD — faqat real o'yinda oshadi
   if (playing) {
     scene.charge = clamp(scene.charge + (power > 0.35 ? 0.11 * power : -0.02) * dt, 0, 1);
     const ms = Math.floor(scene.charge * 5 + 1e-6);
     if (ms > scene.milestone) { scene.milestone = ms; scene.flashT = 0.4; particles.burst(PVX, PVY - 100, 0x39ff88, 16, 170); if (ctl.onCharge) ctl.onCharge(ms); }
-    if (scene.charge >= 1 && ctl.connected && ctl.mode !== 'intro' && !scene.won) { scene.won = true; if (ctl.onWin) ctl.onWin(); }
+    if (scene.charge >= 1 && !scene.won) { scene.won = true; if (ctl.onWin) ctl.onWin(); }
+  } else if (isIntro) {
+    // KINEMATIK KRIZ: reaktor quvvati asta tugaydi, baza qorong'ilashadi
+    scene.cineT += dt; scene.milestone = 0;
+    scene.charge = clamp(lerp(0.58, 0.05, clamp(scene.cineT / 4.2, 0, 1)), 0, 1);
+  } else {
+    // ulanmagan o'yin: kritik past — o'zi o'ynamaydi, o'yinchini kutadi
+    scene.milestone = 0; scene.charge = 0.06 + 0.015 * Math.sin(t * 3);
   }
 
   // baza yorishadi (milestone'ga qarab)
@@ -204,7 +213,7 @@ export function solarTick(scene, dt, t, ctl) {
   meterG.clear();
   const mx = 500, my = 512, mw = 300;
   meterG.roundRect(mx - mw / 2 - 6, my - 8, mw + 12, 16, 8).fill({ color: 0x081410, alpha: 0.8 }).stroke({ width: 1.5, color: 0x2a5a3a });
-  meterG.roundRect(mx - mw / 2, my - 4, mw * scene.charge, 8, 4).fill({ color: scene.charge >= 1 ? 0x6bffb0 : 0x39ff88, alpha: 0.95 });
+  meterG.roundRect(mx - mw / 2, my - 4, mw * scene.charge, 8, 4).fill({ color: scene.charge >= 1 ? 0x6bffb0 : (scene.charge < 0.25 ? 0xff5a3a : 0x39ff88), alpha: 0.95 });
   for (let m = 1; m < 5; m++) meterG.moveTo(mx - mw / 2 + mw * m / 5, my - 8).lineTo(mx - mw / 2 + mw * m / 5, my + 8).stroke({ width: 1, color: 0x0a2018, alpha: 0.8 });
   // alignment halqasi (pivot atrofida)
   alignG.clear();
@@ -212,6 +221,8 @@ export function solarTick(scene, dt, t, ctl) {
   alignG.circle(PVX, PVY, 26).stroke({ width: 2, color: 0x1a2a34, alpha: 0.6 });
   alignG.arc(PVX, PVY, 26, -Math.PI / 2, -Math.PI / 2 + scene.alignment * Math.PI * 2).stroke({ width: 3, color: acol, alpha: 0.9 });
 
-  scene.flashT = Math.max(0, scene.flashT - dt); flash.tint = 0x9fffcf; flash.alpha = scene.flashT * 0.28;
+  scene.flashT = Math.max(0, scene.flashT - dt);
+  if (!playing) { flash.tint = 0xff3b2a; flash.alpha = (0.04 + (scene.charge < 0.2 ? 0.06 : 0)) * (0.5 + 0.5 * Math.sin(t * 6)); }
+  else { flash.tint = 0x9fffcf; flash.alpha = scene.flashT * 0.28; }
   particles.tick(dt);
 }

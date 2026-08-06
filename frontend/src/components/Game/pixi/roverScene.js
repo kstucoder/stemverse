@@ -102,14 +102,20 @@ export function assembleRover(app) {
   const rover = makeRover(root);
   rover.c.x = 500; rover.c.y = 470;
 
+  // KINEMATIK meteor (intro'da korpusni shikastlaydi)
+  const meteor = new Container(); meteor.visible = false; root.addChild(meteor);
+  const mtrail = new Graphics(); meteor.addChild(mtrail);
+  const mhead = new Sprite(radialTexture('rgba(255,180,90,0.95)', 128)); mhead.anchor.set(0.5); mhead.width = mhead.height = 36; mhead.blendMode = 'add'; meteor.addChild(mhead);
+
   const vign = new Sprite(radialVignette()); vign.alpha = 0.62; app.stage.addChild(vign);
   const flash = new Graphics().rect(0, 0, 10, 10).fill(0xffffff); flash.alpha = 0; flash.blendMode = 'add'; app.stage.addChild(flash);
 
   const scene = {
-    app, sky, root, stars, particles, damages, rover, vign, flash,
+    app, sky, root, stars, particles, damages, rover, meteor: { c: meteor, trail: mtrail, head: mhead }, vign, flash,
     rx: 500, ry: 470, faceX: 1, fixed: 0, weld: 0, nearIdx: -1, won: false,
     lastReset: 0, flashT: 0, moving: false,
-    reset() { this.fixed = 0; this.weld = 0; this.won = false; this.rx = 500; this.ry = 470; this.damages.forEach((d) => { d.fixed = false; d.patch.alpha = 0; d.crack.alpha = 1; d.vent.alpha = 1; }); },
+    reveal: damages.map(() => 1), cineInit: false, cineT: 0, cineIdx: 0, mk: 1.2, mFrom: { x: 0, y: 0 },
+    reset() { this.fixed = 0; this.weld = 0; this.won = false; this.rx = 500; this.ry = 470; this.reveal = this.damages.map(() => 1); this.cineInit = false; this.cineT = 0; this.cineIdx = 0; this.mk = 1.2; this.damages.forEach((d) => { d.fixed = false; d.patch.alpha = 0; d.crack.alpha = 1; d.vent.alpha = 1; }); },
   };
   return scene;
 }
@@ -124,23 +130,37 @@ export function roverTick(scene, dt, t, ctl) {
   if (ctl.resetPulse !== undefined && ctl.resetPulse !== scene.lastReset) { scene.lastReset = ctl.resetPulse; scene.reset(); }
   stars.alpha = 0.7 + 0.3 * Math.sin(t * 0.6);
 
-  const playing = (ctl.connected && !scene.won) || ctl.mode === 'intro';
+  const isIntro = ctl.mode === 'intro';
+  const playing = ctl.connected && !isIntro && !scene.won;
 
-  // eng yaqin tuzatilmagan shikast
+  // KINEMATIK: intro'da meteorlar korpusni shikastlaydi (shikastlar ko'z oldida paydo bo'ladi)
+  if (isIntro) {
+    if (!scene.cineInit) { scene.cineInit = true; scene.reveal = scene.damages.map(() => 0); scene.cineIdx = 0; scene.mk = 1.2; }
+    scene.cineT += dt;
+    if (scene.cineIdx < scene.damages.length) {
+      if (scene.mk >= 1) { const d = scene.damages[scene.cineIdx]; scene.mFrom = { x: d.x + rnd(-140, 140), y: -50 }; scene.mk = 0; }
+      const d = scene.damages[scene.cineIdx];
+      scene.mk = Math.min(1, scene.mk + dt * 1.15);
+      const mx = lerp(scene.mFrom.x, d.x, scene.mk), my = lerp(scene.mFrom.y, d.y, scene.mk);
+      scene.meteor.c.visible = true; scene.meteor.c.x = mx; scene.meteor.c.y = my;
+      scene.meteor.trail.clear(); scene.meteor.trail.moveTo(0, 0).lineTo(scene.mFrom.x - mx, scene.mFrom.y - my).stroke({ width: 3, color: 0xffb060, alpha: 0.5 });
+      if (Math.random() < 0.6) particles.burst(mx, my, 0xff8a3a, 1, 40);
+      if (scene.mk >= 1) { scene.reveal[scene.cineIdx] = 1; scene.flashT = 0.6; particles.burst(d.x, d.y, 0xff6a2a, 26, 250); particles.burst(d.x, d.y, 0xffd23a, 12, 180); scene.cineIdx++; }
+    } else scene.meteor.c.visible = false;
+  }
+
+  // eng yaqin tuzatilmagan shikast (ko'rinadigan)
   let nd = -1, ndd = Infinity;
-  damages.forEach((d, i) => { if (d.fixed) return; const dd = Math.hypot(d.x - scene.rx, d.y - scene.ry); if (dd < ndd) { ndd = dd; nd = i; } });
+  damages.forEach((d, i) => { if (d.fixed || scene.reveal[i] < 0.9) return; const dd = Math.hypot(d.x - scene.rx, d.y - scene.ry); if (dd < ndd) { ndd = dd; nd = i; } });
   scene.nearIdx = nd;
   const inRange = nd >= 0 && ndd < WELD_R;
 
-  // HARAKAT: IR pult (ulangan) yoki avto-pilot (demo)
+  // HARAKAT: FAQAT ulangan IR pult roverni yuritadi; aks holda rover PARKda turadi (o'zi ta'mirlamaydi)
   let vx = 0, vy = 0, welding = false;
-  if (ctl.connected) {
+  if (playing) {
     const c = (ctl.ir || 'NONE').toString().toUpperCase();
     if (c === 'UP') vy = -1; else if (c === 'DOWN') vy = 1; else if (c === 'LEFT') vx = -1; else if (c === 'RIGHT') vx = 1;
     welding = c === 'OK' && inRange;
-  } else if (nd >= 0) {                              // avto-pilot: shikastga bor, payvandla
-    const ddx = damages[nd].x - scene.rx, ddy = damages[nd].y - scene.ry, dd = Math.hypot(ddx, ddy) || 1;
-    if (dd > WELD_R - 6) { vx = ddx / dd; vy = ddy / dd; } else welding = true;
   }
   scene.moving = (vx || vy) && !welding;
   if (welding) { vx = 0; vy = 0; }
@@ -173,7 +193,10 @@ export function roverTick(scene, dt, t, ctl) {
   // shikastlarni yangilash (animatsiya + tuzatilgan holat)
   damages.forEach((d, i) => {
     if (d.fixed) { d.patch.alpha = Math.min(1, d.patch.alpha + dt * 3); d.crack.alpha = Math.max(0, d.crack.alpha - dt * 3); d.vent.alpha = Math.max(0, d.vent.alpha - dt * 3); d.ring.clear(); return; }
-    d.vent.alpha = 0.35 + 0.25 * Math.sin(t * 3 + i); d.vent.scale.set(1 + 0.15 * Math.sin(t * 4 + i));
+    const rv = scene.reveal[i];
+    d.crack.alpha = rv;
+    if (rv < 0.05) { d.vent.alpha = 0; d.ring.clear(); return; }   // hali shikastlanmagan (intro boshida)
+    d.vent.alpha = (0.35 + 0.25 * Math.sin(t * 3 + i)) * rv; d.vent.scale.set(1 + 0.15 * Math.sin(t * 4 + i));
     if (Math.random() < 0.02) particles.burst(d.x, d.y - 6, 0x9fd0ff, 2, 60);
     d.ring.clear();
     const active = i === scene.nearIdx;

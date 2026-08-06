@@ -86,9 +86,9 @@ export function assembleReactor(app) {
   const scene = {
     app, sky, root, coolG, coreGlow, rings, core, coreSpark, strobes, disp, dispGlow, gauges, gaugeNeedles, keyGlow, particles, vign, flash,
     stage: 0, code: [], cursor: 0, prevKey: 'NONE', pressed: null, pressT: 0,
-    won: false, ignite: 0, spin: 0, errT: 0, okT: 0, lastReset: 0, demoT: 0,
+    won: false, ignite: 0, spin: 0, errT: 0, okT: 0, lastReset: 0, cineT: 0, cineGlow: 0,
     newCode() { this.code = Array.from({ length: CODELEN }, () => String(Math.floor(rnd(0, 10)))); this.cursor = 0; },
-    reset() { this.stage = 0; this.won = false; this.ignite = 0; this.spin = 0; this.newCode(); },
+    reset() { this.stage = 0; this.won = false; this.ignite = 0; this.spin = 0; this.cineT = 0; this.cineGlow = 0; this.newCode(); },
   };
   scene.newCode();
   return scene;
@@ -121,16 +121,22 @@ export function reactorTick(scene, dt, t, ctl) {
   vign.width = w; vign.height = h; flash.width = w; flash.height = h;
   if (ctl.resetPulse !== undefined && ctl.resetPulse !== scene.lastReset) { scene.lastReset = ctl.resetPulse; scene.reset(); }
 
-  const playing = (ctl.connected && !scene.won) || ctl.mode === 'intro';
+  const isIntro = ctl.mode === 'intro';
+  const playing = ctl.connected && !isIntro && !scene.won;
 
-  // KIRISH: keypad (ulangan) yoki demo (avto-teradi)
-  if (ctl.connected) {
+  // KIRISH: FAQAT ulangan keypad kod teradi (o'yin o'zi o'ynamaydi)
+  if (playing) {
     const k = ctl.key === undefined || ctl.key === null ? 'NONE' : (typeof ctl.key === 'number' ? String(ctl.key) : ctl.key);
-    if (k !== scene.prevKey) { if (isDigit(k) && playing) registerDigit(scene, String(k), ctl); scene.prevKey = k; }
-  } else if (playing) {
-    scene.demoT += dt;
-    if (scene.demoT > 0.55 && scene.stage < STAGES) { scene.demoT = 0; registerDigit(scene, scene.code[scene.cursor], ctl); }
+    if (k !== scene.prevKey) { if (isDigit(k)) registerDigit(scene, String(k), ctl); scene.prevKey = k; }
   }
+
+  // KINEMATIK: intro'da reaktor avto-start urinishi MUVAFFAQIYATSIZ — yadro miltillab o'chadi
+  if (isIntro) {
+    scene.cineT += dt;
+    const ph = scene.cineT % 2.4;
+    scene.cineGlow = ph < 0.5 ? ph / 0.5 : Math.max(0, 1 - (ph - 0.5) / 0.35);   // tez ko'tarilib, o'chadi
+    if (ph > 0.5 && ph < 0.62) { scene.errT = 0.35; scene.particles.burst(CX, CY, 0xff5a3a, 8, 160); }
+  } else scene.cineGlow = 0;
 
   // taymerlar
   scene.pressT = Math.max(0, scene.pressT - dt); scene.okT = Math.max(0, scene.okT - dt); scene.errT = Math.max(0, scene.errT - dt);
@@ -138,16 +144,16 @@ export function reactorTick(scene, dt, t, ctl) {
   if (scene.ignite > 0) scene.ignite = Math.min(2, scene.ignite + dt);
 
   // ===== YADRO (bosqichga qarab kuchayadi + ignite'da portlaydi) =====
-  const lvl = scene.stage / STAGES;
-  const spinSpeed = 0.4 + scene.spin * 0.6 + (scene.ignite > 0 ? scene.ignite * 3 : 0);
+  const lvl = scene.stage / STAGES, cg = scene.cineGlow || 0;
+  const spinSpeed = 0.4 + scene.spin * 0.6 + cg * 1.5 + (scene.ignite > 0 ? scene.ignite * 3 : 0);
   rings.forEach((r, i) => { r.rotation += dt * spinSpeed * (i % 2 ? -1 : 1) * (1 + i * 0.3); r.scale.set(1 + (scene.ignite > 0 ? scene.ignite * 0.4 : 0)); });
   core.clear();
-  const coreR = 22 + lvl * 14 + (scene.ignite > 0 ? scene.ignite * 60 : 0) + 2 * Math.sin(t * 10);
-  const hot = scene.ignite > 0 ? 0xffffff : (lvl > 0.7 ? 0x9fe0ff : 0x4a8ad0);
-  core.circle(CX, CY, coreR).fill({ color: hot, alpha: 0.9 });
-  core.circle(CX, CY, coreR + 6).stroke({ width: 2, color: 0xaad0ff, alpha: 0.5 });
-  coreGlow.alpha = 0.12 + lvl * 0.4 + (scene.ignite > 0 ? scene.ignite * 0.5 : 0); coreGlow.scale.set(1 + lvl * 0.3 + (scene.ignite > 0 ? scene.ignite : 0));
-  coreSpark.alpha = 0.3 + lvl * 0.5; coreSpark.scale.set(1 + 0.3 * Math.sin(t * 12));
+  const coreR = 22 + lvl * 14 + cg * 18 + (scene.ignite > 0 ? scene.ignite * 60 : 0) + 2 * Math.sin(t * 10);
+  const hot = scene.ignite > 0 ? 0xffffff : ((lvl > 0.7 || cg > 0.6) ? 0x9fe0ff : 0x4a8ad0);
+  core.circle(CX, CY, coreR).fill({ color: hot, alpha: 0.5 + lvl * 0.4 + cg * 0.4 });
+  core.circle(CX, CY, coreR + 6).stroke({ width: 2, color: 0xaad0ff, alpha: 0.4 + cg * 0.3 });
+  coreGlow.alpha = 0.1 + lvl * 0.4 + cg * 0.4 + (scene.ignite > 0 ? scene.ignite * 0.5 : 0); coreGlow.scale.set(1 + lvl * 0.3 + cg * 0.25 + (scene.ignite > 0 ? scene.ignite : 0));
+  coreSpark.alpha = 0.25 + lvl * 0.5 + cg * 0.4; coreSpark.scale.set(1 + 0.3 * Math.sin(t * 12));
   if (scene.ignite > 0 && scene.ignite < 0.5 && Math.random() < 0.5) particles.burst(CX, CY, 0x9fe0ff, 10, 320);
 
   // koolant oqimi (bosqichga qarab tezlashadi)

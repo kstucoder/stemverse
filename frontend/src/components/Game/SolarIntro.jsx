@@ -5,25 +5,24 @@ import { useMemo, useRef, useState } from 'react';
 import PixiStage from './pixi/PixiStage';
 import { assembleSolar, solarTick } from './pixi/solarScene';
 import DialogueBox from './DialogueBox';
-import { playScore, playClick } from './gameAudio';
 
+// Electra faqat VOQEA sodir bo'lgach gapiradi — muammoni va nima qilish kerakligini tushuntiradi.
 const LINES = [
-  { text: "Janglar bazani charchatdi — reaktor zaryadi kritik past. Quvvatsiz hech qaysi tizim ishlamaydi.", emotion: 'worried' },
-  { text: "Yangi STEPPER motorli quyosh panellarini o'rnatdim. Stepper servodan aniqroq — qadamba-qadam istalgan burchakka aynan keladi.", emotion: 'normal' },
-  { text: "POT bilan panelni bur — u siljiyotgan uzoq quyoshni 'track' qilsin. Panel qancha aniq qarasa — shuncha ko'p quvvat oqadi.", emotion: 'normal' },
-  { text: "Quyosh osmonda siljiydi, uni tinmay kuzatib bor. Reaktorni 100% zaryadla — baza yana yonsin! Tayyormisan, energiya muhandisi?", emotion: 'excited' },
+  { text: "Ko'rdingmi? Reaktor zaryadi kritik pastga tushdi — baza chiroqlari birin-ketin o'chdi. Janglar bizni quvvatsiz qoldirdi.", emotion: 'worried' },
+  { text: "Quyosh yonimizda, lekin panellar bo'shashib osilib qolgan — hech nimani ushlamayapti, shuning uchun quvvat kelmayapti.", emotion: 'worried' },
+  { text: "Yangi STEPPER motor panelni aniq buradi. Sen POT ni burasan — panel o'sha burchakka aynan keladi va quyoshga qaraydi.", emotion: 'normal' },
+  { text: "Panelni siljiyotgan quyoshga ANIQ qarat (nishon 85%+) — quvvat oqadi. Kuzatib borib reaktorni 100% zaryadla. Platani ulaganingda boshlaymiz!", emotion: 'excited' },
 ];
 
 function buildIntroScene(app, ctlRef, onSceneDone) {
   const scene = assembleSolar(app);
-  const ctl = { connected: false, mode: 'intro', resetPulse: 0, onCharge: () => playScore(), onNear: () => playClick() };
-  let t = 0, done = false, endedAt = 0;
+  const ctl = { connected: false, mode: 'intro', resetPulse: 0 };   // FAQAT kinematik kriz ko'rsatiladi (o'yin o'ynalmaydi)
+  let t = 0, done = false;
   ctlRef.current.skip = () => { if (done) return; done = true; onSceneDone(); };
   app.ticker.add((tk) => {
     const dt = Math.min(tk.deltaMS / 1000, 0.05); t += dt;
-    solarTick(scene, dt, t, ctl);   // ulanmagan + intro -> demo panel quyoshni kuzatadi, zaryadlanadi
-    if (scene.milestone >= 2 && !endedAt) endedAt = t;
-    if (!done && ((endedAt && t > endedAt + 0.8) || t > 10)) { done = true; onSceneDone(); }
+    solarTick(scene, dt, t, ctl);       // kriz: quvvat asta tugaydi, baza qorong'ilashadi
+    if (!done && t > 5.4) { done = true; onSceneDone(); }
   });
   return () => {};
 }
