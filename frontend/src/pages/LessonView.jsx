@@ -22,9 +22,9 @@ import DockIntro from '../components/Game/DockIntro';
 import MeteorIntro from '../components/Game/MeteorIntro';
 import SecurityIntro from '../components/Game/SecurityIntro';
 import MusicVisualizerIntro from '../components/Game/MusicVisualizerIntro';
-import UplinkIntro from '../components/Game/UplinkIntro';
-import StationIntro from '../components/Game/StationIntro';
-import BaseIntro from '../components/Game/BaseIntro';
+import SolarIntro from '../components/Game/SolarIntro';
+import RoverIntro from '../components/Game/RoverIntro';
+import ReactorIntro from '../components/Game/ReactorIntro';
 import MissionControl from '../components/Game/MissionControl';
 import useGameStore from '../stores/gameStore';
 import { playWin } from '../components/Game/gameAudio';
@@ -52,9 +52,9 @@ const PREMIUM_INTRO = {
   obstacle_course: MeteorIntro,
   motion_alarm: SecurityIntro,
   music_visualizer: MusicVisualizerIntro,
-  iot_dashboard: UplinkIntro,
-  remote_sensor: StationIntro,
-  smart_home: BaseIntro,
+  iot_dashboard: SolarIntro,
+  remote_sensor: RoverIntro,
+  smart_home: ReactorIntro,
 };
 
 export default function LessonView() {
