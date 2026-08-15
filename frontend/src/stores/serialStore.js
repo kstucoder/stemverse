@@ -3,6 +3,7 @@ import { create } from 'zustand';
 const useSerialStore = create((set, get) => ({
   port: null,
   reader: null,
+  readableStreamClosed: null,
   connected: false,
   dataStream: [],
   baudRate: 9600,
@@ -13,9 +14,15 @@ const useSerialStore = create((set, get) => ({
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: get().baudRate });
       const textDecoder = new TextDecoderStream();
-      port.readable.pipeTo(textDecoder.writable);
+      // pipeTo() natijasini saqlab qo'yamiz. disconnect() paytida shu promise
+      // tugashini kutmasdan port.close() chaqirilsa, brauzer "Cannot cancel a
+      // locked stream" xatosini beradi (port hali pipeTo tomonidan band).
+      // .catch(() => {}) — cancel qilinganda pipeTo tabiiy ravishda reject
+      // bo'lishi mumkin, buni "Uncaught (in promise)" sifatida chiqib
+      // ketishining oldini oladi.
+      const readableStreamClosed = port.readable.pipeTo(textDecoder.writable).catch(() => {});
       const reader = textDecoder.readable.getReader();
-      set({ port, reader, connected: true, dataStream: [] });
+      set({ port, reader, readableStreamClosed, connected: true, dataStream: [] });
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -23,14 +30,18 @@ const useSerialStore = create((set, get) => ({
   },
 
   disconnect: async () => {
-    const { reader, port } = get();
+    const { reader, port, readableStreamClosed } = get();
     try {
-      if (reader) await reader.cancel();
+      if (reader) {
+        await reader.cancel();
+        // pipe to'liq yopilishini kutamiz — aks holda port hali "locked" bo'ladi
+        if (readableStreamClosed) await readableStreamClosed;
+      }
       if (port) await port.close();
     } catch (e) {
       console.error(e);
     }
-    set({ port: null, reader: null, connected: false, dataStream: [] });
+    set({ port: null, reader: null, readableStreamClosed: null, connected: false, dataStream: [] });
   },
 
   startReading: (onData) => {
