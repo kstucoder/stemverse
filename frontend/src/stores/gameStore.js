@@ -93,8 +93,8 @@ const useGameStore = create((set, get) => ({
     }
 
     const { winConditions, onWin } = state;
+    let won = false;
     if (winConditions && onWin) {
-      let won = false;
       if (winConditions.type === 'led_blink_count' && np.ledBlinks >= winConditions.count) won = true;
       if (winConditions.type === 'button_presses' && np.buttonPresses >= winConditions.count) won = true;
       if (winConditions.type === 'power_reached' && np.maxPower >= winConditions.value) won = true;
@@ -112,6 +112,13 @@ const useGameStore = create((set, get) => ({
       cityState: nc,
       progress: np,
       missionProgress: { type: winConditions?.type || null, value: missionValue },
+      // G'ALABA FAQAT BIR MARTA HISOBLANISHI UCHUN: shart bajarilgach
+      // winConditions/onWin'ni tozalaymiz. Aks holda hardware (masalan
+      // to'xtamay yonib-o'chib turuvchi LED sketch'i) signal yuborishda
+      // davom etaversa, har safar qayta "g'alaba" deb hisoblanib, onWin
+      // (demak ball/XP va backend "complete" so'rovi) cheksiz qayta-qayta
+      // chaqirilib ketardi.
+      ...(won ? { winConditions: null, onWin: null } : {}),
     });
   },
 
