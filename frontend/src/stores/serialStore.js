@@ -36,19 +36,29 @@ const useSerialStore = create((set, get) => ({
   startReading: (onData) => {
     const { reader, connected } = get();
     if (!connected || !reader) return;
+    // Chunk'lar orasida qoldiq matnni saqlash uchun bufer.
+    // Web Serial API bitta qatorni ("TEMP:21\n") bir necha bo'lakka
+    // bo'lib yuborishi mumkin ("TEM" + "P:21\n") — buferlamasdan
+    // buni to'g'ridan-to'g'ri '\n' bo'yicha bo'lish chala qatorlarni
+    // hosil qiladi va ma'lumot yo'qolib qoladi.
+    let buffer = '';
     const readLoop = async () => {
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           if (value) {
-            value.split('\n').forEach((line) => {
+            buffer += value;
+            let idx;
+            while ((idx = buffer.indexOf('\n')) >= 0) {
+              const line = buffer.slice(0, idx);
+              buffer = buffer.slice(idx + 1);
               const t = line.trim();
               if (t) {
                 set((s) => ({ dataStream: [...s.dataStream.slice(-99), t] }));
                 if (onData) onData(t);
               }
-            });
+            }
           }
         }
       } catch (err) {
